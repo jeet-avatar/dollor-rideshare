@@ -672,118 +672,43 @@ def send_vendor_approval_email(
     restaurant_name: str,
     contact_name: str
 ) -> bool:
-    """
-    Send approval notification email to a vendor.
-    """
-    subject = f"🎉 Congratulations! {restaurant_name} is Now Live on Dollor.AI"
+    subject = f"Your partner account is live — {restaurant_name}"
 
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }}
-            .container {{ max-width: 600px; margin: 0 auto; background-color: white; }}
-            .header {{ background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 20px; text-align: center; }}
-            .logo {{ font-size: 32px; color: #ffd700; font-weight: bold; }}
-            .content {{ padding: 40px 30px; }}
-            .greeting {{ font-size: 24px; color: #1e293b; margin-bottom: 20px; }}
-            .message {{ color: #475569; font-size: 16px; line-height: 1.6; }}
-            .highlight {{ background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(26, 26, 46, 0.1) 100%); border-left: 4px solid #ffd700; padding: 20px; margin: 30px 0; border-radius: 8px; }}
-            .cta-button {{ display: inline-block; background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%); color: #1a1a2e; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin: 20px 0; }}
-            .apps {{ margin: 30px 0; }}
-            .app-badge {{ display: inline-block; margin: 5px; }}
-            .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }}
-            .steps {{ margin: 20px 0; }}
-            .step {{ display: flex; align-items: center; margin: 15px 0; }}
-            .step-number {{ background: #ffd700; color: #1a1a2e; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="logo">💰 Dollor.AI</div>
-                <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0;">The $1 Delivery Revolution</p>
-            </div>
-            <div class="content">
-                <h1 class="greeting">Welcome to Dollor.AI, {contact_name}! 🎉</h1>
-                <p class="message">
-                    Great news! <strong>{restaurant_name}</strong> has been approved and is now live on the Dollor.AI platform.
-                    Your customers can start ordering right away!
-                </p>
+    body = f"""
+<p>Hi <strong>{contact_name}</strong>,</p>
+<p><strong>{restaurant_name}</strong> has been approved and is now live on Dollor. Customers can start ordering right away.</p>
 
-                <div class="highlight">
-                    <strong>🚀 Your restaurant is ready to receive orders!</strong><br>
-                    Log in to your dashboard to manage orders, update your menu, and track earnings.
-                </div>
+<div class="box">
+  <div class="row"><span class="row-lbl">Restaurant</span><span class="row-val">{restaurant_name}</span></div>
+  <div class="row"><span class="row-lbl">Status</span><span class="row-val"><span class="green-tag">Live</span></span></div>
+</div>
 
-                <h3>Next Steps:</h3>
-                <div class="steps">
-                    <div class="step">
-                        <div class="step-number">1</div>
-                        <span>Log in to your Vendor Dashboard to review your menu</span>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">2</div>
-                        <span>Download the Dollor.AI Restaurant app for real-time order alerts</span>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">3</div>
-                        <span>Set up your bank account for weekly payouts</span>
-                    </div>
-                </div>
+<ul class="perks">
+  <li><span class="check">→</span>Log in to your dashboard to review your menu and hours</li>
+  <li><span class="check">→</span>Download the Dollor Restaurant app for real-time order alerts</li>
+  <li><span class="check">→</span>Set up your bank account for weekly payouts via Stripe</li>
+</ul>
 
-                <center>
-                    <a href="https://dollor.ai/vendor/login" class="cta-button">
-                        🔑 Login to Dashboard
-                    </a>
-                </center>
+<a href="https://dollor.ai/vendor/login" class="cta">Open Vendor Dashboard →</a>
+<p style="font-size:13px;color:#9ca3af;">Questions? Reply to this email or contact support@dollor.ai.</p>
+"""
+    html_body = _dollor_email("🎉", "Partner Account Approved", f"{restaurant_name} is now live on Dollor.", body)
 
-                <div class="apps">
-                    <p><strong>Download the Restaurant App:</strong></p>
-                    <p>
-                        📱 <a href="https://apps.apple.com/app/dollor-restaurant">iOS App Store</a> &nbsp;|&nbsp;
-                        📱 <a href="https://play.google.com/store/apps/details?id=com.dollor.restaurant">Google Play</a>
-                    </p>
-                </div>
+    text_body = f"""Your partner account is live — {restaurant_name}
 
-                <p class="message" style="margin-top: 30px;">
-                    If you have any questions, our partner support team is available 24/7.<br>
-                    Just reply to this email or call us at <strong>(800) 555-FOOD</strong>.
-                </p>
-            </div>
-            <div class="footer">
-                <p>© 2024 Dollor.AI - The World's First $1 Delivery Platform</p>
-                <p>
-                    <a href="https://dollor.ai/terms">Terms</a> |
-                    <a href="https://dollor.ai/privacy">Privacy</a> |
-                    <a href="https://dollor.ai/support">Support</a>
-                </p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+Hi {contact_name},
 
-    text_body = f"""
-    Welcome to Dollor.AI, {contact_name}!
+{restaurant_name} has been approved and is now live on Dollor.
 
-    Great news! {restaurant_name} has been approved and is now live on the Dollor.AI platform.
+Next steps:
+1. Log in to your dashboard — https://dollor.ai/vendor/login
+2. Download the Dollor Restaurant app for real-time order alerts
+3. Set up your bank account for weekly payouts via Stripe
 
-    Your customers can start ordering right away!
+Questions? support@dollor.ai
 
-    Next Steps:
-    1. Log in to your Vendor Dashboard to review your menu
-    2. Download the Dollor.AI Restaurant app for real-time order alerts
-    3. Set up your bank account for weekly payouts
-
-    Login to Dashboard: https://dollor.ai/vendor/login
-
-    If you have any questions, our partner support team is available 24/7.
-    Just reply to this email or call us at (800) 555-FOOD.
-
-    © 2024 Dollor.AI - The World's First $1 Delivery Platform
-    """
+© 2026 Zietra Technologies Inc. · dollor.ai
+"""
 
     return send_email(to_email, subject, html_body, text_body)
 
@@ -794,106 +719,48 @@ def send_vendor_registration_confirmation(
     contact_name: str,
     vendor_id: str
 ) -> bool:
-    """
-    Send registration confirmation email to a new vendor.
-    """
-    subject = f"Application Received - {restaurant_name} | Dollor.AI"
+    subject = f"Application received — {restaurant_name}"
 
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }}
-            .container {{ max-width: 600px; margin: 0 auto; background-color: white; }}
-            .header {{ background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 20px; text-align: center; }}
-            .logo {{ font-size: 32px; color: #ffd700; font-weight: bold; }}
-            .content {{ padding: 40px 30px; }}
-            .greeting {{ font-size: 24px; color: #1e293b; margin-bottom: 20px; }}
-            .message {{ color: #475569; font-size: 16px; line-height: 1.6; }}
-            .app-id {{ background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; font-family: monospace; font-size: 18px; text-align: center; margin: 20px 0; }}
-            .timeline {{ margin: 30px 0; }}
-            .timeline-item {{ display: flex; margin: 15px 0; }}
-            .timeline-dot {{ width: 12px; height: 12px; background: #ffd700; border-radius: 50%; margin-right: 15px; margin-top: 5px; }}
-            .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="logo">💰 Dollor.AI</div>
-                <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0;">Partner Application</p>
-            </div>
-            <div class="content">
-                <h1 class="greeting">Thank you, {contact_name}! 🙏</h1>
-                <p class="message">
-                    We've received your application for <strong>{restaurant_name}</strong> to join the Dollor.AI platform.
-                </p>
+    body = f"""
+<p>Hi <strong>{contact_name}</strong>,</p>
+<p>We've received your application for <strong>{restaurant_name}</strong> to join the Dollor platform.</p>
 
-                <div class="app-id">
-                    Application ID: <strong>{vendor_id}</strong>
-                </div>
+<div class="box">
+  <div class="row"><span class="row-lbl">Application ID</span><span class="row-val" style="font-family:monospace;font-size:15px">{vendor_id}</span></div>
+  <div class="row"><span class="row-lbl">Restaurant</span><span class="row-val">{restaurant_name}</span></div>
+  <div class="row"><span class="row-lbl">Status</span><span class="row-val"><span class="orange-tag">Under Review</span></span></div>
+</div>
 
-                <h3>What happens next?</h3>
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-dot"></div>
-                        <div>
-                            <strong>Document Review</strong><br>
-                            <span style="color: #64748b;">Our team reviews your submitted information (1-2 business days)</span>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-dot" style="background: #e2e8f0;"></div>
-                        <div>
-                            <strong>Menu Setup</strong><br>
-                            <span style="color: #64748b;">AI-assisted menu configuration and pricing optimization</span>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-dot" style="background: #e2e8f0;"></div>
-                        <div>
-                            <strong>Go Live!</strong><br>
-                            <span style="color: #64748b;">Start receiving orders from hungry customers</span>
-                        </div>
-                    </div>
-                </div>
+<ul class="perks">
+  <li><span class="check">1</span>Document review by our team — typically 1–2 business days</li>
+  <li><span class="check">2</span>Menu setup and pricing configuration</li>
+  <li><span class="check">3</span>Go live and start receiving orders</li>
+</ul>
 
-                <p class="message">
-                    Once approved, you'll receive an email with instructions to log in to your dashboard
-                    using the email and password you provided during registration.
-                </p>
+<p>Once approved, you'll receive a separate email with your dashboard login instructions.</p>
+<p style="font-size:13px;color:#9ca3af;">Questions? Reply to this email or contact support@dollor.ai.</p>
+"""
+    html_body = _dollor_email("📋", "Application Received", "We'll review your application within 1–2 business days.", body)
 
-                <p class="message" style="margin-top: 30px;">
-                    Questions? Reply to this email or call <strong>(800) 555-FOOD</strong>.
-                </p>
-            </div>
-            <div class="footer">
-                <p>© 2024 Dollor.AI - The World's First $1 Delivery Platform</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+    text_body = f"""Application received — {restaurant_name}
 
-    text_body = f"""
-    Thank you, {contact_name}!
+Hi {contact_name},
 
-    We've received your application for {restaurant_name} to join the Dollor.AI platform.
+We've received your application for {restaurant_name}.
 
-    Application ID: {vendor_id}
+Application ID: {vendor_id}
 
-    What happens next?
-    1. Document Review - Our team reviews your submitted information (1-2 business days)
-    2. Menu Setup - AI-assisted menu configuration and pricing optimization
-    3. Go Live! - Start receiving orders from hungry customers
+What happens next:
+1. Document review (1–2 business days)
+2. Menu setup and configuration
+3. Go live!
 
-    Once approved, you'll receive an email with instructions to log in to your dashboard.
+Once approved, you'll receive login instructions for your dashboard.
 
-    Questions? Reply to this email or call (800) 555-FOOD.
+Questions? support@dollor.ai
 
-    © 2024 Dollor.AI
-    """
+© 2026 Zietra Technologies Inc. · dollor.ai
+"""
 
     return send_email(to_email, subject, html_body, text_body)
 
@@ -1178,67 +1045,38 @@ def send_order_confirmation_email(
     order_total: float,
     items_summary: str = ""
 ) -> bool:
-    """
-    Send order confirmation email to customer when order is placed.
-    """
-    subject = f"Order Confirmed! #{order_number} from {restaurant_name}"
+    subject = f"Order confirmed — #{order_number} from {restaurant_name}"
 
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }}
-            .container {{ max-width: 600px; margin: 0 auto; background-color: white; }}
-            .header {{ background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px 20px; text-align: center; }}
-            .logo {{ font-size: 28px; color: #ffd700; font-weight: bold; }}
-            .content {{ padding: 30px; }}
-            .order-box {{ background: #f8fafc; border-radius: 12px; padding: 20px; margin: 20px 0; }}
-            .order-number {{ font-size: 24px; color: #1e293b; font-weight: bold; }}
-            .status {{ display: inline-block; background: #22c55e; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; margin: 10px 0; }}
-            .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="logo">Dollor.AI</div>
-            </div>
-            <div class="content">
-                <h2>Hi {customer_name}!</h2>
-                <p>Your order has been confirmed and is being prepared!</p>
+    items_row = f'<div class="row"><span class="row-lbl">Items</span><span class="row-val">{items_summary}</span></div>' if items_summary else ""
+    body = f"""
+<p>Hi <strong>{customer_name}</strong>,</p>
+<p>Your order from <strong>{restaurant_name}</strong> has been confirmed and is being prepared.</p>
 
-                <div class="order-box">
-                    <div class="order-number">Order #{order_number}</div>
-                    <span class="status">Confirmed</span>
-                    <p><strong>Restaurant:</strong> {restaurant_name}</p>
-                    {f'<p><strong>Items:</strong> {items_summary}</p>' if items_summary else ''}
-                    <p><strong>Total:</strong> ${order_total:.2f}</p>
-                </div>
+<div class="box">
+  <div class="row"><span class="row-lbl">Order #</span><span class="row-val" style="font-family:monospace">{order_number}</span></div>
+  <div class="row"><span class="row-lbl">Restaurant</span><span class="row-val">{restaurant_name}</span></div>
+  {items_row}
+  <div class="row"><span class="row-lbl">Total</span><span class="row-val">${order_total:.2f}</span></div>
+  <div class="row"><span class="row-lbl">Status</span><span class="row-val"><span class="orange-tag">Being Prepared</span></span></div>
+</div>
 
-                <p>We'll notify you when your order is ready for pickup and when the driver is on the way!</p>
-                <p>Track your order in the Dollor.AI app.</p>
-            </div>
-            <div class="footer">
-                <p>Questions? Contact support@dollor.ai</p>
-                <p>2025 Dollor.AI by Zietra Technologies Inc.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+<p>We'll send you another update when a driver picks up your order. Track in the Dollor app.</p>
+"""
+    html_body = _dollor_email("🍽️", "Order Confirmed", f"#{order_number} is on its way soon.", body)
 
-    text_body = f"""
-    Hi {customer_name}!
+    text_body = f"""Order confirmed — #{order_number}
 
-    Your order #{order_number} from {restaurant_name} has been confirmed!
-    Total: ${order_total:.2f}
+Hi {customer_name},
 
-    We'll notify you when your order is ready and when the driver is on the way.
-    Track your order in the Dollor.AI app.
+Your order from {restaurant_name} has been confirmed.
 
-    — The Dollor.AI Team
-    """
+Order #: {order_number}
+{f'Items: {items_summary}' if items_summary else ''}Total: ${order_total:.2f}
+
+We'll notify you when a driver picks up your order.
+
+— The Dollor Team
+"""
 
     return send_email(to_email, subject, html_body, text_body)
 
@@ -1249,54 +1087,33 @@ def send_order_ready_email(
     order_number: str,
     restaurant_name: str
 ) -> bool:
-    """
-    Send email when order is ready for pickup.
-    """
-    subject = f"Your order is ready! #{order_number}"
+    subject = f"Your order is ready — #{order_number}"
 
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }}
-            .container {{ max-width: 600px; margin: 0 auto; background-color: white; }}
-            .header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 30px 20px; text-align: center; }}
-            .logo {{ font-size: 28px; color: white; font-weight: bold; }}
-            .content {{ padding: 30px; }}
-            .status-icon {{ font-size: 48px; text-align: center; }}
-            .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="logo">Order Ready!</div>
-            </div>
-            <div class="content">
-                <h2 style="text-align: center;">Your Food is Ready!</h2>
-                <p>Hi {customer_name},</p>
-                <p>Great news! Your order <strong>#{order_number}</strong> from <strong>{restaurant_name}</strong> is ready and waiting for a driver to pick it up.</p>
-                <p>A driver will be assigned shortly and your food will be on its way soon!</p>
-            </div>
-            <div class="footer">
-                <p>2025 Dollor.AI by Zietra Technologies Inc.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+    body = f"""
+<p>Hi <strong>{customer_name}</strong>,</p>
+<p>Your order <strong>#{order_number}</strong> from <strong>{restaurant_name}</strong> is ready and waiting for a driver.</p>
 
-    text_body = f"""
-    Your Food is Ready!
+<div class="box">
+  <div class="row"><span class="row-lbl">Order #</span><span class="row-val" style="font-family:monospace">{order_number}</span></div>
+  <div class="row"><span class="row-lbl">Restaurant</span><span class="row-val">{restaurant_name}</span></div>
+  <div class="row"><span class="row-lbl">Status</span><span class="row-val"><span class="green-tag">Ready for Pickup</span></span></div>
+</div>
 
-    Hi {customer_name},
+<p>A driver will be assigned shortly and your food will be on its way. Track in the Dollor app.</p>
+"""
+    html_body = _dollor_email("✅", "Order Ready!", "Your food is packed and waiting for a driver.", body)
 
-    Your order #{order_number} from {restaurant_name} is ready!
-    A driver will pick it up shortly.
+    text_body = f"""Your order is ready — #{order_number}
 
-    — The Dollor.AI Team
-    """
+Hi {customer_name},
+
+Your order #{order_number} from {restaurant_name} is ready!
+A driver will pick it up shortly.
+
+Track your order in the Dollor app.
+
+— The Dollor Team
+"""
 
     return send_email(to_email, subject, html_body, text_body)
 
@@ -1324,192 +1141,86 @@ def send_order_delivered_with_receipt_email(
     """
     subject = f"Thank You! Your Order #{order_number} Has Been Delivered"
 
-    # Build items table rows
-    items_html = ""
+    items_rows = ""
     for item in order_items:
         item_name = item.get("name", "Item")
         item_qty = item.get("quantity", 1)
         item_price = item.get("price", 0) or item.get("unit_price", 0)
         item_total = item_qty * item_price
-        items_html += f"""
-        <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">{item_name}</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; text-align: center;">{item_qty}</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">${item_total:.2f}</td>
-        </tr>
-        """
+        items_rows += f'<div class="row"><span class="row-lbl">{item_name} ×{item_qty}</span><span class="row-val">${item_total:.2f}</span></div>'
 
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }}
-            .container {{ max-width: 600px; margin: 0 auto; background-color: white; }}
-            .header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 20px; text-align: center; color: white; }}
-            .header h1 {{ margin: 0 0 10px 0; font-size: 28px; }}
-            .header p {{ margin: 0; opacity: 0.9; }}
-            .checkmark {{ font-size: 60px; margin-bottom: 15px; }}
-            .content {{ padding: 30px; }}
-            .receipt-box {{ background: #f8fafc; border-radius: 12px; padding: 20px; margin: 20px 0; }}
-            .receipt-header {{ font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 15px; border-bottom: 2px solid #22c55e; padding-bottom: 10px; }}
-            .info-row {{ display: flex; justify-content: space-between; padding: 8px 0; }}
-            .info-label {{ color: #64748b; }}
-            .info-value {{ font-weight: 500; color: #1e293b; }}
-            .items-table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
-            .items-table th {{ text-align: left; padding: 12px 0; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 500; }}
-            .items-table th:last-child {{ text-align: right; }}
-            .totals-section {{ margin-top: 20px; padding-top: 15px; border-top: 2px solid #e2e8f0; }}
-            .total-row {{ display: flex; justify-content: space-between; padding: 6px 0; }}
-            .total-row.grand-total {{ font-size: 18px; font-weight: bold; color: #22c55e; padding-top: 12px; border-top: 2px solid #22c55e; margin-top: 10px; }}
-            .tip-box {{ background: #fef3c7; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center; }}
-            .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }}
-            .cta-button {{ display: inline-block; background: #22c55e; color: white; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; margin: 10px 0; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="checkmark">&#10004;</div>
-                <h1>Thank You!</h1>
-                <p>Your order has been delivered</p>
-            </div>
-            <div class="content">
-                <p style="font-size: 16px; color: #1e293b;">Hi {customer_name},</p>
-                <p style="color: #64748b;">We hope you enjoy your meal! Here's your receipt for order <strong>#{order_number}</strong>.</p>
+    discount_row = ""
+    if discount_amount and discount_amount > 0:
+        discount_row = f'<div class="row"><span class="row-lbl">Discount ({promo_code or "Promo"})</span><span class="row-val" style="color:#15803d">−${discount_amount:.2f}</span></div>'
 
-                <div class="receipt-box">
-                    <div class="receipt-header">Order Receipt</div>
+    tip_row = f'<div class="row"><span class="row-lbl">Tip</span><span class="row-val">${tip:.2f}</span></div>' if tip > 0 else ""
 
-                    <div style="margin-bottom: 15px;">
-                        <div class="info-row">
-                            <span class="info-label">Order Date:</span>
-                            <span class="info-value">{order_date}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Restaurant:</span>
-                            <span class="info-value">{restaurant_name}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Delivered To:</span>
-                            <span class="info-value">{delivery_address}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Driver:</span>
-                            <span class="info-value">{driver_name}</span>
-                        </div>
-                    </div>
+    body = f"""
+<p>Hi <strong>{customer_name}</strong>,</p>
+<p>Your order from <strong>{restaurant_name}</strong> has been delivered. We hope you enjoy your meal!</p>
 
-                    <table class="items-table">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th style="text-align: center;">Qty</th>
-                                <th style="text-align: right;">Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {items_html}
-                        </tbody>
-                    </table>
+<div class="box">
+  <div class="row"><span class="row-lbl">Order #</span><span class="row-val" style="font-family:monospace">{order_number}</span></div>
+  <div class="row"><span class="row-lbl">Date</span><span class="row-val">{order_date}</span></div>
+  <div class="row"><span class="row-lbl">Restaurant</span><span class="row-val">{restaurant_name}</span></div>
+  <div class="row"><span class="row-lbl">Driver</span><span class="row-val">{driver_name}</span></div>
+  <div class="row"><span class="row-lbl">Delivered to</span><span class="row-val">{delivery_address}</span></div>
+</div>
 
-                    <div class="totals-section">
-                        <div class="total-row">
-                            <span>Subtotal</span>
-                            <span>${subtotal:.2f}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>Delivery Fee</span>
-                            <span>${delivery_fee:.2f}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>Service Fee</span>
-                            <span>${service_fee:.2f}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>Tax</span>
-                            <span>${tax_amount:.2f}</span>
-                        </div>
-                        {"<div class='total-row' style='color: #22c55e;'><span>Discount (" + promo_code + ")</span><span>-$" + f"{discount_amount:.2f}</span></div>" if discount_amount and discount_amount > 0 else ""}
-                        {"<div class='total-row'><span>Tip</span><span>$" + f"{tip:.2f}</span></div>" if tip > 0 else ""}
-                        <div class="total-row grand-total">
-                            <span>Total</span>
-                            <span>${order_total:.2f}</span>
-                        </div>
-                    </div>
-                </div>
+<div class="box">
+  {items_rows}
+  <div class="divider"></div>
+  <div class="row"><span class="row-lbl">Subtotal</span><span class="row-val">${subtotal:.2f}</span></div>
+  <div class="row"><span class="row-lbl">Delivery fee</span><span class="row-val">${delivery_fee:.2f}</span></div>
+  <div class="row"><span class="row-lbl">Service fee</span><span class="row-val">${service_fee:.2f}</span></div>
+  <div class="row"><span class="row-lbl">Tax</span><span class="row-val">${tax_amount:.2f}</span></div>
+  {discount_row}
+  {tip_row}
+  <div class="row"><span class="row-lbl" style="font-weight:700;color:#0a0a0f">Total</span><span class="row-val" style="font-weight:900;font-size:16px">${order_total:.2f}</span></div>
+</div>
 
-                <div class="tip-box">
-                    <p style="margin: 0 0 10px 0; font-weight: 600; color: #92400e;">Enjoyed your delivery?</p>
-                    <p style="margin: 0; color: #92400e;">Rate your experience in the app!</p>
-                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #b45309;">Drivers keep 100% of tips on Dollor.AI</p>
-                </div>
+<div class="alert">Drivers keep 100% of tips on Dollor. Rate your experience in the app!</div>
+"""
 
-                <div style="text-align: center;">
-                    <p style="color: #64748b;">Thank you for choosing Dollor!</p>
-                    <p style="font-size: 24px; margin: 10px 0;">&#127829; &#128663; &#127881;</p>
-                </div>
-            </div>
-            <div style="background: #f1f5f9; padding: 15px 30px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                <p style="margin: 5px 0;"><strong>Safety:</strong> Dollor.ai maintains a zero-tolerance policy for drug and alcohol use by drivers.</p>
-                <p style="margin: 5px 0;">To report a safety concern: support@dollor.ai</p>
-                <p style="margin: 5px 0;">CPUC Consumer Complaints: 1-800-894-9444 | CIU_intake@cpuc.ca.gov</p>
-            </div>
-            <div class="footer">
-                <p>Questions about your order? Contact us at support@dollor.ai</p>
-                <p>&copy; 2026 Dollor.AI by Zietra Technologies Inc.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+    html_body = _dollor_email(
+        "🚗", "Order Delivered!", f"Your receipt for order #{order_number}.", body,
+        footer_note="Safety concern? Email support@dollor.ai · CPUC: 1-800-894-9444"
+    )
 
-    # Plain text version
     items_text = "\n".join([
-        f"  {item.get('name', 'Item')} x{item.get('quantity', 1)} - ${(item.get('quantity', 1) * (item.get('price', 0) or item.get('unit_price', 0))):.2f}"
+        f"  {item.get('name', 'Item')} ×{item.get('quantity', 1)} — ${(item.get('quantity', 1) * (item.get('price', 0) or item.get('unit_price', 0))):.2f}"
         for item in order_items
     ])
 
-    text_body = f"""
-    Thank You! Your Order Has Been Delivered
+    text_body = f"""Delivered! Receipt for order #{order_number}
 
-    Hi {customer_name},
+Hi {customer_name},
 
-    We hope you enjoy your meal! Here's your receipt for order #{order_number}.
+Your order from {restaurant_name} has been delivered.
 
-    ORDER RECEIPT
-    =============
-    Order Date: {order_date}
-    Restaurant: {restaurant_name}
-    Delivered To: {delivery_address}
-    Driver: {driver_name}
+ORDER RECEIPT
+=============
+Order #: {order_number}
+Date: {order_date}
+Restaurant: {restaurant_name}
+Delivered to: {delivery_address}
+Driver: {driver_name}
 
-    ITEMS:
-    {items_text}
+ITEMS:
+{items_text}
 
-    TOTALS:
-    Subtotal: ${subtotal:.2f}
-    Delivery Fee: ${delivery_fee:.2f}
-    Service Fee: ${service_fee:.2f}
-    Tax: ${tax_amount:.2f}
-    {"Discount (" + (promo_code or "") + "): -$" + f"{discount_amount:.2f}" if discount_amount and discount_amount > 0 else ""}
-    {"Tip: $" + f"{tip:.2f}" if tip > 0 else ""}
-    -------------------
-    TOTAL: ${order_total:.2f}
+Subtotal: ${subtotal:.2f}
+Delivery fee: ${delivery_fee:.2f}
+Service fee: ${service_fee:.2f}
+Tax: ${tax_amount:.2f}
+{"Discount (" + (promo_code or "") + "): -${:.2f}".format(discount_amount) if discount_amount and discount_amount > 0 else ""}
+{"Tip: ${:.2f}".format(tip) if tip > 0 else ""}
+TOTAL: ${order_total:.2f}
 
-    Enjoyed your delivery? Rate your experience in the app!
-    Drivers keep 100% of tips on Dollor.AI.
+Drivers keep 100% of tips. Rate your experience in the app!
 
-    Thank you for choosing Dollor!
-
-    ---
-    SAFETY: Dollor.ai maintains a zero-tolerance policy for drug and alcohol use by drivers.
-    Report a safety concern: support@dollor.ai
-    CPUC Consumer Complaints: 1-800-894-9444 | CIU_intake@cpuc.ca.gov
-
-    Questions? support@dollor.ai
-    — The Dollor.AI Team
-    """
+© 2026 Zietra Technologies Inc. · dollor.ai
+"""
 
     return send_email(to_email, subject, html_body, text_body)
 
@@ -1530,85 +1241,56 @@ def send_delivery_completed_driver_email(
     if total_earnings is None:
         total_earnings = delivery_fee + tip
 
-    subject = f"Delivery Complete! You Earned ${total_earnings:.2f}"
+    subject = f"Delivery complete — you earned ${total_earnings:.2f}"
 
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }}
-            .container {{ max-width: 600px; margin: 0 auto; background-color: white; }}
-            .header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 30px 20px; text-align: center; color: white; }}
-            .content {{ padding: 30px; }}
-            .earnings-box {{ background: #ecfdf5; border-radius: 12px; padding: 25px; margin: 20px 0; border: 2px solid #22c55e; }}
-            .earnings-row {{ display: flex; justify-content: space-between; padding: 8px 0; }}
-            .earnings-label {{ color: #64748b; }}
-            .earnings-value {{ font-weight: 500; color: #1e293b; }}
-            .earnings-total {{ display: flex; justify-content: space-between; padding: 15px 0; border-top: 2px solid #22c55e; margin-top: 10px; }}
-            .total-label {{ font-size: 18px; font-weight: bold; color: #059669; }}
-            .total-value {{ font-size: 24px; font-weight: bold; color: #059669; }}
-            .zero-fee {{ background: #f0fdf4; border-radius: 8px; padding: 15px; margin: 15px 0; text-align: center; border: 1px dashed #22c55e; }}
-            .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h2>Delivery Complete!</h2>
-                <p style="margin: 5px 0 0 0; opacity: 0.9;">Order #{order_number}</p>
-            </div>
-            <div class="content">
-                <p>Great job, {driver_name}!</p>
-                <p style="color: #64748b;">You delivered from <strong>{restaurant_name}</strong>. Here are your earnings:</p>
+    tip_row = f'<div class="row"><span class="row-lbl">Tip</span><span class="row-val">${tip:.2f}</span></div>' if tip > 0 else ""
 
-                <div class="earnings-box">
-                    <div class="earnings-row">
-                        <span class="earnings-label">Delivery Fee</span>
-                        <span class="earnings-value">${delivery_fee:.2f}</span>
-                    </div>
-                    {"<div class='earnings-row'><span class='earnings-label'>Tip</span><span class='earnings-value'>$" + f"{tip:.2f}</span></div>" if tip > 0 else ""}
-                    <div class="earnings-row">
-                        <span class="earnings-label">Platform Fee</span>
-                        <span class="earnings-value" style="color: #22c55e;">$0.00</span>
-                    </div>
-                    <div class="earnings-total">
-                        <span class="total-label">TOTAL EARNINGS</span>
-                        <span class="total-value">${total_earnings:.2f}</span>
-                    </div>
-                </div>
+    body = f"""
+<p>Great work, <strong>{driver_name}</strong>!</p>
+<p>You completed a delivery from <strong>{restaurant_name}</strong> (Order #{order_number}).</p>
 
-                <div class="zero-fee">
-                    <p style="margin: 0; color: #059669; font-weight: 600;">You keep 100% &mdash; Dollor.AI charges $0 to drivers for food delivery.</p>
-                </div>
-            </div>
-            <div class="footer">
-                <p>Questions? Contact support@dollor.ai</p>
-                <p>&copy; 2026 Dollor.AI by Zietra Technologies Inc.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+<div class="stats">
+  <div class="stat">
+    <div class="stat-val">${total_earnings:.2f}</div>
+    <div class="stat-lbl">Total Earned</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">${delivery_fee:.2f}</div>
+    <div class="stat-lbl">Delivery Fee</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">${tip:.2f}</div>
+    <div class="stat-lbl">Tip</div>
+  </div>
+</div>
 
-    text_body = f"""
-    Delivery Complete! Order #{order_number}
+<div class="box">
+  <div class="row"><span class="row-lbl">Order #</span><span class="row-val" style="font-family:monospace">{order_number}</span></div>
+  <div class="row"><span class="row-lbl">Restaurant</span><span class="row-val">{restaurant_name}</span></div>
+  <div class="row"><span class="row-lbl">Delivery Fee</span><span class="row-val">${delivery_fee:.2f}</span></div>
+  {tip_row}
+  <div class="row"><span class="row-lbl">Platform Fee</span><span class="row-val" style="color:#15803d">$0.00</span></div>
+  <div class="row"><span class="row-lbl" style="font-weight:700;color:#0a0a0f">Your Earnings</span><span class="row-val" style="font-weight:900;font-size:16px;color:#ff6b00">${total_earnings:.2f}</span></div>
+</div>
 
-    Great job, {driver_name}!
-    Restaurant: {restaurant_name}
+<div class="alert">You keep 100% — Dollor charges $0 platform fee for food deliveries.</div>
+"""
+    html_body = _dollor_email("💰", "Delivery Complete!", f"Order #{order_number} · ${total_earnings:.2f} earned.", body)
 
-    YOUR EARNINGS:
-    Delivery Fee: ${delivery_fee:.2f}
-    {"Tip: $" + f"{tip:.2f}" if tip > 0 else ""}
-    Platform Fee: $0.00
-    -------------------
-    TOTAL EARNINGS: ${total_earnings:.2f}
+    text_body = f"""Delivery complete — Order #{order_number}
 
-    You keep 100% — Dollor.AI charges $0 to drivers for food delivery.
+Hi {driver_name},
 
-    Questions? support@dollor.ai
-    — The Dollor.AI Team
-    """
+You delivered from {restaurant_name}.
+
+Delivery Fee: ${delivery_fee:.2f}
+{"Tip: ${:.2f}".format(tip) if tip > 0 else ""}Platform Fee: $0.00
+YOUR EARNINGS: ${total_earnings:.2f}
+
+You keep 100% — Dollor charges $0 platform fee for food deliveries.
+
+© 2026 Zietra Technologies Inc. · dollor.ai
+"""
 
     return send_email(to_email, subject, html_body, text_body)
 
@@ -1712,75 +1394,66 @@ def send_delivery_completed_vendor_email(
     a definitive payout confirmation per order — what they earned, what
     was deducted, when it transferred. This closes that loop.
     """
-    subject = f"Payout confirmed — Order #{order_number} • ${vendor_payout:.2f}"
+    subject = f"Payout confirmed — Order #{order_number} · ${vendor_payout:.2f}"
 
-    items_html = ""
+    items_rows = ""
     for it in (order_items or []):
         qty = it.get("quantity", 1) if isinstance(it, dict) else 1
         name = it.get("name", "Item") if isinstance(it, dict) else str(it)
         line_total = it.get("total_price") or it.get("unit_price") or 0 if isinstance(it, dict) else 0
-        items_html += f"""
-            <tr><td style="padding:6px 0;color:#475569;">{qty}× {name}</td>
-            <td style="padding:6px 0;text-align:right;color:#475569;">${float(line_total):.2f}</td></tr>"""
+        items_rows += f'<div class="row"><span class="row-lbl">{qty}× {name}</span><span class="row-val">${float(line_total):.2f}</span></div>'
 
     discount_row = ""
     if discount_amount and discount_amount > 0:
-        discount_row = f"""
-            <div style="display:flex;justify-content:space-between;padding:4px 0;color:#22c55e;">
-                <span>Discount ({promo_code or 'Promo'})</span>
-                <span>-${discount_amount:.2f}</span>
-            </div>"""
+        discount_row = f'<div class="row"><span class="row-lbl">Discount ({promo_code or "Promo"})</span><span class="row-val" style="color:#15803d">−${discount_amount:.2f}</span></div>'
 
-    html_body = f"""<!DOCTYPE html>
-    <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;margin:0;padding:20px;">
-    <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:32px 24px;text-align:center;color:#fff;">
-            <div style="font-size:14px;font-weight:600;letter-spacing:1.2px;opacity:0.9;">PAYOUT CONFIRMED</div>
-            <div style="font-size:42px;font-weight:800;margin-top:8px;">${vendor_payout:.2f}</div>
-            <div style="margin-top:8px;opacity:0.9;">Order #{order_number}</div>
-        </div>
-        <div style="padding:28px 24px;">
-            <p style="margin:0 0 12px;color:#1e293b;">Hi {restaurant_name},</p>
-            <p style="margin:0 0 20px;color:#475569;">Your delivery has been completed and your payout has been recorded. Stripe will transfer the funds to your connected bank account on your next payout cycle.</p>
+    body = f"""
+<p>Hi <strong>{restaurant_name}</strong>,</p>
+<p>Order #{order_number} has been delivered. Your payout has been recorded and will transfer to your connected bank on the next Stripe payout cycle.</p>
 
-            <div style="background:#f0fdf4;border-radius:10px;padding:16px;margin:20px 0;border:1px solid #86efac;">
-                <div style="font-weight:600;color:#15803d;margin-bottom:10px;">PAYOUT BREAKDOWN</div>
-                <div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569;">
-                    <span>Subtotal</span><span>${subtotal:.2f}</span>
-                </div>
-                {discount_row}
-                <div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569;">
-                    <span>Platform fee</span><span>-${platform_fee:.2f}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:10px 0 0;margin-top:8px;border-top:2px solid #16a34a;font-weight:bold;font-size:16px;color:#15803d;">
-                    <span>YOUR PAYOUT</span><span>${vendor_payout:.2f}</span>
-                </div>
-            </div>
+<div class="stats">
+  <div class="stat">
+    <div class="stat-val">${vendor_payout:.2f}</div>
+    <div class="stat-lbl">Your Payout</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">${subtotal:.2f}</div>
+    <div class="stat-lbl">Order Subtotal</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">${platform_fee:.2f}</div>
+    <div class="stat-lbl">Platform Fee</div>
+  </div>
+</div>
 
-            <div style="background:#f8fafc;border-radius:10px;padding:16px;margin:20px 0;">
-                <div style="font-weight:600;color:#1e293b;margin-bottom:10px;">ORDER DETAILS</div>
-                <table style="width:100%;font-size:14px;">{items_html}</table>
-                <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0;color:#64748b;font-size:13px;">
-                    <div>Customer: {customer_name}</div>
-                    <div>Driver: {driver_name}</div>
-                    <div>Delivered: {delivered_at_str}</div>
-                </div>
-            </div>
+<div class="box">
+  {items_rows}
+  <div class="divider"></div>
+  <div class="row"><span class="row-lbl">Subtotal</span><span class="row-val">${subtotal:.2f}</span></div>
+  {discount_row}
+  <div class="row"><span class="row-lbl">Platform fee</span><span class="row-val">−${platform_fee:.2f}</span></div>
+  <div class="row"><span class="row-lbl" style="font-weight:700;color:#0a0a0f">Your Payout</span><span class="row-val" style="font-weight:900;font-size:16px;color:#ff6b00">${vendor_payout:.2f}</span></div>
+</div>
 
-            <p style="margin:20px 0 0;color:#94a3b8;font-size:12px;">This is an automatic receipt from Dollor.ai. View your full sales history any time in the Restaurant app.</p>
-        </div>
-    </div>
-    </body></html>"""
+<div class="box">
+  <div class="row"><span class="row-lbl">Customer</span><span class="row-val">{customer_name}</span></div>
+  <div class="row"><span class="row-lbl">Driver</span><span class="row-val">{driver_name}</span></div>
+  <div class="row"><span class="row-lbl">Delivered</span><span class="row-val">{delivered_at_str}</span></div>
+</div>
+
+<p style="font-size:13px;color:#9ca3af;">View your full sales history any time in the Dollor Restaurant app.</p>
+"""
+    html_body = _dollor_email("💳", "Payout Confirmed", f"Order #{order_number} · ${vendor_payout:.2f} recorded.", body)
 
     text_body = (
-        f"PAYOUT CONFIRMED — ${vendor_payout:.2f}\n\n"
-        f"Order #{order_number}\nRestaurant: {restaurant_name}\n\n"
+        f"Payout confirmed — Order #{order_number}\n\n"
+        f"Restaurant: {restaurant_name}\n\n"
         f"Subtotal:     ${subtotal:.2f}\n"
         + (f"Discount ({promo_code or 'Promo'}): -${discount_amount:.2f}\n" if discount_amount and discount_amount > 0 else "")
         + f"Platform fee: -${platform_fee:.2f}\n"
         f"YOUR PAYOUT:  ${vendor_payout:.2f}\n\n"
         f"Customer: {customer_name}\nDriver: {driver_name}\nDelivered: {delivered_at_str}\n\n"
-        "— Dollor.ai"
+        "© 2026 Zietra Technologies Inc. · dollor.ai"
     )
 
     return send_email(to_email=to_email, subject=subject, html_body=html_body, text_body=text_body)
