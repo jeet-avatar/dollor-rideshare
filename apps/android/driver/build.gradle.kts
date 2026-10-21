@@ -49,8 +49,8 @@ android {
         applicationId = "ai.dollor.driver"
         minSdk = 24
         targetSdk = 35
-        versionCode = 261008
-        versionName = "1.0.12"
+        versionCode = 261020
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
