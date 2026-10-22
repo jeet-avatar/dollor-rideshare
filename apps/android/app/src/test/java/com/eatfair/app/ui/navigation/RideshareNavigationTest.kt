@@ -34,16 +34,13 @@ class RideshareNavigationTest {
 
     /**
      * TC-NAV-003: Verify all core navigation screens exist
-     * Expected: Home, Search, Cart, Profile, and Rideshare screens defined
+     * Expected: Home, Profile, and Rideshare screens defined
      */
     @Test
     fun `all core navigation screens are defined`() {
-        // Food Delivery screens
+        // Core screens
         assertNotNull(Screen.Home)
         assertNotNull(Screen.Search)
-        assertNotNull(Screen.Cart)
-        assertNotNull(Screen.Restaurant)
-        assertNotNull(Screen.OrderTrackingScreen)
 
         // Rideshare screens
         assertNotNull(Screen.RideRequest)
@@ -57,14 +54,12 @@ class RideshareNavigationTest {
 
     /**
      * TC-NAV-004: Verify rideshare routes are unique
-     * Expected: No duplicate routes between food and rideshare
      */
     @Test
     fun `rideshare routes are unique and not conflicting`() {
         val allRoutes = listOf(
             Screen.Home.route,
             Screen.Search.route,
-            Screen.Cart.route,
             Screen.RideRequest.route,
             Screen.RideTracking.route,
             Screen.DriverChat.route
@@ -77,11 +72,11 @@ class RideshareNavigationTest {
 /**
  * UI Test Cases (Manual/Espresso):
  *
- * TC-UI-001: Service Mode Selector Visibility
+ * TC-UI-001: Home Screen Loads
  * Steps:
  * 1. Launch app and navigate to HomeScreen
  * 2. Scroll to top of screen
- * Expected: Two cards visible - "Food Delivery ($1 Flat Fee)" and "Rideshare ($1-$3 Tiered)"
+ * Expected: Rideshare booking card visible
  *
  * TC-UI-002: Rideshare Card Navigation
  * Steps:

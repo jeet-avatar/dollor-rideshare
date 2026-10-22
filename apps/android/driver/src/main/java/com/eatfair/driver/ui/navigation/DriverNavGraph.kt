@@ -64,7 +64,7 @@ sealed class DriverScreen(
     val unselectedIcon: ImageVector
 ) {
     object Home : DriverScreen("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
-    object Orders : DriverScreen("orders", "Orders", Icons.Filled.DirectionsCar, Icons.Outlined.DirectionsCar)
+    object Orders : DriverScreen("orders", "Rides", Icons.Filled.DirectionsCar, Icons.Outlined.DirectionsCar)
     object Earnings : DriverScreen("earnings", "Earnings", Icons.Filled.AttachMoney, Icons.Outlined.AttachMoney)
     object Profile : DriverScreen("profile", "Profile", Icons.Filled.Person, Icons.Outlined.Person)
 }
