@@ -58,15 +58,15 @@ fun HelpSupportScreen(
     var expandedFaqId by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
 
-    val categories = listOf("All", "Orders", "Payments", "Account", "Delivery")
+    val categories = listOf("All", "Rides", "Payments", "Account", "Drivers")
 
     val faqItems = remember {
         listOf(
             FAQItem(
                 "1",
-                "How do I track my order?",
-                "You can track your order by going to the Orders tab and selecting your active order. Real-time tracking shows your driver's location and estimated arrival time.",
-                "Orders"
+                "How do I track my ride?",
+                "You can track your ride by going to the Rides tab and selecting your active ride. Real-time tracking shows your driver's location and estimated arrival time.",
+                "Rides"
             ),
             FAQItem(
                 "2",
@@ -76,33 +76,33 @@ fun HelpSupportScreen(
             ),
             FAQItem(
                 "3",
-                "How do I cancel my order?",
-                "Orders can be cancelled within 2 minutes of placing them or before the restaurant starts preparing. Go to Orders → Select Order → Cancel Order. Full refunds are issued for eligible cancellations.",
-                "Orders"
+                "How do I cancel my ride?",
+                "Rides can be cancelled before a driver is matched. Go to Rides → Select Ride → Cancel. Full refunds are issued for eligible cancellations.",
+                "Rides"
             ),
             FAQItem(
                 "4",
-                "How do I update my delivery address?",
-                "Go to Profile → Manage Addresses to add, edit, or delete addresses. During checkout, you can also add a new address.",
+                "How do I update my saved addresses?",
+                "Go to Profile → Manage Addresses to add, edit, or delete addresses. You can also enter a new address when booking a ride.",
                 "Account"
             ),
             FAQItem(
                 "5",
                 "What are platform fees?",
-                "Dollor.ai charges transparent, low platform fees:\n• Food Delivery: $1 flat fee per order\n• Rideshare: Tiered fees ($1-$3 based on fare)\n\n100% of tips go directly to drivers.",
+                "Dollor.ai charges transparent, low platform fees:\n• Tier 1 (up to \$35): \$1 platform fee\n• Tier 2 (\$35.01-\$70): \$2 platform fee\n• Tier 3 (over \$70): \$3 platform fee\n\n100% of tips go directly to drivers.",
                 "Payments"
             ),
             FAQItem(
                 "6",
                 "How do I contact my driver?",
-                "Once your order is picked up, you can call or message your driver through the order tracking screen. Your phone number is masked for privacy.",
-                "Delivery"
+                "Once your ride is matched, you can call or message your driver through the ride tracking screen. Your phone number is masked for privacy.",
+                "Drivers"
             ),
             FAQItem(
                 "7",
-                "What if my order is wrong or missing items?",
-                "Contact support immediately through the app. We'll work with the restaurant to resolve the issue and provide appropriate compensation.",
-                "Orders"
+                "What if I have an issue with my ride?",
+                "Contact support immediately through the app. We'll review the issue and provide appropriate assistance.",
+                "Rides"
             ),
             FAQItem(
                 "8",
@@ -113,13 +113,13 @@ fun HelpSupportScreen(
             FAQItem(
                 "9",
                 "Are drivers employees of Dollor.ai?",
-                "No, all drivers are independent contractors. Dollor.ai is a matchmaking platform that connects customers with independent drivers.",
-                "Delivery"
+                "No, all drivers are independent contractors. Dollor.ai is a matchmaking platform that connects riders with independent drivers.",
+                "Drivers"
             ),
             FAQItem(
                 "10",
                 "How do refunds work?",
-                "Refunds are processed to your original payment method within 5-7 business days. For issues with orders, contact support for assistance.",
+                "Refunds are processed to your original payment method within 5-7 business days. For disputed charges, contact support for assistance.",
                 "Payments"
             )
         )

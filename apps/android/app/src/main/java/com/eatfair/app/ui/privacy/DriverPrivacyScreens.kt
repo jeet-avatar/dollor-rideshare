@@ -90,7 +90,7 @@ fun WhatDriversSeePage(
             )
 
             Text(
-                text = "Drivers only see limited information needed for delivery",
+                text = "Drivers only see limited information needed for your ride",
                 fontSize = 14.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
@@ -117,17 +117,17 @@ fun WhatDriversSeePage(
                     ),
                     PrivacyItem(
                         icon = Icons.Default.LocationOn,
-                        title = "Delivery address",
-                        description = "Only visible during active delivery"
+                        title = "Destination address",
+                        description = "Only visible during active ride"
                     ),
                     PrivacyItem(
                         icon = Icons.Default.Receipt,
-                        title = "Order details",
-                        description = "Items and any special instructions"
+                        title = "Ride details",
+                        description = "Route and any special instructions"
                     ),
                     PrivacyItem(
                         icon = Icons.Default.Notes,
-                        title = "Delivery instructions",
+                        title = "Pickup instructions",
                         description = "Gate codes, building info you provide"
                     )
                 )
@@ -163,8 +163,8 @@ fun WhatDriversSeePage(
                     ),
                     PrivacyItem(
                         icon = Icons.Default.History,
-                        title = "Your order history",
-                        description = "Past orders are private"
+                        title = "Your ride history",
+                        description = "Past rides are private"
                     )
                 )
             )
@@ -189,7 +189,7 @@ fun WhatDriversSeePage(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Your information is automatically hidden after delivery is complete",
+                        text = "Your information is automatically hidden after your ride is complete",
                         fontSize = 13.sp,
                         color = TextPrimary,
                         lineHeight = 18.sp
@@ -283,7 +283,7 @@ fun YourPrivacyPage(
             ProtectionCard(
                 icon = Icons.Default.LocationOff,
                 title = "Address Protection",
-                description = "Your delivery address is only visible to drivers during active delivery. Once complete, it's automatically removed from their view.",
+                description = "Your destination is only visible to drivers during an active ride. Once complete, it's automatically removed from their view.",
                 color = SafetyBlue
             )
 
@@ -434,7 +434,7 @@ fun SafetyFeaturesPage(
             SafetyFeatureCard(
                 icon = Icons.Default.GpsFixed,
                 title = "Real-Time Tracking",
-                description = "Track your delivery or ride in real-time from pickup to arrival.",
+                description = "Track your ride in real-time from pickup to arrival.",
                 features = listOf(
                     "Live GPS tracking",
                     "Estimated arrival time",
@@ -448,7 +448,7 @@ fun SafetyFeaturesPage(
             SafetyFeatureCard(
                 icon = Icons.Default.Share,
                 title = "Share Your Trip",
-                description = "Share your delivery or ride status with friends and family for added peace of mind.",
+                description = "Share your ride status with friends and family for added peace of mind.",
                 features = listOf(
                     "Share live location",
                     "Send ETA to contacts",

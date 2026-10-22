@@ -195,7 +195,7 @@ fun AddAddressDetailsScreen(
                 color = Color(0xFFFFF3E0)
             ) {
                 Text(
-                    text = "A detailed address will help our Delivery Partner reach your doorstep easily",
+                    text = "A detailed address will help your driver reach your pickup location easily",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(8.dp)

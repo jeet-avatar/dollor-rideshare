@@ -48,7 +48,7 @@ fun PrivacyPolicyScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "This Privacy Policy explains how Dollor.AI collects, uses, and protects your personal information when you use our food delivery and rideshare services. We are committed to protecting your privacy and ensuring the security of your data.",
+                text = "This Privacy Policy explains how Dollor.AI collects, uses, and protects your personal information when you use our rideshare services. We are committed to protecting your privacy and ensuring the security of your data.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF333333),
                 lineHeight = 22.sp
@@ -62,9 +62,9 @@ fun PrivacyPolicyScreen(
             Text(
                 text = "We collect information you provide directly:\n\n" +
                         "- Account information (name, email, phone number)\n" +
-                        "- Delivery addresses and location data\n" +
+                        "- Pickup and destination addresses and location data\n" +
                         "- Payment information (processed securely via Stripe)\n" +
-                        "- Order history and preferences\n" +
+                        "- Ride history and preferences\n" +
                         "- Communications with support\n\n" +
                         "We also collect information automatically:\n\n" +
                         "- Device information and identifiers\n" +
@@ -82,9 +82,9 @@ fun PrivacyPolicyScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "We use your information to:\n\n" +
-                        "- Process and deliver your orders\n" +
+                        "- Process and match your ride requests\n" +
                         "- Provide customer support\n" +
-                        "- Send order updates and notifications\n" +
+                        "- Send ride updates and notifications\n" +
                         "- Improve our services and app experience\n" +
                         "- Prevent fraud and ensure security\n" +
                         "- Comply with legal obligations",
@@ -136,8 +136,7 @@ fun PrivacyPolicyScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "We may share your information with:\n\n" +
-                        "- Restaurants (to prepare and deliver your orders)\n" +
-                        "- Delivery partners (limited to delivery information)\n" +
+                        "- Drivers (limited to trip information)\n" +
                         "- Payment processors (Stripe) for secure transactions\n" +
                         "- Analytics providers (in anonymized form)\n" +
                         "- Law enforcement (when required by law)\n\n" +

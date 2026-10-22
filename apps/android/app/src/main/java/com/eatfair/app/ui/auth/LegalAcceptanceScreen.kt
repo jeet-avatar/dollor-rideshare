@@ -335,18 +335,13 @@ You must be at least 18 years of age to use Dollor.ai. By using our services, yo
 
 3. PLATFORM DESCRIPTION
 Dollor.ai operates as a technology platform that facilitates connections between:
-• Customers seeking food delivery services
 • Customers seeking rideshare transportation
-• Independent restaurants and food establishments
-• Independent delivery and rideshare drivers
+• Independent rideshare drivers
 
-Dollor.ai is NOT a transportation company, food service provider, or delivery company. We provide technology that enables connections between users.
+Dollor.ai is NOT a transportation company or taxi service. We provide technology that enables connections between riders and drivers.
 
 4. TRANSPARENT PRICING MODEL
 Dollor.ai charges transparent, flat platform fees:
-
-FOOD DELIVERY:
-• ${'$'}1.00 platform fee per order
 
 RIDESHARE:
 • Tier 1 (fares up to ${'$'}35): ${'$'}1.00 platform fee
@@ -356,7 +351,7 @@ RIDESHARE:
 100% of customer tips go directly to drivers. We do not take any percentage of tips.
 
 5. INDEPENDENT CONTRACTOR RELATIONSHIP
-All drivers and delivery partners using Dollor.ai are independent contractors, NOT employees of Dollor.ai. The Platform does not:
+All drivers using Dollor.ai are independent contractors, NOT employees of Dollor.ai. The Platform does not:
 • Control when, where, or how long drivers work
 • Provide vehicles or equipment
 • Set driver schedules or routes
@@ -392,12 +387,12 @@ All content, trademarks, and intellectual property on the Platform are owned by 
 TO THE MAXIMUM EXTENT PERMITTED BY LAW:
 • Dollor.ai provides the Platform "AS IS" without warranties
 • We are not liable for actions of independent contractors
-• We are not responsible for food quality or preparation
+• We are not responsible for delays caused by traffic or road conditions
 • Our total liability shall not exceed the amount paid for the specific transaction
 
 11. REFUND POLICY
-• Orders may be cancelled before restaurant confirmation
-• Refund requests for quality issues are reviewed case-by-case
+• Rides may be cancelled before a driver is matched
+• Refund requests for disputed charges are reviewed case-by-case
 • Approved refunds are processed within 3-5 business days
 • Contact support@dollor.ai for refund requests
 
@@ -442,22 +437,22 @@ This Privacy Policy describes how Dollor.ai, Inc. ("Dollor.ai," "we," "us," or "
 Information You Provide:
 • Account Information: Name, email address, phone number, profile photo
 • Payment Information: Credit/debit card details (processed securely via Stripe)
-• Delivery Information: Addresses, delivery instructions, location data
+• Trip Information: Pickup and destination addresses, ride instructions, location data
 • Communications: Messages with support, feedback, and reviews
 
 Information Collected Automatically:
 • Device Information: Device type, operating system, unique device identifiers
 • Usage Data: App interactions, features used, time spent
-• Location Data: GPS location when using delivery or rideshare features
+• Location Data: GPS location when using rideshare features
 • Log Data: IP address, browser type, access times
 
 2. HOW WE USE YOUR INFORMATION
 
 We use your information to:
-• Process and fulfill orders and ride requests
-• Connect you with restaurants and drivers
+• Process and fulfill ride requests
+• Connect you with drivers
 • Process payments securely
-• Send order updates and notifications
+• Send ride updates and notifications
 • Provide customer support
 • Improve and personalize our services
 • Detect and prevent fraud
@@ -466,7 +461,7 @@ We use your information to:
 3. INFORMATION SHARING
 
 We share information with:
-• Service Providers: Restaurants (order details), drivers (delivery info), payment processors (Stripe)
+• Service Providers: Drivers (trip details), payment processors (Stripe)
 • Business Partners: Analytics providers (in anonymized form)
 • Legal Requirements: When required by law, court order, or government request
 • Safety: To protect rights, safety, and property of users and the public

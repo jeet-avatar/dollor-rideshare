@@ -91,7 +91,7 @@ fun ReferAndEarnScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Share your referral code and both you and your friend will get $5 off your next order!",
+                text = "Share your referral code and both you and your friend will get $5 off your next ride!",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.Center,

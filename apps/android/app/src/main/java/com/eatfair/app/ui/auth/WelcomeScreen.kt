@@ -102,7 +102,7 @@ fun WelcomeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Your Local Rideshare & Delivery Marketplace",
+                    text = "Your Local Rideshare Marketplace",
                     fontSize = 16.sp,
                     color = Color.White.copy(alpha = 0.9f),
                     textAlign = TextAlign.Center,

@@ -42,18 +42,18 @@ fun RateDriverScreen(
     var showTipSection by remember { mutableStateOf(false) }
 
     val positiveTags = listOf(
-        RatingTag("fast", "Fast Delivery"),
+        RatingTag("fast", "Fast Driver"),
         RatingTag("friendly", "Friendly"),
         RatingTag("professional", "Professional"),
-        RatingTag("careful", "Careful with Order"),
+        RatingTag("safe", "Safe Driver"),
         RatingTag("communication", "Great Communication"),
         RatingTag("on_time", "On Time")
     )
 
     val negativeTags = listOf(
-        RatingTag("slow", "Slow Delivery", false),
+        RatingTag("slow", "Slow Driver", false),
         RatingTag("unfriendly", "Unfriendly", false),
-        RatingTag("damaged", "Damaged Order", false),
+        RatingTag("unsafe", "Unsafe Driving", false),
         RatingTag("late", "Late", false),
         RatingTag("poor_communication", "Poor Communication", false)
     )
@@ -107,14 +107,14 @@ fun RateDriverScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "How was your delivery with $driverName?",
+                    text = "How was your ride with $driverName?",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
 
                 Text(
-                    text = "Order #${orderId.takeLast(6)}",
+                    text = "Ride #${orderId.takeLast(6)}",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
