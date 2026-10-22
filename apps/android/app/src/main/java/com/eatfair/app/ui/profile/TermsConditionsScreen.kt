@@ -48,7 +48,7 @@ fun TermsConditionsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Welcome to Dollor.AI. By using our food delivery and rideshare services, you agree to these Terms & Conditions. Please read them carefully before placing orders.",
+                text = "Welcome to Dollor.AI. By using our rideshare services, you agree to these Terms & Conditions. Please read them carefully before booking a ride.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF333333),
                 lineHeight = 22.sp
@@ -60,11 +60,11 @@ fun TermsConditionsScreen(
             SectionTitle("1. Service Description")
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Dollor.AI provides a platform connecting customers with restaurants and independent delivery partners. We facilitate food ordering and delivery services using a revolutionary flat-fee pricing model:\n\n" +
-                        "- \$1 delivery fee for orders up to \$35\n" +
-                        "- \$2 delivery fee for orders \$35.01 to \$70\n" +
-                        "- \$3 delivery fee for orders over \$70\n\n" +
-                        "Unlike traditional platforms that charge 25-35% commission, our tiered model keeps costs low for everyone.",
+                text = "Dollor.AI provides a rideshare platform connecting passengers with independent drivers using a flat-fee pricing model:\n\n" +
+                        "- \$1 platform fee for rides up to \$35\n" +
+                        "- \$2 platform fee for rides \$35.01 to \$70\n" +
+                        "- \$3 platform fee for rides over \$70\n\n" +
+                        "Unlike traditional rideshare platforms that take 25-35% commission, our flat-fee model keeps more money with drivers.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF666666),
                 lineHeight = 22.sp
@@ -81,7 +81,7 @@ fun TermsConditionsScreen(
                         "- Provide accurate account information\n" +
                         "- Maintain the security of your login credentials\n" +
                         "- Have a valid payment method\n" +
-                        "- Provide accurate delivery addresses\n\n" +
+                        "- Provide accurate pickup and destination addresses\n\n" +
                         "You are responsible for all activity on your account.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF666666),
@@ -90,17 +90,17 @@ fun TermsConditionsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Section 3: Orders and Payments
-            SectionTitle("3. Orders and Payments")
+            // Section 3: Rides and Payments
+            SectionTitle("3. Rides and Payments")
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "When you place an order:\n\n" +
-                        "- Prices shown include applicable taxes\n" +
-                        "- Delivery fees are displayed before checkout\n" +
+                text = "When you book a ride:\n\n" +
+                        "- Fares are displayed before you accept a driver's bid\n" +
+                        "- Platform fee is shown transparently at checkout\n" +
                         "- Payment is processed securely via Stripe\n" +
-                        "- Tips to delivery partners are optional but appreciated\n" +
-                        "- 100% of tips go directly to delivery partners\n\n" +
-                        "We reserve the right to cancel orders due to payment issues, restaurant unavailability, or other operational reasons.",
+                        "- Tips to drivers are optional but appreciated\n" +
+                        "- 100% of tips go directly to drivers\n\n" +
+                        "We reserve the right to cancel rides due to payment issues or other operational reasons.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF666666),
                 lineHeight = 22.sp
@@ -108,17 +108,17 @@ fun TermsConditionsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Section 4: Delivery Terms
-            SectionTitle("4. Delivery Terms")
+            // Section 4: Ride Terms
+            SectionTitle("4. Ride Terms")
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Regarding deliveries:\n\n" +
-                        "- Estimated delivery times are approximate\n" +
-                        "- You must be available to receive your order\n" +
-                        "- Provide accurate delivery instructions\n" +
-                        "- Contact support immediately for delivery issues\n" +
-                        "- Delivery partners are independent contractors\n\n" +
-                        "We are not responsible for delays caused by traffic, weather, or restaurant preparation times.",
+                text = "Regarding rides:\n\n" +
+                        "- Estimated arrival times are approximate\n" +
+                        "- Be at your pickup location when the driver arrives\n" +
+                        "- Provide accurate pickup and destination details\n" +
+                        "- Contact support immediately for ride issues\n" +
+                        "- Drivers are independent contractors\n\n" +
+                        "We are not responsible for delays caused by traffic or weather conditions.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF666666),
                 lineHeight = 22.sp
@@ -130,10 +130,10 @@ fun TermsConditionsScreen(
             SectionTitle("5. Refunds and Cancellations")
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Our refund policy:\n\n" +
-                        "- Orders can be cancelled before restaurant confirmation\n" +
-                        "- Refunds for quality issues are reviewed case-by-case\n" +
-                        "- Missing items may be refunded or redelivered\n" +
+                text = "Our cancellation policy:\n\n" +
+                        "- Rides can be cancelled before a driver is matched\n" +
+                        "- Cancellations after matching may incur a fee\n" +
+                        "- Refunds for disputed charges are reviewed case-by-case\n" +
                         "- Refunds are processed to the original payment method\n" +
                         "- Processing time: 3-5 business days\n\n" +
                         "Contact support@dollor.ai for refund requests.",
@@ -151,7 +151,7 @@ fun TermsConditionsScreen(
                 text = "You agree not to:\n\n" +
                         "- Provide false or misleading information\n" +
                         "- Use the service for illegal purposes\n" +
-                        "- Harass delivery partners or restaurant staff\n" +
+                        "- Harass drivers or other users\n" +
                         "- Attempt to manipulate pricing or promotions\n" +
                         "- Share your account with others\n" +
                         "- Use automated systems to access the platform\n\n" +
@@ -185,11 +185,10 @@ fun TermsConditionsScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Dollor.AI provides the platform \"as is.\" We are not liable for:\n\n" +
-                        "- Food quality or preparation (restaurant responsibility)\n" +
-                        "- Delivery delays beyond our control\n" +
-                        "- Actions of independent delivery partners\n" +
+                        "- Actions of independent drivers\n" +
+                        "- Ride delays beyond our control\n" +
                         "- Indirect or consequential damages\n\n" +
-                        "Our liability is limited to the amount you paid for the affected order.",
+                        "Our liability is limited to the amount you paid for the affected ride.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF666666),
                 lineHeight = 22.sp

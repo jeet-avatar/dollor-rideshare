@@ -52,7 +52,7 @@ android {
         applicationId = "ai.dollor.customer"
         minSdk = 24
         targetSdk = 35
-        versionCode = 261020
+        versionCode = 261022
         versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -195,5 +195,7 @@ configurations.all {
     resolutionStrategy {
         force("androidx.core:core-ktx:1.15.0")
         force("androidx.core:core:1.15.0")
+        // Force reCAPTCHA to patched version — 18.1.2 has a critical security vulnerability
+        force("com.google.android.recaptcha:recaptcha:18.4.0")
     }
 }

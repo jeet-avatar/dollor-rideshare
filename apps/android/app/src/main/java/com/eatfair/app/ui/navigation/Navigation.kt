@@ -11,9 +11,6 @@ sealed class Screen(val route: String) {
     object LegalAcceptance : Screen("legal_acceptance")
     object EmailVerification : Screen("email_verification") // Email verification screen
     object Main: Screen("main") // Main screen with bottom navigation
-    // Home/Search/Cart/Restaurant routes are no longer registered in
-    // NavigationGraph (food delivery removed), but are kept because
-    // RideshareNavigationTest.kt still asserts they exist.
     object Home: Screen("home")
     object Search: Screen("search")
     object Profile: Screen("profile")
@@ -23,11 +20,6 @@ sealed class Screen(val route: String) {
     object Notifications: Screen("notification")
     object PaymentMethods: Screen("payment_methods")
 
-    object Restaurant: Screen("restaurant/{restaurantId}"){
-        fun createRoute(restaurantId: String) = "restaurant/$restaurantId"
-    }
-    object Cart: Screen("cart")
-
     object LocationMap: Screen("location_map")
 
     object AddAddressDetailsScreen: Screen("add_address_details?addressId={addressId}") {
@@ -35,10 +27,6 @@ sealed class Screen(val route: String) {
     }
 
     object SavedAddressesScreen: Screen("saved_addresses")
-
-    object OrderTrackingScreen: Screen("order_tracking?orderId={orderId}") {
-        fun createRoute(orderId: String) = "order_tracking?orderId=$orderId"
-    }
 
     // Settings & Legal screens - Required for Google Play Store
     object Settings: Screen("settings")

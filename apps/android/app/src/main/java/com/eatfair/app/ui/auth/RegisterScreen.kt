@@ -174,7 +174,7 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "We're building a platform where everyone wins.\n100% of your payment goes to restaurants & drivers.",
+                        text = "We're building a platform where everyone wins.\n100% of your payment goes directly to drivers.",
                         fontSize = 15.sp,
                         color = Color.White.copy(alpha = 0.95f),
                         textAlign = TextAlign.Center,
@@ -211,7 +211,7 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Start ordering from local restaurants today",
+                    text = "Book your first ride in minutes",
                     fontSize = 14.sp,
                     color = TextSecondary
                 )
@@ -312,7 +312,7 @@ fun RegisterScreen(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "Fair pricing for everyone in the food delivery ecosystem",
+                            text = "Fair pricing for everyone in the rideshare ecosystem",
                             fontSize = 13.sp,
                             color = TextSecondary
                         )
@@ -323,10 +323,7 @@ fun RegisterScreen(
                             text = "No hidden fees or surge pricing"
                         )
                         MissionBenefit(
-                            text = "Restaurants keep 100% of food prices"
-                        )
-                        MissionBenefit(
-                            text = "Drivers receive 100% of delivery fees & tips"
+                            text = "Drivers receive 100% of fares & tips"
                         )
                         MissionBenefit(
                             text = "You pay only a flat \$1 platform fee"

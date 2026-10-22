@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -120,14 +120,14 @@ fun WelcomeScreen(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 FeatureRow(
-                    icon = Icons.Default.Restaurant,
-                    title = "Food Delivery",
-                    subtitle = "Order from local restaurants"
-                )
-                FeatureRow(
                     icon = Icons.Default.DirectionsCar,
                     title = "Rideshare",
-                    subtitle = "Connect with local drivers"
+                    subtitle = "Request a ride — drivers bid for your trip"
+                )
+                FeatureRow(
+                    icon = Icons.Default.LocationOn,
+                    title = "Real-Time Tracking",
+                    subtitle = "Track your driver live on the map"
                 )
                 FeatureRow(
                     icon = Icons.Default.AttachMoney,
