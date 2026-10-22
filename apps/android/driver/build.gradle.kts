@@ -13,7 +13,7 @@ plugins {
 
 android {
     namespace = "com.eatfair.driver"
-    compileSdk = 35
+    compileSdk = 36
 
     lint {
         disable += "NullSafeMutableLiveData"
@@ -48,8 +48,8 @@ android {
     defaultConfig {
         applicationId = "ai.dollor.driver"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 261021
+        targetSdk = 36
+        versionCode = 261022
         versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

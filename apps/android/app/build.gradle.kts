@@ -16,7 +16,7 @@ plugins {
 
 android {
     namespace = "com.eatfair.app"
-    compileSdk = 35
+    compileSdk = 36
 
     lint {
         disable += "NullSafeMutableLiveData"
@@ -52,8 +52,9 @@ android {
         applicationId = "ai.dollor.customer"
         minSdk = 24
         targetSdk = 35
-        versionCode = 261023
+        versionCode = 261024
         versionName = "1.1.0"
+        targetSdk = 36
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
