@@ -67,34 +67,6 @@ object AppConfig {
     fun initialize(apiBaseUrl: String = PRODUCTION_API_URL, isProduction: Boolean = true) {
         _apiBaseUrl = apiBaseUrl
         _isProduction = isProduction
-        Microservices.initialize(apiBaseUrl)
-    }
-
-    // =============================================================================
-    // MICROSERVICE URLS
-    // =============================================================================
-    // Each mobile app connects to its dedicated microservice
-    // Partner App -> restaurant-service (port 8004)
-    // Customer App -> Multiple services via API Gateway
-    // Driver App -> driver-service (port 8003)
-    // =============================================================================
-    object Microservices {
-        // PRODUCTION BUILD - API Gateway pattern
-        private const val PRODUCTION_BASE = "https://api.dollor.ai"
-
-        private var _baseUrl: String = PRODUCTION_BASE
-
-        // All microservices use the same base URL (API Gateway pattern)
-        val authServiceUrl: String get() = _baseUrl
-        val restaurantServiceUrl: String get() = _baseUrl
-        val driverServiceUrl: String get() = _baseUrl
-        val orderServiceUrl: String get() = _baseUrl
-        val menuServiceUrl: String get() = _baseUrl
-        val notificationServiceUrl: String get() = _baseUrl
-
-        fun initialize(baseUrl: String = PRODUCTION_BASE) {
-            _baseUrl = baseUrl.removeSuffix("/api")
-        }
     }
 
     // MARK: - App Bundle IDs (Production)
@@ -109,54 +81,6 @@ object AppConfig {
         const val VENDOR_EMAIL_HINT = "demobusiness@dollor.ai"
         const val DEMO_PASSWORD_PLACEHOLDER = "********"
     }
-
-    // =============================================================================
-    // FOOD DELIVERY PRICING - FLAT $1 (No tiered pricing)
-    // =============================================================================
-    object FoodDelivery {
-        // FLAT fees - same regardless of order value
-        const val CUSTOMER_FEE = 1.00           // $1 flat per order
-        const val RESTAURANT_FEE = 1.00         // $1 flat per restaurant
-        const val DRIVER_FEE = 0.00             // FREE - drivers keep 100%
-        const val TIP_PLATFORM_FEE = 0.00       // 100% of tips go to driver
-
-        /**
-         * Get customer fee for food delivery.
-         * Always $1 flat - no tiered pricing for food.
-         */
-        fun getCustomerFee(orderSubtotal: Double): Double = CUSTOMER_FEE
-
-        /**
-         * Get restaurant platform fee.
-         * Always $1 flat per restaurant.
-         */
-        fun getRestaurantFee(orderSubtotal: Double): Double = RESTAURANT_FEE
-
-        /**
-         * Calculate total fees for a food order.
-         * Multi-restaurant orders: Customer pays $1 total, each restaurant pays $1.
-         */
-        fun calculateOrderFees(orderSubtotal: Double, restaurantCount: Int = 1): FoodOrderFees {
-            return FoodOrderFees(
-                customerFee = CUSTOMER_FEE,  // Always $1 regardless of order value or restaurant count
-                restaurantFees = RESTAURANT_FEE * restaurantCount,  // $1 per restaurant
-                driverFee = DRIVER_FEE,  // Always $0
-                totalPlatformRevenue = CUSTOMER_FEE + (RESTAURANT_FEE * restaurantCount)
-            )
-        }
-
-        /**
-         * Get fee description for UI display.
-         */
-        fun getFeeDescription(): String = "$1 Matchmaking Fee"
-    }
-
-    data class FoodOrderFees(
-        val customerFee: Double,
-        val restaurantFees: Double,
-        val driverFee: Double,
-        val totalPlatformRevenue: Double
-    )
 
     // =============================================================================
     // RIDESHARE PRICING - COMPETITIVE MARKET RATES
@@ -574,100 +498,6 @@ object AppConfig {
         val perMile: Double,
         val isRecommended: Boolean
     )
-
-    // MARK: - Driver Pay Configuration (Food Delivery)
-    object DriverPay {
-        const val BASE_PAY = 3.00              // Base pay per delivery
-        const val PER_MILE_RATE = 0.50         // Per mile rate
-
-        // Tiered base pay (for larger orders)
-        const val BASE_PAY_TIER_1 = 3.00       // Orders <= $35
-        const val BASE_PAY_TIER_2 = 4.00       // Orders $35-$70
-        const val BASE_PAY_TIER_3 = 5.00       // Orders > $70
-
-        // Tiered per-mile rates
-        const val PER_MILE_TIER_1 = 0.50       // Orders <= $35
-        const val PER_MILE_TIER_2 = 0.60       // Orders $35-$70
-        const val PER_MILE_TIER_3 = 0.75       // Orders > $70
-
-        /**
-         * Calculate driver earnings for a delivery.
-         * Drivers keep 100% of base pay + per mile + tips (no platform fee).
-         */
-        fun calculateDriverEarnings(distanceMiles: Double, tip: Double): Double {
-            return BASE_PAY + (distanceMiles * PER_MILE_RATE) + tip
-        }
-
-        /**
-         * Calculate tiered driver earnings based on order value.
-         */
-        fun calculateTieredDriverEarnings(orderSubtotal: Double, distanceMiles: Double, tip: Double): Double {
-            val basePay = when {
-                orderSubtotal <= TieredPricing.TIER_1_MAX_ORDER -> BASE_PAY_TIER_1
-                orderSubtotal <= TieredPricing.TIER_2_MAX_ORDER -> BASE_PAY_TIER_2
-                else -> BASE_PAY_TIER_3
-            }
-            val perMile = when {
-                orderSubtotal <= TieredPricing.TIER_1_MAX_ORDER -> PER_MILE_TIER_1
-                orderSubtotal <= TieredPricing.TIER_2_MAX_ORDER -> PER_MILE_TIER_2
-                else -> PER_MILE_TIER_3
-            }
-            return basePay + (distanceMiles * perMile) + tip
-        }
-    }
-
-    // =============================================================================
-    // TIERED PRICING HELPER (for food delivery driver pay calculation)
-    // Note: Customer always pays $1 flat, but driver pay scales with order size
-    // =============================================================================
-    object TieredPricing {
-        // Order value tiers (for driver pay calculation)
-        const val TIER_1_MAX_ORDER = 35.00     // Orders up to $35
-        const val TIER_2_MAX_ORDER = 70.00     // Orders $35-$70
-        // Tier 3: Orders above $70
-
-        // Customer fee is always $1 flat (no tiered pricing for customers)
-        const val CUSTOMER_FEE = 1.00
-
-        /**
-         * Calculate customer fee for food delivery.
-         * Always returns $1 flat - no tiered pricing for customers.
-         */
-        fun calculateCustomerFee(orderSubtotal: Double): Double = CUSTOMER_FEE
-
-        /**
-         * Get tier number for driver pay calculation (1, 2, or 3).
-         */
-        fun getTier(orderSubtotal: Double): Int {
-            return when {
-                orderSubtotal <= TIER_1_MAX_ORDER -> 1
-                orderSubtotal <= TIER_2_MAX_ORDER -> 2
-                else -> 3
-            }
-        }
-    }
-
-    // MARK: - Tax Configuration
-    object Tax {
-        val STATE_TAX_RATES = mapOf(
-            "CA" to 0.0725,  // California
-            "TX" to 0.0625,  // Texas
-            "NY" to 0.08,    // New York
-            "FL" to 0.06,    // Florida
-            "WA" to 0.065,   // Washington
-            "IL" to 0.0625,  // Illinois
-            "PA" to 0.06,    // Pennsylvania
-            "OH" to 0.0575,  // Ohio
-            "GA" to 0.04,    // Georgia
-            "NC" to 0.0475   // North Carolina
-        )
-
-        const val DEFAULT_TAX_RATE = 0.0825  // 8.25% default
-
-        fun getTaxRate(state: String): Double {
-            return STATE_TAX_RATES[state.uppercase()] ?: DEFAULT_TAX_RATE
-        }
-    }
 
     // MARK: - Location Configuration
     object Location {

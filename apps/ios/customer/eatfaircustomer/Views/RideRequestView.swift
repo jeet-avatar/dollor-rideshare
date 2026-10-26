@@ -2690,7 +2690,7 @@ struct RideStatusCard: View {
                         .padding(.vertical, 8)
                     }
 
-                    // Skip Tip — still finalizes the ride (captures card for fare only)
+                    // Skip Tip — closes the tip screen; the fare is captured when the driver completes the ride
                     Button(action: { finalize(tipAmount: 0) }) {
                         Text(isSubmittingTip ? "Processing..." : "Skip Tip")
                             .font(.caption)
@@ -2780,6 +2780,13 @@ struct RideStatusCard: View {
 
     private func finalize(tipAmount: Double) {
         guard let rideId = viewModel.activeRide?.rideId else {
+            tipSubmitted = true
+            return
+        }
+
+        // No tip means nothing to send: the fare is captured when the driver completes the ride,
+        // and the tip endpoint rejects an amount of 0.
+        guard tipAmount > 0 else {
             tipSubmitted = true
             return
         }

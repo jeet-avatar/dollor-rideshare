@@ -187,60 +187,6 @@ fun AddressActionCard(
 }
 
 @Composable
-fun ImportBlinkitCard(onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(Lx.Radius.button),
-        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Blinkit Logo Placeholder
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Lx.Gold, RoundedCornerShape(Lx.Radius.chip)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "B",
-                        fontSize = Lx.FontSize.title,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-
-                Text(
-                    text = "Import addresses from Blinkit",
-                    fontSize = Lx.FontSize.subheadline,
-                    fontWeight = FontWeight.Medium,
-                    color = Lx.Text
-                )
-            }
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Import",
-                tint = Lx.TextSecondary
-            )
-        }
-    }
-}
-
-@Composable
 fun SavedAddressCard(
     address: AddressDto,
     onClick: () -> Unit,

@@ -246,28 +246,6 @@ interface DollorApiService {
     ): SavedCardsResponse
 
     /**
-     * Add new payment card
-     * Matches iOS: POST /customers/{customerId}/cards
-     */
-    @POST("customers/{customerId}/cards")
-    suspend fun addPaymentCard(
-        @Path("customerId") customerId: Int,
-        @Body request: AddCardRequest,
-        @Header("Authorization") token: String
-    ): PaymentCard
-
-    /**
-     * Delete payment card
-     * Matches iOS: DELETE /customers/{customerId}/cards/{cardId}
-     */
-    @DELETE("customers/{customerId}/cards/{cardId}")
-    suspend fun deletePaymentCard(
-        @Path("customerId") customerId: Int,
-        @Path("cardId") cardId: String,
-        @Header("Authorization") token: String
-    ): GenericResponse
-
-    /**
      * Set default payment card
      * Matches iOS: POST /customers/{customerId}/cards/{cardId}/default
      */
@@ -346,25 +324,6 @@ interface DollorApiService {
     // DRIVER PROFILE
     // ==========================================
 
-    @GET("erp/drivers/{driverId}")
-    suspend fun getDriverProfile(
-        @Path("driverId") driverId: Int,
-        @Header("Authorization") token: String
-    ): DriverProfile
-
-    @PUT("erp/drivers/{driverId}")
-    suspend fun updateDriverProfile(
-        @Path("driverId") driverId: Int,
-        @Body request: UpdateDriverRequest,
-        @Header("Authorization") token: String
-    ): DriverProfile
-
-    @GET("drivers/{driverId}/documents")
-    suspend fun getDriverDocuments(
-        @Path("driverId") driverId: Int,
-        @Header("Authorization") token: String
-    ): DriverDocumentsResponse
-
     @Multipart
     @POST("drivers/{driverId}/documents")
     suspend fun uploadDriverDocument(
@@ -373,19 +332,6 @@ interface DollorApiService {
         @Part("document_type") documentType: okhttp3.RequestBody,
         @Header("Authorization") token: String
     ): DocumentUploadResponse
-
-    @GET("drivers/{driverId}/status")
-    suspend fun getDriverStatus(
-        @Path("driverId") driverId: Int,
-        @Header("Authorization") token: String
-    ): DriverStatusResponse
-
-    @POST("drivers/{driverId}/status")
-    suspend fun updateDriverStatus(
-        @Path("driverId") driverId: Int,
-        @Body request: UpdateDriverStatusRequest,
-        @Header("Authorization") token: String
-    ): DriverStatusResponse
 
     /**
      * Delete driver account - required by Google Play Store policy
@@ -577,12 +523,6 @@ interface DollorApiService {
         @Header("Authorization") token: String
     ): List<AvailableRide>
 
-    @GET("erp/driver/{driverId}/rides")
-    suspend fun getDriverRides(
-        @Path("driverId") driverId: Int,
-        @Header("Authorization") token: String
-    ): DriverRidesResponse
-
     @POST("v2/driver/rides/{rideId}/accept")
     suspend fun acceptRide(
         @Path("rideId") rideId: Int,
@@ -693,12 +633,6 @@ interface DollorApiService {
     // ==========================================
     // LEGAL & PUBLIC PAGES
     // ==========================================
-
-    @GET("legal/tos")
-    suspend fun getTermsOfService(): Response<String>
-
-    @GET("legal/privacy-policy")
-    suspend fun getPrivacyPolicy(): Response<String>
 
     // ==========================================
     // PUSH NOTIFICATIONS
