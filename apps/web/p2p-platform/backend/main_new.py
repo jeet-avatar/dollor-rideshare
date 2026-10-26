@@ -6727,6 +6727,30 @@ def get_driver_dashboard_v5(
         }
 
 
+def _driver_period_total(db: Session, driver_id: int, start_date: datetime) -> float:
+    """Delivered-order and completed-ride earnings (fees and tips included) since start_date."""
+    try:
+        orders = db.query(Order).filter(
+            Order.driver_id == driver_id,
+            Order.status == OrderStatus.DELIVERED,
+            Order.created_at >= start_date,
+        ).all()
+    except Exception:
+        orders = []
+    try:
+        from models import RideRequest, RideRequestStatus
+        rides = db.query(RideRequest).filter(
+            RideRequest.matched_driver_id == driver_id,
+            RideRequest.status == RideRequestStatus.COMPLETED,
+            RideRequest.created_at >= start_date,
+        ).all()
+    except Exception:
+        rides = []
+    total = sum(float(o.delivery_fee or 0) + float(o.tip or 0) for o in orders)
+    total += sum(float(r.driver_payout or 0) + float(r.tip_amount or 0) for r in rides)
+    return round(total, 2)
+
+
 @app.get("/api/driver/earnings")
 async def get_driver_earnings(
     period: str = "today",  # today, week, month, all
@@ -6795,10 +6819,10 @@ async def get_driver_earnings(
         "total_earnings": total,
         "platform_fee": 0.00,  # Drivers pay $0 commission per CLAUDE.md
         "note": "100% of your earnings go to you. Dollor.ai charges $0 commission to drivers.",
-        # Period totals for iOS/Android apps
-        "today": total if period == "today" else 0,
-        "week": total if period == "week" else 0,
-        "month": total if period == "month" else 0,
+        # Period totals for iOS/Android apps: always all three, whichever period was requested
+        "today": _driver_period_total(db, driver.id, now.replace(hour=0, minute=0, second=0, microsecond=0)),
+        "week": _driver_period_total(db, driver.id, now - timedelta(days=7)),
+        "month": _driver_period_total(db, driver.id, now - timedelta(days=30)),
         "pending": 0.0  # Pending payout amount
     }
 
