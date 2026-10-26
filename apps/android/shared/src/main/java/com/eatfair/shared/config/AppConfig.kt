@@ -166,27 +166,39 @@ object AppConfig {
     // =============================================================================
     object Rideshare {
         // Driver bid presets as a share of the suggested fare (same on iOS AppConfig)
-        const val BID_QUICK_ACCEPT_FACTOR = 0.92
-        const val BID_FAIR_FACTOR = 1.00
-        const val BID_PREMIUM_FACTOR = 1.08
+        @Volatile var BID_QUICK_ACCEPT_FACTOR = 0.92
+            private set
+        @Volatile var BID_FAIR_FACTOR = 1.00
+            private set
+        @Volatile var BID_PREMIUM_FACTOR = 1.08
+            private set
 
         // Tier thresholds (platform fee tiers)
-        const val TIER_1_MAX_FARE = 35.00       // Fares up to $35
-        const val TIER_2_MAX_FARE = 70.00       // Fares $35.01 to $70
+        @Volatile var TIER_1_MAX_FARE = 35.00       // Fares up to $35
+            private set
+        @Volatile var TIER_2_MAX_FARE = 70.00       // Fares $35.01 to $70
+            private set
         // Tier 3: Fares above $70
 
         // Platform fees per tier - MUCH LOWER than industry (25-30%)
-        const val TIER_1_FEE = 1.00             // $1 for fares <= $35
-        const val TIER_2_FEE = 2.00             // $2 for fares $35.01-$70
-        const val TIER_3_FEE = 3.00             // $3 for fares > $70
+        @Volatile var TIER_1_FEE = 1.00             // $1 for fares <= $35
+            private set
+        @Volatile var TIER_2_FEE = 2.00             // $2 for fares $35.01-$70
+            private set
+        @Volatile var TIER_3_FEE = 3.00             // $3 for fares > $70
+            private set
 
         // =============================================================================
         // COMPETITIVE BASE RATES (Market-aligned pricing)
         // =============================================================================
-        const val BASE_FARE = 2.50              // Competitive base fare
-        const val PER_MILE_RATE = 1.15          // Market-rate per mile
-        const val PER_MINUTE_RATE = 0.18        // Market-rate per minute
-        const val MINIMUM_FARE = 5.00           // Minimum fare for short trips (matches iOS)
+        @Volatile var BASE_FARE = 2.50              // Competitive base fare
+            private set
+        @Volatile var PER_MILE_RATE = 1.15          // Market-rate per mile
+            private set
+        @Volatile var PER_MINUTE_RATE = 0.18        // Market-rate per minute
+            private set
+        @Volatile var MINIMUM_FARE = 5.00           // Minimum fare for short trips (matches iOS)
+            private set
 
         // Time-of-day multipliers (transparent, not surge pricing)
         const val PEAK_MORNING_MULTIPLIER = 1.15    // 7-9 AM (+15%)
@@ -203,6 +215,77 @@ object AppConfig {
         // Demand caps (never exceed 1.5x, unlike competitors)
         const val MAX_DEMAND_MULTIPLIER = 1.50
         const val MIN_DEMAND_MULTIPLIER = 0.90
+
+
+        // Values below default to the backend's current policy and are replaced by GET /api/config/rideshare
+        // (see RideshareConfigLoader). Defaults only matter before the first successful fetch.
+        @Volatile var biddingWindowMinutes = 5
+            private set
+        @Volatile var etaOptionsMinutes: List<Int> = listOf(3, 5, 10, 15)
+            private set
+        @Volatile var accessForAllRiderShare = 0.05
+            private set
+        @Volatile var accessForAllDriverShare = 0.05
+            private set
+
+        /** Support details. Hours, response time and the ACH note are null until the backend configures them. */
+        data class Support(
+            val email: String = "support@dollor.ai",
+            val phone: String? = null,
+            val url: String? = null,
+            val hoursText: String? = null,
+            val responseMinutes: Int? = null,
+            val achFeeDiscountText: String? = null
+        )
+        @Volatile var support = Support()
+            private set
+
+        /** e.g. "$5 off your first ride"; null until the backend configures a real reward. */
+        @Volatile var referralRewardText: String? = null
+            private set
+
+        /** Replace the policy values with the backend's. Missing keys keep their current value. */
+        fun apply(json: org.json.JSONObject) {
+            json.optJSONObject("fees")?.let { f ->
+                TIER_1_MAX_FARE = f.optDouble("tier1MaxFare", TIER_1_MAX_FARE)
+                TIER_2_MAX_FARE = f.optDouble("tier2MaxFare", TIER_2_MAX_FARE)
+                TIER_1_FEE = f.optDouble("tier1Fee", TIER_1_FEE)
+                TIER_2_FEE = f.optDouble("tier2Fee", TIER_2_FEE)
+                TIER_3_FEE = f.optDouble("tier3Fee", TIER_3_FEE)
+                accessForAllRiderShare = f.optDouble("accessForAllRiderShare", accessForAllRiderShare)
+                accessForAllDriverShare = f.optDouble("accessForAllDriverShare", accessForAllDriverShare)
+            }
+            json.optJSONObject("pricing")?.let { p ->
+                BASE_FARE = p.optDouble("baseFare", BASE_FARE)
+                PER_MILE_RATE = p.optDouble("perMileRate", PER_MILE_RATE)
+                PER_MINUTE_RATE = p.optDouble("perMinuteRate", PER_MINUTE_RATE)
+                MINIMUM_FARE = p.optDouble("minimumFare", MINIMUM_FARE)
+            }
+            json.optJSONObject("bidding")?.let { b ->
+                BID_QUICK_ACCEPT_FACTOR = b.optDouble("quickAcceptFactor", BID_QUICK_ACCEPT_FACTOR)
+                BID_FAIR_FACTOR = b.optDouble("fairFactor", BID_FAIR_FACTOR)
+                BID_PREMIUM_FACTOR = b.optDouble("premiumFactor", BID_PREMIUM_FACTOR)
+                biddingWindowMinutes = b.optInt("windowMinutes", biddingWindowMinutes)
+                b.optJSONArray("etaOptionsMinutes")?.let { arr ->
+                    val options = (0 until arr.length()).map { arr.getInt(it) }
+                    if (options.isNotEmpty()) etaOptionsMinutes = options
+                }
+            }
+            json.optJSONObject("referral")?.let { r ->
+                referralRewardText = if (r.isNull("rewardText")) null else r.optString("rewardText").ifBlank { null }
+            }
+            json.optJSONObject("support")?.let { s ->
+                fun text(key: String): String? = if (s.isNull(key)) null else s.optString(key).ifBlank { null }
+                support = Support(
+                    email = text("email") ?: support.email,
+                    phone = text("phone"),
+                    url = text("url"),
+                    hoursText = text("hoursText"),
+                    responseMinutes = if (s.isNull("responseMinutes")) null else s.optInt("responseMinutes"),
+                    achFeeDiscountText = text("achFeeDiscountText")
+                )
+            }
+        }
 
         // Tips
         const val TIP_PLATFORM_FEE = 0.00       // 100% of tips go to driver

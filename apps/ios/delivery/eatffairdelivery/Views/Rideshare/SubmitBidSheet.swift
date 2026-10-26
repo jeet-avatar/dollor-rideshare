@@ -446,7 +446,7 @@ struct SubmitBidSheet: View {
                 .foregroundColor(Theme.lxText)
 
             HStack(spacing: 8) {
-                ForEach([3, 5, 10, 15], id: \.self) { minutes in
+                ForEach(AppConfig.shared.etaOptionsMinutes, id: \.self) { minutes in
                     Button(action: { estimatedArrival = minutes }) {
                         Text("\(minutes) min")
                             .font(.subheadline)

@@ -16,6 +16,7 @@ class DriverApp : Application() {
             apiBaseUrl = BuildConfig.API_BASE_URL,
             isProduction = BuildConfig.IS_PRODUCTION
         )
+        com.eatfair.shared.config.RideshareConfigLoader.load(this)
         Log.d("DriverApp", "Driver App initialized - PRODUCTION")
         Log.d("DriverApp", "API_BASE_URL: ${BuildConfig.API_BASE_URL}")
     }

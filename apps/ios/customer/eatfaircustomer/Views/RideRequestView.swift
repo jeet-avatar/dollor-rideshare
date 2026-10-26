@@ -676,7 +676,7 @@ struct RideBottomSheet: View {
                         HStack(spacing: 4) {
                             Image(systemName: "info.circle")
                                 .font(.caption2)
-                            Text("Connection fee: $\(String(format: "%.2f", viewModel.platformFee)) (tiered $1-$3) • Driver sets final price")
+                            Text("Connection fee: $\(String(format: "%.2f", viewModel.platformFee)) (tiered \(AppConfig.shared.rideshareFeeRangeText)) • Driver sets final price")
                                 .font(.caption2)
                         }
                         .foregroundColor(Theme.lxTextMuted)
@@ -726,7 +726,7 @@ struct RideBottomSheet: View {
                     Image(systemName: "info.circle.fill")
                         .font(Lx.Typography.caption)
                         .foregroundColor(Lx.Palette.success)
-                    Text("$1-$3 tiered connection fee • Drivers are independent")
+                    Text("\(AppConfig.shared.rideshareFeeRangeText) tiered connection fee • Drivers are independent")
                         .font(Lx.Typography.caption)
                         .foregroundColor(Lx.Palette.textSecondary)
                 }

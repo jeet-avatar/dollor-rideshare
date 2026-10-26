@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.profile
 
+import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -196,15 +197,15 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Contact Support - opens the device email client to support@dollor.ai
+            // Contact Support - opens the device email client to the configured support address
             SettingsMenuItem(
                 icon = Icons.Default.Email,
                 title = "Contact Support",
-                subtitle = "support@dollor.ai",
+                subtitle = AppConfig.Rideshare.support.email,
                 onClick = {
                     val emailIntent = android.content.Intent(
                         android.content.Intent.ACTION_SENDTO,
-                        android.net.Uri.parse("mailto:support@dollor.ai")
+                        android.net.Uri.parse("mailto:${AppConfig.Rideshare.support.email}")
                     ).apply {
                         putExtra(android.content.Intent.EXTRA_SUBJECT, "Dollor.ai Support Request")
                     }
@@ -213,7 +214,7 @@ fun SettingsScreen(
                     } catch (e: android.content.ActivityNotFoundException) {
                         android.widget.Toast.makeText(
                             context,
-                            "No email app found. Contact support@dollor.ai",
+                            "No email app found. Contact ${AppConfig.Rideshare.support.email}",
                             android.widget.Toast.LENGTH_LONG
                         ).show()
                     }

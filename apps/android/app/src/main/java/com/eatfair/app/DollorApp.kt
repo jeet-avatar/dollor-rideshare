@@ -43,6 +43,8 @@ class DollorApp : Application() {
             isProduction = BuildConfig.IS_PRODUCTION
         )
 
+        com.eatfair.shared.config.RideshareConfigLoader.load(this)
+
         // Initialize CustomerRideshareApiService with SecureStorage
         // Matches iOS pattern: P2PAPIService.shared.init() accesses SecureStorage.shared
         val entryPoint = EntryPointAccessors.fromApplication(this, SecureStorageEntryPoint::class.java)

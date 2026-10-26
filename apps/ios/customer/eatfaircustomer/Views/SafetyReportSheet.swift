@@ -77,11 +77,11 @@ struct SafetyReportSheet: View {
                             .font(.caption).foregroundColor(Lx.Palette.textSecondary)
                         HStack {
                             Image(systemName: "phone.fill").font(.caption)
-                            Text("+1-800-365-5671").font(.caption.weight(.medium))
+                            Text(AppConfig.shared.supportPhone).font(.caption.weight(.medium))
                         }
                         HStack {
                             Image(systemName: "envelope.fill").font(.caption)
-                            Text("support@dollor.ai").font(.caption.weight(.medium))
+                            Text(AppConfig.shared.supportEmail).font(.caption.weight(.medium))
                         }
                         Text("You may also contact CPUC directly:")
                             .font(.caption).foregroundColor(Lx.Palette.textSecondary)

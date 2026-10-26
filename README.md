@@ -37,7 +37,15 @@ Fees are flat per ride and **come from configuration, never from copy**:
 
 The CPUC Access-for-All charge is $0.10, split $0.05 to the rider and $0.05 to the driver. Drivers keep the rest of the fare plus 100% of tips.
 
-Where the numbers live (UI, legal and help text read from these; do not retype them in a screen):
+### Dynamic configuration
+
+Fees, pricing rates, bidding presets (92% / 100% / 108%, 5-minute window, ETA choices), dispatch policy and support details are served by `GET /api/config/rideshare` (`rideshare_config.py`, built from `pricing_config.py`, `ride_dispatch.py` and environment variables). Both apps fetch it at launch, cache the last good response on the device, and fall back to bundled defaults that mirror the backend when offline. Change a value once in the backend and every app picks it up without a release.
+
+Values the business has not set are returned as `null` and the apps hide them instead of showing a claim: support hours (`SUPPORT_HOURS_TEXT`), average chat response time (`SUPPORT_RESPONSE_MINUTES`), the ACH note (`ACH_FEE_DISCOUNT_TEXT`) and the referral reward (`REFERRAL_REWARD_TEXT`). Support email, phone and URL default to the existing support contact and can be overridden with `SUPPORT_EMAIL`, `SUPPORT_PHONE`, `SUPPORT_URL`.
+
+Fee tiers are applied in exactly one place on the backend (`platform_fee_for` in `pricing_config.py`).
+
+Where the numbers live on each platform (UI, legal and help text read from these; do not retype them in a screen):
 - Android: `AppConfig.Rideshare` in `apps/android/shared/.../config/AppConfig.kt` (`calculatePlatformFee`, `feeRangeText`, `tierLines`).
 - iOS: `AppConfig` in `apps/ios/eatfair-ios-shared/Sources/EatFairShared/AppConfig.swift` (`rideshareTierRows`, `rideshareFeeSummary`).
 - Backend: the tier constants used when a ride completes (`bid_routes.py`). The backend is the source of truth for charged amounts.

@@ -62,7 +62,7 @@ struct TermsAndConditionsView: View {
                             Text("I accept the Terms & Conditions")
                                 .fontWeight(.semibold)
                                 .foregroundColor(Theme.lxText)
-                            Text("By accepting, you agree to our platform policies, $1 fee structure, and driver guidelines.")
+                            Text("By accepting, you agree to our platform policies, \(AppConfig.shared.rideshareFeeRangeText) fee structure, and driver guidelines.")
                                 .font(.caption)
                                 .foregroundColor(Theme.lxTextSecondary)
                         }

@@ -73,7 +73,8 @@ fun HelpSupportScreen(
             FAQItem(
                 "2",
                 "What payment methods are accepted?",
-                "We accept all major credit/debit cards, Apple Pay, Google Pay, and ACH bank transfers. ACH payments receive a discount on platform fees.",
+                "We accept all major credit/debit cards, Apple Pay, Google Pay, and ACH bank transfers." +
+                    (AppConfig.Rideshare.support.achFeeDiscountText?.let { " $it" } ?: ""),
                 "Payments"
             ),
             FAQItem(
@@ -134,10 +135,17 @@ fun HelpSupportScreen(
                         faq.answer.contains(searchQuery, ignoreCase = true))
     }
 
-    val supportOptions = listOf(
-        SupportOption("chat", "Chat with Us", "Average response time: 2 mins", Icons.Default.Chat, onChatWithUs),
-        SupportOption("email", "Email Support", "support@dollor.ai", Icons.Default.Email, onContactSupport),
-        SupportOption("call", "Call Support", "Available 9AM - 9PM", Icons.Default.Phone, onCallSupport)
+    val support = AppConfig.Rideshare.support
+    val supportOptions = listOfNotNull(
+        SupportOption(
+            "chat", "Chat with Us",
+            support.responseMinutes?.let { "Average response time: $it mins" } ?: "Message our team",
+            Icons.Default.Chat, onChatWithUs
+        ),
+        SupportOption("email", "Email Support", support.email, Icons.Default.Email, onContactSupport),
+        support.phone?.let { phone ->
+            SupportOption("call", "Call Support", support.hoursText ?: phone, Icons.Default.Phone, onCallSupport)
+        }
     )
 
     Scaffold(

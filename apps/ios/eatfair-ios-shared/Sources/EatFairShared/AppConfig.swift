@@ -117,9 +117,12 @@ public class AppConfig: ObservableObject {
     @Published public var rideshareTier3Fee: Double = 3.00   // $3 for fares > $70
 
     // Driver bid presets as a share of the suggested fare (same on Android AppConfig)
-    public let bidQuickAcceptFactor: Double = 0.92
-    public let bidFairFactor: Double = 1.00
-    public let bidPremiumFactor: Double = 1.08
+    // Defaults mirror the backend; GET /api/config/rideshare replaces them (see applyRideshareConfig).
+    @Published public var bidQuickAcceptFactor: Double = 0.92
+    @Published public var bidFairFactor: Double = 1.00
+    @Published public var bidPremiumFactor: Double = 1.08
+    @Published public var biddingWindowMinutes: Int = 5
+    @Published public var etaOptionsMinutes: [Int] = [3, 5, 10, 15]
 
     // Legacy properties (kept for backwards compatibility)
     @Published public var ridesharePlatformFeePerMile: Double = 0.10  // Deprecated
@@ -203,6 +206,11 @@ public class AppConfig: ObservableObject {
     static func money(_ value: Double) -> String { "$\(Int(value.rounded()))" }
 
     /// One-line fee summary for FAQ / legal copy, e.g. "$1 for fares up to $25, $2 for fares $25-$50, $3 for fares over $50".
+    /// Lowest-to-highest platform fee, e.g. "$1-$3". Always in sync with the tier config.
+    public var rideshareFeeRangeText: String {
+        "$\(Int(rideshareTier1Fee))-$\(Int(rideshareTier3Fee))"
+    }
+
     public var rideshareFeeSummary: String {
         "$\(Int(rideshareTier1Fee)) for fares up to \(Self.money(rideshareTier1MaxFare)), $\(Int(rideshareTier2Fee)) for fares \(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare)), $\(Int(rideshareTier3Fee)) for fares over \(Self.money(rideshareTier2MaxFare))"
     }
@@ -302,7 +310,7 @@ public class AppConfig: ObservableObject {
     @Published public var ridePerMileRate: Double = 1.15       // Per mile rate
     @Published public var ridePerMinuteRate: Double = 0.18     // Per minute rate
     @Published public var rideMinFare: Double = 8.00           // Minimum fare (matches backend pricing_config.py:21 MINIMUM_FARE)
-    @Published public var rideCancellationFee: Double = 5.00   // Cancellation fee (base)
+    @Published public var rideCancellationFee: Double = 0.00   // Rider cancel fee; the server charges none today (replaced by /api/config/rideshare)
     @Published public var rideCancellationFeeDriverEnRoute: Double = 0.00  // Server charges no rider cancel fee today (bid_routes.py cancel); keep UI truthful
     @Published public var rideCancellationFeeInProgress: Double = 0.00    // Server blocks cancelling in-progress rides; no fee is charged
     @Published public var rideSurgeEnabled: Bool = true        // Surge pricing enabled
@@ -374,6 +382,12 @@ public class AppConfig: ObservableObject {
     @Published public var supportUrl: String = "https://www.dollor.ai/support"
     @Published public var supportPhone: String = "+1-800-365-5671"
     @Published public var supportEmail: String = "support@dollor.ai"
+    /// Shown only when the backend configures them, so the app never displays an unconfirmed claim.
+    @Published public var supportHoursText: String?
+    @Published public var supportResponseMinutes: Int?
+    @Published public var achFeeDiscountText: String?
+    /// e.g. "$5 off your first ride"; nil until the backend configures a real reward.
+    @Published public var referralRewardText: String?
 
     // Legal URLs (Required for App Store - Apple Guideline 5.1.1)
     public var termsOfServiceUrl: String { AppConstants.termsOfServiceURL }
@@ -387,13 +401,78 @@ public class AppConfig: ObservableObject {
 
     private var configLoaded = false
 
-    private init() {}
+    private static let rideshareConfigCacheKey = "rideshare_config_json"
+
+    private init() {
+        if let cached = UserDefaults.standard.data(forKey: Self.rideshareConfigCacheKey),
+           let json = try? JSONSerialization.jsonObject(with: cached) as? [String: Any] {
+            applyRideshareConfig(json)
+        }
+    }
+
+    // MARK: - Rideshare policy from the backend (fees, bidding presets, support)
+
+    /// Fetches GET /api/config/rideshare, applies it and caches the last good response for offline launches.
+    public func fetchRideshareConfig() {
+        guard let url = URL(string: "\(p2pAPIBaseURL)/api/config/rideshare") else { return }
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, _ in
+            guard let self = self,
+                  (response as? HTTPURLResponse)?.statusCode == 200,
+                  let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                configLogger.warning("Using cached/default rideshare config")
+                return
+            }
+            UserDefaults.standard.set(data, forKey: Self.rideshareConfigCacheKey)
+            DispatchQueue.main.async { self.applyRideshareConfig(json) }
+        }.resume()
+    }
+
+    /// Replaces policy values with the backend's. Missing keys keep their current value.
+    func applyRideshareConfig(_ json: [String: Any]) {
+        if let fees = json["fees"] as? [String: Any] {
+            if let v = fees["tier1MaxFare"] as? Double { rideshareTier1MaxFare = v }
+            if let v = fees["tier2MaxFare"] as? Double { rideshareTier2MaxFare = v }
+            if let v = fees["tier1Fee"] as? Double { rideshareTier1Fee = v }
+            if let v = fees["tier2Fee"] as? Double { rideshareTier2Fee = v }
+            if let v = fees["tier3Fee"] as? Double { rideshareTier3Fee = v }
+            if let v = fees["riderCancellationFee"] as? Double {
+                rideCancellationFee = v
+                rideCancellationFeeDriverEnRoute = v
+            }
+        }
+        if let pricing = json["pricing"] as? [String: Any] {
+            if let v = pricing["baseFare"] as? Double { rideBaseFare = v }
+            if let v = pricing["perMileRate"] as? Double { ridePerMileRate = v }
+            if let v = pricing["perMinuteRate"] as? Double { ridePerMinuteRate = v }
+            if let v = pricing["minimumFare"] as? Double { rideMinFare = v }
+        }
+        if let bidding = json["bidding"] as? [String: Any] {
+            if let v = bidding["quickAcceptFactor"] as? Double { bidQuickAcceptFactor = v }
+            if let v = bidding["fairFactor"] as? Double { bidFairFactor = v }
+            if let v = bidding["premiumFactor"] as? Double { bidPremiumFactor = v }
+            if let v = bidding["windowMinutes"] as? Int { biddingWindowMinutes = v }
+            if let v = bidding["etaOptionsMinutes"] as? [Int], !v.isEmpty { etaOptionsMinutes = v }
+        }
+        if let referral = json["referral"] as? [String: Any] {
+            referralRewardText = referral["rewardText"] as? String
+        }
+        if let support = json["support"] as? [String: Any] {
+            if let v = support["email"] as? String, !v.isEmpty { supportEmail = v }
+            if let v = support["phone"] as? String, !v.isEmpty { supportPhone = v }
+            if let v = support["url"] as? String, !v.isEmpty { supportUrl = v }
+            supportHoursText = support["hoursText"] as? String
+            supportResponseMinutes = support["responseMinutes"] as? Int
+            achFeeDiscountText = support["achFeeDiscountText"] as? String
+        }
+    }
 
     // MARK: - Fetch Configuration from P2P (Dollar.ai) Backend
 
     /// Fetches app configuration from Dollar.ai backend
     /// All data comes from P2P backend - Firebase is only for authentication
     public func fetchConfig(completion: ((Bool) -> Void)? = nil) {
+        fetchRideshareConfig()
         guard let url = URL(string: "\(p2pAPIBaseURL)/api/config") else {
             configLogger.error("Invalid URL for config endpoint")
             // Use default values if API fails

@@ -60,7 +60,7 @@ private object BidPresets {
     val QUICK_ACCEPT = AppConfig.Rideshare.BID_QUICK_ACCEPT_FACTOR
     val FAIR = AppConfig.Rideshare.BID_FAIR_FACTOR
     val PREMIUM = AppConfig.Rideshare.BID_PREMIUM_FACTOR
-    val arrivalMinutes = listOf(3, 5, 10, 15)
+    val arrivalMinutes: List<Int> get() = AppConfig.Rideshare.etaOptionsMinutes
 }
 
 private fun money(value: Double) = "$" + String.format("%.2f", value)

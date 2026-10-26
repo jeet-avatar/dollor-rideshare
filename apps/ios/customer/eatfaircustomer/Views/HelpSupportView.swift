@@ -94,7 +94,7 @@ struct HelpSupportView: View {
                 ContactOptionCard(
                     icon: "message.fill",
                     title: "Live Chat",
-                    subtitle: "Chat with us",
+                    subtitle: AppConfig.shared.supportResponseMinutes.map { "Replies in ~\($0) min" } ?? "Chat with us",
                     color: Theme.lxOrange
                 ) {
                     showLiveChat = true
@@ -103,7 +103,7 @@ struct HelpSupportView: View {
                 ContactOptionCard(
                     icon: "envelope.fill",
                     title: "Email",
-                    subtitle: "support@dollor.ai",
+                    subtitle: AppConfig.shared.supportEmail,
                     color: Theme.lxOrange
                 ) {
                     openEmail()
@@ -112,7 +112,7 @@ struct HelpSupportView: View {
                 ContactOptionCard(
                     icon: "phone.fill",
                     title: "Phone",
-                    subtitle: "Call us",
+                    subtitle: AppConfig.shared.supportHoursText ?? "Call us",
                     color: Theme.lxOrange
                 ) {
                     openPhone()
@@ -226,7 +226,7 @@ struct HelpSupportView: View {
 
     // MARK: - Actions
     private func openEmail() {
-        if let url = URL(string: "mailto:support@dollor.ai") {
+        if let url = URL(string: "mailto:\(AppConfig.shared.supportEmail)") {
             UIApplication.shared.open(url)
         }
     }
@@ -267,7 +267,7 @@ struct FAQItem: Identifiable {
 }
 
 // MARK: - All FAQs Data
-private let allFAQs: [FAQItem] = [
+private var allFAQs: [FAQItem] { [
     FAQItem(
         id: "1",
         question: "How do I track my ride?",
@@ -295,7 +295,7 @@ private let allFAQs: [FAQItem] = [
     FAQItem(
         id: "5",
         question: "How do I add a payment method?",
-        answer: "Go to Profile > Payment Methods > Add Card. We accept all major credit and debit cards. You can also link your bank account for ACH payments with a $0.50 discount.",
+        answer: "Go to Profile > Payment Methods > Add Card. We accept all major credit and debit cards. You can also link your bank account for ACH payments.\(AppConfig.shared.achFeeDiscountText.map { " \($0)" } ?? "")",
         category: .payments
     ),
     FAQItem(
@@ -328,7 +328,7 @@ private let allFAQs: [FAQItem] = [
         answer: "Share your unique referral code with friends. When they take their first ride, you both get $5 credit! Go to Profile > Refer & Earn to get your code.",
         category: .account
     )
-]
+] }
 
 // MARK: - Contact Option Card
 struct ContactOptionCard: View {

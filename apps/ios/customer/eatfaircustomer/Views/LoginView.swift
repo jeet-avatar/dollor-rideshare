@@ -97,7 +97,7 @@ struct LoginView: View {
             Text(isSignUp ? "Create your account" : "Welcome back")
                 .font(Lx.Typography.largeTitle.weight(.bold))
                 .foregroundColor(lxText)
-            Text(isSignUp ? "Ride for a flat $1 platform fee." : "Sign in to continue")
+            Text(isSignUp ? "Ride for a flat \(AppConfig.shared.rideshareFeeRangeText) platform fee." : "Sign in to continue")
                 .font(Lx.Typography.subheadline)
                 .foregroundColor(lxTextSecondary)
         }
@@ -301,7 +301,7 @@ struct LoginView: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(Lx.Typography.subheadline)
                 .foregroundColor(lxOrange)
-            Text("Flat $1 platform fee · 100% of tips go to drivers")
+            Text("Flat \(AppConfig.shared.rideshareFeeRangeText) platform fee · 100% of tips go to drivers")
                 .font(Lx.Typography.footnote.weight(.medium))
                 .foregroundColor(lxTextSecondary)
         }

@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.navigation
 
+import com.eatfair.shared.config.AppConfig
 import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -614,7 +615,7 @@ fun NavGraphBuilder.profileGraph(
                         type = "text/plain"
                         putExtra(
                             android.content.Intent.EXTRA_TEXT,
-                            "Join me on Dollor.ai! Use my code $code to get \$5 off your first ride. Download now: https://dollor.ai/app"
+                            "Join me on Dollor.ai! Use my code $code" + (AppConfig.Rideshare.referralRewardText?.let { " to get $it" } ?: "") + ". Download now: https://dollor.ai/app"
                         )
                     }
                     ctx.startActivity(android.content.Intent.createChooser(send, "Share your code"))
@@ -701,15 +702,15 @@ fun NavGraphBuilder.profileGraph(
             HelpSupportScreen(
                 onBackClick = { navController.navigateUp() },
                 onContactSupport = {
-                    val mail = android.content.Intent(android.content.Intent.ACTION_SENDTO, android.net.Uri.parse("mailto:support@dollor.ai"))
+                    val mail = android.content.Intent(android.content.Intent.ACTION_SENDTO, android.net.Uri.parse("mailto:${AppConfig.Rideshare.support.email}"))
                         .putExtra(android.content.Intent.EXTRA_SUBJECT, "Dollor.ai Support")
                     runCatching { ctx.startActivity(mail) }.onFailure {
-                        android.widget.Toast.makeText(ctx, "Email us at support@dollor.ai", android.widget.Toast.LENGTH_LONG).show()
+                        android.widget.Toast.makeText(ctx, "Email us at ${AppConfig.Rideshare.support.email}", android.widget.Toast.LENGTH_LONG).show()
                     }
                 },
                 onChatWithUs = { navController.navigate("support_chat") },
                 onCallSupport = {
-                    ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:+18003655671")))
+                    ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:${AppConfig.Rideshare.support.phone.orEmpty()}")))
                 }
             )
         }

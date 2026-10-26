@@ -205,7 +205,7 @@ struct ReferAndEarnView: View {
         }
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: [
-                "Join me on Dollor.ai! Use my code \(referralCode) to get $5 off your first order. Download now: \(AppConstants.appDownloadURL)"
+                "Join me on Dollor.ai! Use my code \(referralCode)\(AppConfig.shared.referralRewardText.map { " to get \($0)" } ?? ""). Download now: \(AppConstants.appDownloadURL)"
             ])
         }
     }
