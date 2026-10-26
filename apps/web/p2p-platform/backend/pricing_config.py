@@ -57,6 +57,13 @@ class PricingConfig:
     BID_FAIR_FACTOR: float = 1.00
     BID_PREMIUM_FACTOR: float = 1.08        # 8% above for premium service
     BID_ETA_OPTIONS_MINUTES: tuple = (3, 5, 10, 15)
+    MAX_CUSTOMER_COUNTERS: int = 3          # counter-offers a rider may make on one request
+    MAX_ROUNDS_PER_BID: int = 2             # negotiation rounds on a single bid
+
+    # Passenger no-show: the driver may mark a no-show after waiting, and the rider is charged the fee
+    NOSHOW_WAIT_SECONDS: int = 300
+    NOSHOW_FEE: float = 5.00
+    NOSHOW_DRIVER_SHARE: float = 0.80
 
 
 @dataclass

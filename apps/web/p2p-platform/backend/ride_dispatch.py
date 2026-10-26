@@ -27,6 +27,11 @@ DriverPoint = Tuple[int, float, float]  # (driver_id, latitude, longitude)
 EARTH_RADIUS_MILES = 3958.8
 
 
+def max_radius_miles() -> float:
+    """Widest search radius the dispatch policy ever reaches."""
+    return max(radius for _, radius in RADIUS_STEPS_MILES)
+
+
 def haversine_miles(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     p1, p2 = math.radians(lat1), math.radians(lat2)
     dlat, dlon = p2 - p1, math.radians(lon2 - lon1)

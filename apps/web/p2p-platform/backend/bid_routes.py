@@ -89,6 +89,7 @@ def _notify_customer(db: Session, customer_id: int, title: str, message: str,
         logger.warning(f"Failed to create in-app notification: {e}")
 
 
+import ride_dispatch
 from ride_dispatch import SHARED_DEMO_DRIVER_EMAILS, is_driver_notified
 
 router = APIRouter(prefix="/api/rides", tags=["Ride Bidding"])
@@ -1132,7 +1133,7 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
             raise HTTPException(status_code=400, detail="Counter price required")
 
         # Multi-round negotiation: Check customer counter limit (max 3 total)
-        MAX_CUSTOMER_COUNTERS = 3
+        MAX_CUSTOMER_COUNTERS = pricing_engine.config.MAX_CUSTOMER_COUNTERS
         current_counter_count = ride_request.customer_counter_count or 0
 
         if current_counter_count >= MAX_CUSTOMER_COUNTERS:
@@ -1142,7 +1143,7 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
             )
 
         # Check negotiation round for this bid (max 2 rounds per bid)
-        MAX_ROUNDS_PER_BID = 2
+        MAX_ROUNDS_PER_BID = pricing_engine.config.MAX_ROUNDS_PER_BID
         current_round = bid.negotiation_round or 1
 
         if current_round >= MAX_ROUNDS_PER_BID and bid.last_offer_by == "customer":
@@ -1347,13 +1348,17 @@ async def get_available_ride_requests(
     driver_id: Optional[int] = None,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
-    radius_km: float = 15.0,
+    radius_km: Optional[float] = None,
     driver: Driver = Depends(require_driver),
     db: Session = Depends(get_db)
 ):
     """
     Get available ride requests near the driver for bidding. Requires driver auth.
     """
+    # Default search radius is the widest dispatch step, so every driver the policy notifies can see the ride
+    if radius_km is None:
+        radius_km = ride_dispatch.max_radius_miles() * 1.609344
+
     # Only online drivers receive bids
     if not driver.is_online:
         return {"success": True, "available_requests": [], "count": 0}
@@ -1834,7 +1839,7 @@ async def driver_counter_offer(bid_id: int, data: DriverCounterInput, request: R
             detail=f"Counter must be more than customer's offer of ${bid.customer_counter_price:.2f}"
         )
 
-    MAX_ROUNDS_PER_BID = 2
+    MAX_ROUNDS_PER_BID = pricing_engine.config.MAX_ROUNDS_PER_BID
     if bid.negotiation_round >= MAX_ROUNDS_PER_BID:
         raise HTTPException(
             status_code=400,
@@ -2304,7 +2309,6 @@ async def driver_cancel_ride(request_id: int, request: Request, data: DriverCanc
     }
 
 
-NOSHOW_CANCELLATION_FEE = 5.00
 
 @router.post("/request/{request_id}/no-show")
 async def mark_passenger_no_show(request_id: int, request: Request, auth_driver: Driver = Depends(require_driver), db: Session = Depends(get_db)):
@@ -2326,11 +2330,12 @@ async def mark_passenger_no_show(request_id: int, request: Request, auth_driver:
 
     # Verify wait time (minimum 5 minutes after arrival)
     wait_seconds = (datetime.utcnow() - ride_request.driver_arrived_at).total_seconds()
-    if wait_seconds < 300:  # 5 minutes = 300 seconds
-        remaining = int(300 - wait_seconds)
+    noshow_wait = pricing_engine.config.NOSHOW_WAIT_SECONDS
+    if wait_seconds < noshow_wait:
+        remaining = int(noshow_wait - wait_seconds)
         raise HTTPException(
             status_code=400,
-            detail=f"Please wait {remaining} more seconds before marking no-show (minimum 5 minutes)"
+            detail=f"Please wait {remaining} more seconds before marking no-show (minimum {noshow_wait // 60} minutes)"
         )
 
     # Cancel the ride with no-show flag
@@ -2338,11 +2343,11 @@ async def mark_passenger_no_show(request_id: int, request: Request, auth_driver:
     ride_request.cancelled_at = datetime.utcnow()
 
     # Apply cancellation fee to customer
-    cancellation_fee = NOSHOW_CANCELLATION_FEE
+    cancellation_fee = pricing_engine.config.NOSHOW_FEE
     ride_request.platform_fee = cancellation_fee
 
     # Pay driver a portion for their time
-    ride_request.driver_payout = round(cancellation_fee * 0.8, 2)  # Driver gets 80% of no-show fee
+    ride_request.driver_payout = round(cancellation_fee * pricing_engine.config.NOSHOW_DRIVER_SHARE, 2)
 
     db.commit()
 

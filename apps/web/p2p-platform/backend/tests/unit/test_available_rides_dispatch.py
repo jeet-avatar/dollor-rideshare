@@ -82,3 +82,12 @@ def test_shared_demo_driver_always_sees_rides(client, db_session, open_ride, dri
     db_session.commit()
     token = create_access_token(data={"sub": online_driver.email, "role": "driver", "driver_id": online_driver.id})
     assert open_ride in available(client, {"Authorization": f"Bearer {token}"}, *FAR)
+
+
+def test_default_radius_reaches_the_widest_dispatch_step(client, db_session, open_ride, driver_headers_online):
+    """Without a radius param (Android sends none) a driver 20 miles out still sees a ride once the search widened to 25 mi."""
+    ride = db_session.query(RideRequest).get(open_ride)
+    ride.created_at = datetime.utcnow() - timedelta(seconds=130)
+    db_session.commit()
+    twenty_miles_out = (37.7879 + 20 / 69.0, -122.4075)
+    assert open_ride in available(client, driver_headers_online, *twenty_miles_out)

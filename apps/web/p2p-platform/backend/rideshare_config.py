@@ -49,6 +49,13 @@ def build_rideshare_config() -> dict:
             "fairFactor": cfg.BID_FAIR_FACTOR,
             "premiumFactor": cfg.BID_PREMIUM_FACTOR,
             "etaOptionsMinutes": list(cfg.BID_ETA_OPTIONS_MINUTES),
+            "maxCustomerCounters": cfg.MAX_CUSTOMER_COUNTERS,
+            "maxRoundsPerBid": cfg.MAX_ROUNDS_PER_BID,
+        },
+        "noShow": {
+            "waitSeconds": cfg.NOSHOW_WAIT_SECONDS,
+            "fee": cfg.NOSHOW_FEE,
+            "driverShare": cfg.NOSHOW_DRIVER_SHARE,
         },
         "dispatch": {
             "maxNotifiedDrivers": ride_dispatch.MAX_NOTIFIED_DRIVERS,
