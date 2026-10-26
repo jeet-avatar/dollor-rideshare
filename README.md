@@ -127,6 +127,7 @@ DO_NOT_USE.md                            legacy code register: what not to call 
 
 - [docs/LAUNCH_READINESS_REPORT.md](docs/LAUNCH_READINESS_REPORT.md): API audit, timings and what is still untested.
 - [DO_NOT_USE.md](DO_NOT_USE.md): legacy names, endpoints and repo hygiene.
+- [docs/audit-2026-10-26/](docs/audit-2026-10-26/): hardcode, dead-code, API-map and Uber/Lyft research audits.
 - `apps/android/CLAUDE.md`: Android conventions.
 
 ## Known open items

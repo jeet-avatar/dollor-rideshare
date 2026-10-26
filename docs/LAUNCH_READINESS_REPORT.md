@@ -193,3 +193,29 @@ See `DO_NOT_USE.md` for legacy code that must not be reused, and its hygiene che
 * **Still not re-run this pass:** iOS in-app timings, two-driver competition (driver 129 pending admin approval), Forgot-password code entry, real Stripe charging, push notifications.
 * **Still hardcoded copy to clean up:** Help screen claims such as "Average response time: 2 mins", "Available 9AM - 9PM" and "ACH payments receive a discount on platform fees" are static text; confirm each is true or remove it before submission.
 * The root `README.md` was an unrelated "Invoice Management System" template and has been replaced with this project's README.
+
+## 10. Cleanup and API audit (2026-10-26)
+
+Four audits were run (hardcodes, dead code, API map and cross-app features, public Uber/Lyft research); the reports are in `docs/audit-2026-10-26/`.
+
+**Fixed and tested**
+* iOS rider tracking (`GET /api/erp/rides/{id}/track`) raised an `AttributeError` for every call (also on production); it now matches the canonical route.
+* Rides matched by the driver accepting the rider's counter-offer were never pre-authorized, so they completed unpaid. One helper (`_authorize_ride_payment`) now serves both match paths; a declined card cancels the ride (402).
+* Ride chat had no participant check and trusted `sender_type` from the request body; now only the rider, the matched driver or an admin can use it and the sender comes from the token.
+* iOS chat send reported failure although the message was saved (reply lacked `id` and `sender_id`).
+* iOS "Skip Tip" sent a tip of 0 and got a 422.
+* `GET /api/rides/available` defaulted to a 15 km radius, so Android drivers never saw rides at the 10 and 25 mile dispatch steps; the default is now the widest dispatch step.
+* `accept-counter` no longer overwrites a ride that is no longer open and closes countered rival bids.
+* The matched driver now receives `customer_phone` so the call button works.
+* Hardcoded business values moved to the backend config: bid presets, ETA options, negotiation limits, no-show wait/fee/driver share, support contacts, referral reward. Wrong claims removed ("No hidden fees or surge pricing", "0% Commission", fake referral stats).
+
+**Removed (grep- and compile-verified)**
+* Android: 29 unreferenced files, food-era config objects, 10 unused Retrofit methods, unused drawables.
+* iOS: 24 unreferenced files and about 7,300 lines of food/vendor/menu/promo/cart API code from `P2PAPIService.swift` (15,808 to 8,443 lines). The audit's list was not perfect (it marked two files whole-dead that contained live types, `EnhancedModels.swift`, `PaymentService.swift`, `PlaceholderViews.swift`); the build caught those and they were restored.
+
+**Open, needs a decision or a real-money test**
+* Tip after capture: the ride is captured at completion, then the tip endpoint modifies and captures the same PaymentIntent again. This will likely fail with real Stripe; the fix is a separate tip charge. Not changed because it cannot be verified without Stripe.
+* Masked calling does not exist (clients dial raw numbers); Android rider has no SOS or share-trip; Android driver has no waybill; recurring rides have CRUD but never dispatch; push types do not match on Android; single-session is enforced only on password login.
+* iOS negotiation endpoints (`negotiation-status`, `customer-negotiate`) are broken and unchecked; confirm whether that flow is still used.
+* Not built: ride PIN, off-route and long-stop check-ins, rider-visible "drivers contacted" count.
+* Backend cleanup left for an owner call: 12 never-imported scripts, `/api/demo/*` and `/api/debug/order/{id}` (look like an unauthenticated back door), unused ORM tables, 383 tracked vendor PDFs.
