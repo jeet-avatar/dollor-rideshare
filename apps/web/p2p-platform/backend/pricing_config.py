@@ -43,6 +43,21 @@ class PricingConfig:
     MAX_DEMAND_MULTIPLIER: float = 1.50
     MIN_DEMAND_MULTIPLIER: float = 0.90
 
+    # CPUC Access-for-All charge per trip (Decision 19-06-033), split between rider and driver
+    ACCESS_FOR_ALL_FEE: float = 0.10
+    ACCESS_FOR_ALL_RIDER_SHARE: float = 0.05
+    ACCESS_FOR_ALL_DRIVER_SHARE: float = 0.05
+
+    # Riders are not charged to cancel a ride
+    RIDER_CANCELLATION_FEE: float = 0.00
+
+    # Bidding
+    BIDDING_WINDOW_MINUTES: int = 5
+    BID_QUICK_ACCEPT_FACTOR: float = 0.92   # 8% below the suggested fare for a fast pickup
+    BID_FAIR_FACTOR: float = 1.00
+    BID_PREMIUM_FACTOR: float = 1.08        # 8% above for premium service
+    BID_ETA_OPTIONS_MINUTES: tuple = (3, 5, 10, 15)
+
 
 @dataclass
 class SuggestedBid:
@@ -248,9 +263,9 @@ class DollorPricingEngine:
     ) -> List[SuggestedBid]:
         """Generate three suggested bid levels for drivers"""
 
-        quick_accept_price = subtotal * 0.92  # 8% below for fast pickup
+        quick_accept_price = subtotal * self.config.BID_QUICK_ACCEPT_FACTOR
         fair_price = subtotal
-        premium_price = subtotal * 1.08  # 8% above for premium service
+        premium_price = subtotal * self.config.BID_PREMIUM_FACTOR
 
         return [
             SuggestedBid(
@@ -342,6 +357,21 @@ class DollorPricingEngine:
 
 # Singleton instance
 pricing_engine = DollorPricingEngine()
+
+
+def platform_fee_for(fare: float) -> float:
+    """Flat platform fee for a fare. The only place the fee tiers are applied."""
+    return pricing_engine._get_platform_fee(fare)
+
+
+def fare_tier_description(fare: float) -> str:
+    """Human-readable tier for a fare, built from the configured thresholds."""
+    cfg = pricing_engine.config
+    if fare <= cfg.TIER_1_MAX:
+        return f"fare <= ${cfg.TIER_1_MAX:.0f}"
+    if fare <= cfg.TIER_2_MAX:
+        return f"fare ${cfg.TIER_1_MAX:.0f}-${cfg.TIER_2_MAX:.0f}"
+    return f"fare > ${cfg.TIER_2_MAX:.0f}"
 
 
 def get_fare_estimate(

@@ -7,6 +7,7 @@ handling food delivery and rideshare coordination.
 Version: 1.0.1
 """
 
+from pricing_config import pricing_engine, platform_fee_for, fare_tier_description
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect, Header, Body, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -409,7 +410,7 @@ _PUBLIC_EXACT_PATHS = {
     "/api/legal/regulatory",
 
     # App config
-    "/api/config",
+    "/api/config", "/api/config/rideshare",
 
     # Auth — customer
     "/register",
@@ -794,12 +795,7 @@ async def backfill_payouts(request: Request, db: Session = Depends(get_db)):
     updated = 0
     for r in rides:
         price = float(r.final_price or r.suggested_price or 0)
-        if price <= 35:
-            correct_fee = 1.00
-        elif price <= 70:
-            correct_fee = 2.00
-        else:
-            correct_fee = 3.00
+        correct_fee = platform_fee_for(price)
         correct_payout = round(price - correct_fee, 2)
 
         old_fee = float(r.platform_fee) if r.platform_fee is not None else None
@@ -3917,12 +3913,7 @@ def _check_driver_proximity_to_delivery(driver_id: int, driver_lat: float, drive
 
 def get_fare_tier_description(fare: float) -> str:
     """Get human-readable tier description for a fare amount."""
-    if fare <= 35.00:
-        return "fare <= $35"
-    elif fare <= 70.00:
-        return "fare $35-$70"
-    else:
-        return "fare > $70"
+    return fare_tier_description(fare)
 
 
 @app.post("/api/erp/rides/estimate-fare")
@@ -5467,12 +5458,8 @@ async def complete_ride_and_pay_driver(
     # Fare tiers: ≤$35 → $1, $35-$70 → $2, >$70 → $3
     if ride.platform_fee is not None:
         platform_fee = float(ride.platform_fee)
-    elif ride_fare <= 35:
-        platform_fee = 1.0
-    elif ride_fare <= 70:
-        platform_fee = 2.0
     else:
-        platform_fee = 3.0
+        platform_fee = platform_fee_for(ride_fare)
 
     tip = float(ride.tip_amount or 0)
 
@@ -8745,9 +8732,14 @@ def get_platform_revenue(
         RideRequest.status == RideRequestStatus.COMPLETED,
         RideRequest.created_at >= start_date
     ).all()
-    tier1 = sum(float(r.platform_fee or 0) for r in completed_rides if float(r.final_price or r.suggested_price or 0) <= 35)
-    tier2 = sum(float(r.platform_fee or 0) for r in completed_rides if 35 < float(r.final_price or r.suggested_price or 0) <= 70)
-    tier3 = sum(float(r.platform_fee or 0) for r in completed_rides if float(r.final_price or r.suggested_price or 0) > 70)
+    tier_cfg = pricing_engine.config
+
+    def _ride_price(r):
+        return float(r.final_price or r.suggested_price or 0)
+
+    tier1 = sum(float(r.platform_fee or 0) for r in completed_rides if _ride_price(r) <= tier_cfg.TIER_1_MAX)
+    tier2 = sum(float(r.platform_fee or 0) for r in completed_rides if tier_cfg.TIER_1_MAX < _ride_price(r) <= tier_cfg.TIER_2_MAX)
+    tier3 = sum(float(r.platform_fee or 0) for r in completed_rides if _ride_price(r) > tier_cfg.TIER_2_MAX)
     rideshare_total = tier1 + tier2 + tier3
 
     total_rides = len(completed_rides)
@@ -9531,12 +9523,7 @@ async def negotiate_ride_ios_alias(
     is_driver_offer = request.get("is_driver_offer", True)
 
     # Calculate platform fee based on fare (tiered: $1/$2/$3)
-    if proposed_fare <= 35:
-        platform_fee = 1.0
-    elif proposed_fare <= 70:
-        platform_fee = 2.0
-    else:
-        platform_fee = 3.0
+    platform_fee = platform_fee_for(proposed_fare)
 
     # Update ride with the offer (use customer_preferred_price for both since no driver_offer field)
     if not is_driver_offer:
@@ -9715,6 +9702,10 @@ app.include_router(realtime_router, dependencies=[Depends(require_any_auth)])
 # Include Ride Bidding routes (Matchmaking platform)
 from bid_routes import router as bid_router
 app.include_router(bid_router)
+
+# Public rideshare config (fees, bidding presets, dispatch, support) read by every app
+from rideshare_config import router as rideshare_config_router
+app.include_router(rideshare_config_router)
 
 # Include Rideshare Payment routes (Stripe integration for drivers)
 from rideshare_payments import router as rideshare_payments_router, get_tier_fee

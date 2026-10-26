@@ -28,7 +28,7 @@ from websocket_server import (
     broadcast_bid_update, broadcast_bid_withdrawn, broadcast_counter_offer_response,
     broadcast_ride_status
 )
-from pricing_config import pricing_engine, get_fare_estimate, get_bid_label
+from pricing_config import pricing_engine, get_fare_estimate, get_bid_label, platform_fee_for
 from email_service import (
     send_ride_request_confirmation_email,
     send_ride_bid_received_email,
@@ -114,7 +114,7 @@ class CreateRideRequestInput(BaseModel):
     special_requests: Optional[str] = None
     accessibility_requested: bool = False  # TNC-12: Passenger needs wheelchair-accessible or disability-accessible vehicle
     accessibility_notes: Optional[str] = None  # TNC-12: Specific accessibility needs
-    bidding_duration_minutes: int = 5  # How long to accept bids
+    bidding_duration_minutes: int = pricing_engine.config.BIDDING_WINDOW_MINUTES  # How long to accept bids
 
     # A1/A6/A7: Input validation for API security
     @field_validator('pickup_latitude', 'dropoff_latitude')
@@ -2687,14 +2687,9 @@ async def complete_ride(request_id: int, request: Request, auth_driver: Driver =
 
     # Calculate and persist platform fee + driver payout (fare-tiered Model A)
     final_price = float(ride_request.final_price or ride_request.suggested_price or 0)
-    if final_price <= 35:
-        platform_fee = 1.00
-    elif final_price <= 70:
-        platform_fee = 2.00
-    else:
-        platform_fee = 3.00
+    platform_fee = platform_fee_for(final_price)
     ride_request.platform_fee = platform_fee
-    driver_a4a_share = 0.05  # TNC-13: driver's share of Access for All fee
+    driver_a4a_share = pricing_engine.config.ACCESS_FOR_ALL_DRIVER_SHARE  # TNC-13
     ride_request.driver_payout = round(final_price - platform_fee - driver_a4a_share, 2)
 
     # Prop 22: compute per-ride floor data (non-blocking — failure must not block ride completion)
