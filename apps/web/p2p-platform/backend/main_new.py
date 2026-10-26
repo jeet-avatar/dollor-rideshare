@@ -2554,6 +2554,28 @@ class DriverLoginResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# Accounts shared by app-store reviewers and the QA team: several people must be able to use them at once.
+from ride_dispatch import SHARED_DEMO_DRIVER_EMAILS as _SHARED_DEMO_DRIVER_EMAILS
+
+
+def _enforce_single_driver_session(email: str, driver_pk: int, access_token: str) -> None:
+    """One active session per driver: a new login revokes the previous device's token (like Uber).
+
+    Shared demo accounts are exempt so reviewers and testers do not sign each other out.
+    """
+    if (email or "").lower() in _SHARED_DEMO_DRIVER_EMAILS:
+        return
+    try:
+        claims = jwt.get_unverified_claims(access_token)
+        jti, exp = claims.get("jti"), claims.get("exp")
+        if jti and exp:
+            from cache import rotate_active_session
+            ttl = max(int(exp - datetime.utcnow().timestamp()), 60)
+            rotate_active_session(f"driver:{driver_pk}", jti, ttl)
+    except Exception as e:
+        logger.warning(f"single-session enforcement skipped: {e}")
+
+
 @app.post("/api/auth/driver/login")
 def driver_login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Driver login - authenticates driver and returns token"""
@@ -2622,6 +2644,7 @@ def driver_login(request: Request, form_data: OAuth2PasswordRequestForm = Depend
             detail="Driver account is suspended. Please contact support@dollor.ai"
         )
     access_token = create_access_token(data={"sub": user.email, "role": "driver", "driver_id": driver.id})
+    _enforce_single_driver_session(user.email, driver.id, access_token)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -3087,6 +3110,19 @@ def set_driver_online(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Background check not passed. You cannot go online until your background check clears."
+            )
+
+    # A driver cannot go offline in the middle of a ride (riders would be stranded with an unreachable driver).
+    if not online_status:
+        from models import RideRequest, RideRequestStatus
+        in_ride = db.query(RideRequest.id).filter(
+            RideRequest.matched_driver_id == driver.id,
+            RideRequest.status.in_([RideRequestStatus.MATCHED, RideRequestStatus.IN_PROGRESS]),
+        ).first()
+        if in_ride:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Finish or cancel your current ride before going offline."
             )
 
     driver.is_online = online_status
@@ -6354,6 +6390,17 @@ async def get_customer_dashboard(customer: Customer = Depends(require_customer),
     }
 
 
+def _ride_history_total(ride) -> float:
+    """What the rider actually paid for a completed ride, same arithmetic as the receipt
+    (fare + connection fee + CPUC Access-for-All customer share + tip). Other statuses show the fare only."""
+    fare = float(ride.final_price or ride.suggested_price or 0)
+    status = ride.status.value if getattr(ride, "status", None) else ""
+    if status != "completed":
+        return round(fare, 2)
+    cpuc_customer_share = float(getattr(ride, "access_for_all_fee", None) or 0.10) / 2
+    return round(fare + float(ride.platform_fee or 0) + cpuc_customer_share + float(ride.tip_amount or 0), 2)
+
+
 @app.get("/api/customer/rides/history")
 async def get_customer_ride_history(
     limit: int = 20,
@@ -6391,6 +6438,7 @@ async def get_customer_ride_history(
             "fare": float(ride.final_price or ride.suggested_price or 0),
             "platform_fee": float(ride.platform_fee or 0),
             "tip": float(ride.tip_amount or 0),
+            "total": _ride_history_total(ride),
             "driver_name": driver_name,
             "status": ride.status.value if ride.status else "unknown",
             "rating": ride.customer_rating,
@@ -9338,7 +9386,6 @@ app.include_router(order_flow_router)
 # driver/customer apps to call /erp/* ride paths without the /api prefix.
 
 @app.get("/erp/rides/available")
-@app.get("/api/erp/rides/available")
 async def get_available_rides_ios_alias(
     request: Request,
     driver_lat: Optional[float] = None,
@@ -9364,7 +9411,6 @@ async def get_available_rides_ios_alias(
     )
 
 @app.post("/erp/rides/{ride_id}/accept")
-@app.post("/api/erp/rides/{ride_id}/accept")
 async def accept_ride_ios_alias(ride_id: int, request: AssignDriverRequest, _auth: dict = Depends(require_any_auth), db: Session = Depends(get_db)):
     """Alias for iOS Driver app - accept ride (legacy - actual flow uses bid system).
     This sets status to MATCHED directly for backward compatibility.
@@ -9407,7 +9453,6 @@ async def accept_ride_ios_alias(ride_id: int, request: AssignDriverRequest, _aut
     return {"success": True, "message": "Ride accepted", "ride_id": ride.id, "status": "matched"}
 
 @app.post("/erp/rides/{ride_id}/picked-up")
-@app.post("/api/erp/rides/{ride_id}/picked-up")
 async def ride_picked_up_ios_alias(ride_id: int, _auth: dict = Depends(require_any_auth), db: Session = Depends(get_db)):
     """Alias for iOS Driver app - mark ride picked up (transitions to IN_PROGRESS).
     iOS calls: POST /api/erp/rides/{rideId}/picked-up
@@ -10260,7 +10305,6 @@ def get_driver_bids(
     }
 
 
-@app.get("/api/rides/available")
 def get_available_ride_requests(
     driver_id: Optional[int] = None,
     latitude: Optional[float] = None,
@@ -11153,30 +11197,6 @@ async def proxy_create_refund(http_request: Request, request: dict, _auth: dict 
     if result:
         return result
     return {"error": "Payment service unavailable", "fallback": True}
-
-
-@app.put("/api/erp/drivers/{driver_id}/status")
-async def proxy_update_driver_status(driver_id: int, request: dict, driver: Driver = Depends(require_driver)):
-    """Proxy to driver-service: Update driver status (kept: iOS calls this path)"""
-    # SECURITY: Verify the authenticated driver owns this account
-    if driver.id != driver_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    result = await proxy_request(DRIVER_SERVICE_URL, f"/erp/drivers/{driver_id}/status", method="PATCH", json_data=request)
-    if result:
-        return result
-    return {"error": "Driver service unavailable", "fallback": True}
-
-
-@app.put("/api/erp/drivers/{driver_id}/location")
-async def proxy_update_driver_location(driver_id: int, request: dict, driver: Driver = Depends(require_driver)):
-    """Proxy to driver-service: Update driver location (kept: iOS calls this path)"""
-    # SECURITY: Verify the authenticated driver owns this account
-    if driver.id != driver_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    result = await proxy_request(DRIVER_SERVICE_URL, "/api/driver/location", method="PUT", json_data=request)
-    if result:
-        return result
-    return {"error": "Driver service unavailable", "fallback": True}
 
 
 # ==================== FCM TOKEN REGISTRATION ENDPOINTS ====================
@@ -13658,7 +13678,6 @@ app.add_api_route("/customers/{customer_id}/delete", delete_customer_account, me
 app.add_api_route("/customer/email/send-verification", send_verification_email, methods=["POST"])
 app.add_api_route("/customer/email/verify", verify_customer_email, methods=["POST"])
 app.add_api_route("/customer/email/status", get_email_verification_status, methods=["GET"])
-app.add_api_route("/api/erp/rides/estimate", estimate_fare_frontend, methods=["POST"])
 app.add_api_route("/api/erp/drivers/{driver_id}", get_driver_profile_by_id, methods=["GET"])
 app.add_api_route("/api/drivers/{driver_id}", update_driver_profile_by_id, methods=["PUT"])
 app.add_api_route("/erp/drivers/{driver_id}", update_driver_profile_by_id, methods=["PUT"])
@@ -13678,7 +13697,8 @@ app.add_api_route("/customer/apple-auth", customer_apple_auth, methods=["POST"])
 # - POST /bid/{bid_id}/accept-counter -> accept_counter_offer
 # - POST /bid/{bid_id}/reject-counter -> reject_counter_offer
 app.add_api_route("/driver/bids", get_driver_bids, methods=["GET"])
-app.add_api_route("/rides/available", get_available_ride_requests, methods=["GET"])
+from bid_routes import get_available_ride_requests as _live_available_rides
+app.add_api_route("/rides/available", _live_available_rides, methods=["GET"])  # same handler as /api/rides/available
 app.add_api_route("/p2p/ride-requests/{ride_request_id}/chat", get_ride_request_chat, methods=["GET"])
 app.add_api_route("/p2p/ride-requests/{ride_request_id}/chat", send_ride_request_chat, methods=["POST"])
 app.add_api_route("/chat/ride/{ride_id}", get_ride_chat_messages_alias, methods=["GET"])

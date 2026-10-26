@@ -45,6 +45,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _bg_email(name: str, *args, **kwargs):
+    """Send a ride email without making the API caller wait on SMTP.
+
+    Runs the (blocking) sender in a worker thread so request handlers return immediately and the event loop is
+    not blocked. The sender is looked up by name at call time so tests can still patch `bid_routes.<name>`.
+    Without a running event loop (scripts, sync callers) it runs inline as before.
+    """
+    fn = globals()[name]
+
+    def _run():
+        try:
+            fn(*args, **kwargs)
+        except Exception as exc:  # emails must never break a ride
+            logger.error(f"Background email {name} failed: {exc}")
+
+    try:
+        asyncio.get_running_loop().run_in_executor(None, _run)
+    except RuntimeError:
+        _run()
+
 # Public endpoint rate limiter — prevents scrapers from hammering the fare estimate endpoint
 _public_estimate_rate_limiter = RateLimiter(max_requests=20, window_seconds=60)  # 20/min per IP
 
@@ -67,6 +88,8 @@ def _notify_customer(db: Session, customer_id: int, title: str, message: str,
     except Exception as e:
         logger.warning(f"Failed to create in-app notification: {e}")
 
+
+from ride_dispatch import SHARED_DEMO_DRIVER_EMAILS, is_driver_notified
 
 router = APIRouter(prefix="/api/rides", tags=["Ride Bidding"])
 
@@ -576,7 +599,7 @@ async def create_ride_request(data: CreateRideRequestInput, request: Request, cu
 
     # Send confirmation email to customer
     try:
-        send_ride_request_confirmation_email(
+        _bg_email("send_ride_request_confirmation_email",
             to_email=customer.email,
             customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
             request_id=ride_request.request_id,
@@ -975,7 +998,7 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
         try:
             customer = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
             if customer and customer.email and driver:
-                send_ride_matched_email(
+                _bg_email("send_ride_matched_email",
                     to_email=customer.email,
                     customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                     request_id=ride_request.request_id,
@@ -1296,7 +1319,7 @@ async def cancel_ride_request(request_id: int, request: Request, customer: Custo
     try:
         customer = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
         if customer and customer.email:
-            send_ride_cancelled_email(
+            _bg_email("send_ride_cancelled_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
@@ -1375,8 +1398,35 @@ async def get_available_ride_requests(
         for eb in existing_bids:
             driver_existing_bids[eb.ride_request_id] = eb
 
+    # Dispatch policy (ride_dispatch.py): offer each request to the nearest drivers around the pickup,
+    # widening the search if nobody bids. Only applies when the app sent a live location; without one
+    # (e.g. no GPS fix) every open request stays visible rather than hiding rides from the driver.
+    dispatch_enabled = (
+        latitude is not None and longitude is not None
+        and (driver.email or "").lower() not in SHARED_DEMO_DRIVER_EMAILS
+    )
+    online_points = []
+    if dispatch_enabled:
+        online_points = [
+            (d.id, d.current_latitude, d.current_longitude)
+            for d in db.query(Driver).filter(
+                Driver.is_online == True,  # noqa: E712
+                Driver.current_latitude.isnot(None),
+                Driver.current_longitude.isnot(None),
+                Driver.id != driver.id,
+            ).all()
+        ]
+        online_points.append((driver.id, latitude, longitude))
+
     nearby_requests = []
     for request in open_requests:
+        if dispatch_enabled:
+            age_seconds = (now - (request.created_at or now)).total_seconds()
+            if not is_driver_notified(
+                driver.id, request.pickup_latitude, request.pickup_longitude,
+                online_points, age_seconds, has_bids=bool(getattr(request, "bids", None)),
+            ):
+                continue
         # Calculate distance if driver location provided
         distance = None
         if latitude is not None and longitude is not None and request.pickup_latitude and request.pickup_longitude:
@@ -1636,7 +1686,7 @@ async def submit_bid(request_id: int, data: SubmitBidInput, request: Request, dr
                 RideBid.status == BidStatus.PENDING
             ).count()
 
-            send_ride_bid_received_email(
+            _bg_email("send_ride_bid_received_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
@@ -1940,7 +1990,7 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
         customer = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
         driver = db.query(Driver).filter(Driver.id == bid.driver_id).first()
         if customer and customer.email and driver:
-            send_ride_matched_email(
+            _bg_email("send_ride_matched_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
@@ -2540,7 +2590,7 @@ async def start_ride(request_id: int, request: Request, auth_driver: Driver = De
         customer = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
         driver = db.query(Driver).filter(Driver.id == ride_request.matched_driver_id).first()
         if customer and customer.email and driver:
-            send_ride_started_email(
+            _bg_email("send_ride_started_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
@@ -2809,7 +2859,7 @@ async def complete_ride(request_id: int, request: Request, auth_driver: Driver =
             # Convert km to miles for receipt
             distance_miles = (ride_request.estimated_distance_km or 0) * 0.621371
 
-            send_ride_completed_email(
+            _bg_email("send_ride_completed_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,

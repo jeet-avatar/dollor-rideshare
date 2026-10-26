@@ -11,6 +11,9 @@ Plus edge-case tests: low bid rejection, max counter limit, active ride guard,
 cancel with bid expiry, expired bidding window, and tiered pricing verification.
 """
 
+import sys
+from contextlib import contextmanager
+
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
@@ -63,10 +66,30 @@ def driver_headers(test_driver):
     return {"Authorization": f"Bearer {token}"}
 
 
+@contextmanager
+def patched_stripe():
+    """bid_routes imports stripe inside its handlers, so swap the module itself for a mock."""
+    fake = MagicMock()
+    with patch.dict(sys.modules, {"stripe": fake}):
+        yield fake
+
+
+@pytest.fixture(autouse=True)
+def ready_driver(db_session, test_driver):
+    """Drivers only see rides when online, and only verified drivers may bid (bid_routes KYC gate)."""
+    test_driver.is_online = True
+    test_driver.verification_status = "verified"
+    test_driver.documents_verified = True
+    db_session.commit()
+    return test_driver
+
+
 @pytest.fixture
 def mock_stripe():
     with patch("rideshare_payments.stripe.PaymentIntent.create") as mock_pi, \
-         patch("rideshare_payments.stripe.Transfer.create") as mock_transfer:
+         patch("rideshare_payments.stripe.Transfer.create") as mock_transfer, \
+         patch("rideshare_payments.stripe.PaymentIntent.modify"), \
+         patch("rideshare_payments.stripe.PaymentIntent.capture"):
         mock_pi.return_value = MagicMock(
             id="pi_test_123", client_secret="pi_test_secret"
         )
@@ -106,7 +129,6 @@ class TestRideshareE2EFlow:
     ):
         customer = test_customer
         driver = test_driver
-
         # ── Step 1: Fare Estimate ────────────────────────────────────────
         resp = client.post("/api/rides/estimate", json={
             "pickup_latitude": PICKUP_LAT,
@@ -311,14 +333,14 @@ class TestRideshareE2EFlow:
         assert data["success"] is True
         assert data["fare"] == 22.00
         assert data["tier_fee"] == 1.00          # fare ≤ $35 → $1
-        assert data["customer_pays"] == 23.00     # 22 + 1
-        assert data["driver_receives"] == 21.00   # 22 - 1
+        assert data["customer_pays"] == 23.05     # 22 + 1 tier fee + 0.05 CPUC Access for All (customer share)
+        assert data["driver_receives"] == 20.95   # 22 - 1 tier fee - 0.05 CPUC Access for All (driver share)
         assert data["platform_earns"] == 2.00     # 1 × 2
 
         # Verify Stripe mock called with 2300 cents
         mock_stripe["payment_intent"].assert_called_once()
         call_kwargs = mock_stripe["payment_intent"].call_args
-        assert call_kwargs[1]["amount"] == 2300  # $23.00 in cents
+        assert call_kwargs[1]["amount"] == 2305  # $23.05 in cents
 
         # ── Step 16: Customer Rates Driver ───────────────────────────────
         resp = client.post(
@@ -460,7 +482,6 @@ class TestRideshareEdgeCases:
             email=f"bob.{datetime.now().timestamp()}@test.com",
             phone="+14155550200",
             password_hash=get_password_hash("Pass123!"),
-            is_active=True,
         )
         db_session.add(customer2)
         db_session.commit()
@@ -612,8 +633,9 @@ class TestRideshareEdgeCases:
             assert data["tier_fee"] == expected_fee, (
                 f"Fare ${fare}: expected tier_fee ${expected_fee}, got ${data['tier_fee']}"
             )
-            assert data["customer_pays"] == fare + expected_fee
-            assert data["driver_receives"] == fare - expected_fee
+            cpuc_share = 0.05  # CPUC Access for All: $0.05 from the rider and $0.05 from the driver
+            assert data["customer_pays"] == round(fare + expected_fee + cpuc_share, 2)
+            assert data["driver_receives"] == round(fare - expected_fee - cpuc_share, 2)
             assert data["platform_earns"] == expected_fee * 2
 
     # ride_id verified: iOS passes Int (P2PAPIService.swift:5471 rideId: Int interpolated into URL)
@@ -673,7 +695,6 @@ class TestRideshareEdgeCases:
             first_name="WAV",
             last_name="Driver",
             phone="+14155550999",
-            is_active=True,
             is_online=True,
             status=DriverStatus.ACTIVE,
             accessibility_capable=True,
@@ -736,7 +757,7 @@ class TestRideshareEdgeCases:
         bid_id = resp.json()["bid"]["id"]
 
         # Customer accepts bid — with Stripe failing
-        with patch("bid_routes.stripe") as mock_stripe_module:
+        with patched_stripe() as mock_stripe_module:
             mock_stripe_module.PaymentIntent.create.side_effect = Exception(
                 "StripeError: Your card was declined"
             )
@@ -799,7 +820,7 @@ class TestRideshareEdgeCases:
         bid_id = resp.json()["bid"]["id"]
 
         # Customer accepts bid (mock Stripe to avoid network calls)
-        with patch("bid_routes.stripe") as mock_stripe_module:
+        with patched_stripe() as mock_stripe_module:
             mock_stripe_module.PaymentIntent.create.return_value = MagicMock(id="pi_test_cancel")
             mock_stripe_module.Customer.list.return_value = MagicMock(data=[])
             mock_stripe_module.Customer.create.return_value = MagicMock(id="cus_test_cancel")
@@ -823,7 +844,6 @@ class TestRideshareEdgeCases:
             first_name="Other",
             last_name="Driver",
             phone="+14155550888",
-            is_active=True,
             is_online=True,
             status=DriverStatus.ACTIVE,
         )
@@ -856,7 +876,7 @@ class TestRideshareEdgeCases:
         )
 
         # Matched driver cancels — ride reverts to OPEN, bid to WITHDRAWN
-        with patch("bid_routes.stripe") as mock_stripe_module:
+        with patched_stripe() as mock_stripe_module:
             mock_stripe_module.PaymentIntent.cancel.return_value = MagicMock()
             resp = client.post(
                 f"/api/rides/request/{ride_id}/driver-cancel",

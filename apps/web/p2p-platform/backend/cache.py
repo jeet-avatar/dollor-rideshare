@@ -316,6 +316,31 @@ def blacklist_token(jti: str, ttl_seconds: int) -> None:
     _revoked_tokens.add(jti)
 
 
+_active_sessions: dict = {}
+
+
+def rotate_active_session(session_key: str, new_jti: str, ttl_seconds: int) -> None:
+    """Record `new_jti` as the only live session for `session_key` (e.g. "driver:48").
+
+    The previously active token, if any, is revoked, so a second login signs the first device out.
+    """
+    redis_key = f"session:{session_key}"
+    previous = None
+    if redis_client:
+        try:
+            raw = redis_client.get(redis_key)
+            previous = raw.decode() if isinstance(raw, bytes) else raw
+            redis_client.setex(redis_key, ttl_seconds, new_jti)
+        except Exception:
+            previous = _active_sessions.get(session_key)
+            _active_sessions[session_key] = new_jti
+    else:
+        previous = _active_sessions.get(session_key)
+        _active_sessions[session_key] = new_jti
+    if previous and previous != new_jti:
+        blacklist_token(previous, ttl_seconds)
+
+
 def is_token_blacklisted(jti: str) -> bool:
     """Return True if token has been revoked."""
     key = f"revoked:{jti}"
