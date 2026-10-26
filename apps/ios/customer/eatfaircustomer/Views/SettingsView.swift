@@ -49,7 +49,7 @@ struct SettingsView: View {
                                 isOn: $emailNotifications
                             )
                         }
-                        .background(Lx.Palette.onAccent)
+                        .background(Lx.Palette.surface)
                         .cornerRadius(Lx.Radius.button)
                         .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
@@ -89,7 +89,7 @@ struct SettingsView: View {
                                 .padding()
                             }
                         }
-                        .background(Lx.Palette.onAccent)
+                        .background(Lx.Palette.surface)
                         .cornerRadius(Lx.Radius.button)
                         .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
@@ -113,7 +113,7 @@ struct SettingsView: View {
                                 SettingsOptionRow(icon: "doc.text.fill", title: "Terms & Conditions")
                             }
                         }
-                        .background(Lx.Palette.onAccent)
+                        .background(Lx.Palette.surface)
                         .cornerRadius(Lx.Radius.button)
                         .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
@@ -137,7 +137,7 @@ struct SettingsView: View {
                                 SettingsOptionRow(icon: "questionmark.circle.fill", title: "Help Center")
                             }
                         }
-                        .background(Lx.Palette.onAccent)
+                        .background(Lx.Palette.surface)
                         .cornerRadius(Lx.Radius.button)
                         .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
@@ -171,7 +171,7 @@ struct SettingsView: View {
                             }
                             .padding()
                         }
-                        .background(Lx.Palette.onAccent)
+                        .background(Lx.Palette.surface)
                         .cornerRadius(Lx.Radius.button)
                         .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }

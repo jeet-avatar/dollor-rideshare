@@ -26,7 +26,7 @@ platform :ios do
     setup_api_key
     match(
       type: "appstore",
-      app_identifier: ["com.dollorai.customer", "com.dollorai.restaurant", "com.dollorai.delivery"],
+      app_identifier: ["com.dollorai.customer", "com.dollorai.delivery"],
       readonly: is_ci
     )
   end
@@ -68,44 +68,7 @@ platform :ios do
     )
   end
 
-  # ==================== RESTAURANT APP ====================
-
-  desc "Build Restaurant app for TestFlight"
-  lane :restaurant_testflight do
-    setup_api_key
-    match(
-      type: "appstore",
-      app_identifier: "com.dollorai.restaurant",
-      readonly: is_ci
-    )
-
-    # Update code signing for main target only
-    update_code_signing_settings(
-      path: "restaurant/eatffairrestaurant.xcodeproj",
-      use_automatic_signing: false,
-      team_id: "PRKZ4UVCD7",
-      code_sign_identity: "Apple Distribution",
-      profile_name: "match AppStore com.dollorai.restaurant",
-      targets: ["eatffairrestaurant"]
-    )
-
-    build_app(
-      workspace: "restaurant/eatffairrestaurant.xcworkspace",
-      scheme: "eatffairrestaurant",
-      configuration: "Release",
-      export_method: "app-store",
-      output_directory: "build",
-      output_name: "DollorRestaurant.ipa",
-      clean: true
-    )
-
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true,
-      ipa: "build/DollorRestaurant.ipa"
-    )
-  end
-
-  # ==================== DRIVER/DELIVERY APP ====================
+  # ==================== DRIVER APP ====================
 
   desc "Build Driver app for TestFlight"
   lane :driver_testflight do
@@ -147,7 +110,6 @@ platform :ios do
   desc "Deploy all apps to TestFlight"
   lane :all_testflight do
     customer_testflight
-    restaurant_testflight
     driver_testflight
   end
 
@@ -203,19 +165,6 @@ platform :ios do
     )
   end
 
-  desc "Build Restaurant app for TestFlight (local signing)"
-  lane :restaurant_testflight_local do
-    build_and_upload_local(
-      project: "restaurant/eatffairrestaurant.xcodeproj",
-      workspace: "restaurant/eatffairrestaurant.xcworkspace",
-      scheme: "eatffairrestaurant",
-      target: "eatffairrestaurant",
-      bundle_id: "com.dollorai.restaurant",
-      profile_name: "Dollor Restaurant AppStore",
-      ipa_name: "DollorRestaurant.ipa"
-    )
-  end
-
   desc "Build Driver app for TestFlight (local signing)"
   lane :driver_testflight_local do
     build_and_upload_local(
@@ -232,7 +181,6 @@ platform :ios do
   desc "Deploy all apps to TestFlight (local signing)"
   lane :all_testflight_local do
     customer_testflight_local
-    restaurant_testflight_local
     driver_testflight_local
   end
 
@@ -247,6 +195,8 @@ platform :ios do
       skip_binary_upload: true,
       skip_screenshots: true,
       skip_metadata: false,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false,
       force: true,
       submission_information: {
         export_compliance_uses_encryption: false,
@@ -265,6 +215,8 @@ platform :ios do
       skip_binary_upload: true,
       skip_screenshots: true,
       skip_metadata: false,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false,
       force: true,
       submission_information: {
         export_compliance_uses_encryption: false,
@@ -292,6 +244,8 @@ platform :ios do
       skip_screenshots: true,
       submit_for_review: true,
       automatic_release: false,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false,
       force: true,
       submission_information: {
         export_compliance_uses_encryption: false,
@@ -311,6 +265,8 @@ platform :ios do
       skip_screenshots: true,
       submit_for_review: true,
       automatic_release: false,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false,
       force: true,
       submission_information: {
         export_compliance_uses_encryption: false,

@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-gem "fastlane", "~> 2.219"
+gem "fastlane", ">= 2.235.0"
 gem "cocoapods", "~> 1.14"
 
 # Ruby 4.0 compatibility - gems removed from stdlib

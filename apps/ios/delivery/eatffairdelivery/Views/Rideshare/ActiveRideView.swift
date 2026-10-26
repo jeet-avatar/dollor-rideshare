@@ -81,12 +81,14 @@ struct ActiveRideView: View {
         bid.ride_request
     }
 
+    /// The settled fare from the server once the ride is completed; before that, the bid's current price.
     private var finalPrice: Double {
-        bid.customer_counter_price ?? bid.proposed_price
+        viewModel.completionData?.final_price ?? bid.customer_counter_price ?? bid.proposed_price
     }
 
     private var driverEarnings: Double {
-        max(0, finalPrice - AppConfig.shared.calculateRidesharePlatformFee(fareAmount: finalPrice))
+        viewModel.completionData?.driver_payout
+            ?? max(0, finalPrice - AppConfig.shared.calculateRidesharePlatformFee(fareAmount: finalPrice))
     }
 
     private var hasRiderPhone: Bool {
