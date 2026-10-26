@@ -7,6 +7,7 @@ handling food delivery and rideshare coordination.
 Version: 1.0.1
 """
 
+from pricing_config import pricing_engine, platform_fee_for, fare_tier_description
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect, Header, Body, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -409,7 +410,7 @@ _PUBLIC_EXACT_PATHS = {
     "/api/legal/regulatory",
 
     # App config
-    "/api/config",
+    "/api/config", "/api/config/rideshare",
 
     # Auth — customer
     "/register",
@@ -794,12 +795,7 @@ async def backfill_payouts(request: Request, db: Session = Depends(get_db)):
     updated = 0
     for r in rides:
         price = float(r.final_price or r.suggested_price or 0)
-        if price <= 35:
-            correct_fee = 1.00
-        elif price <= 70:
-            correct_fee = 2.00
-        else:
-            correct_fee = 3.00
+        correct_fee = platform_fee_for(price)
         correct_payout = round(price - correct_fee, 2)
 
         old_fee = float(r.platform_fee) if r.platform_fee is not None else None
@@ -2554,6 +2550,28 @@ class DriverLoginResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# Accounts shared by app-store reviewers and the QA team: several people must be able to use them at once.
+from ride_dispatch import SHARED_DEMO_DRIVER_EMAILS as _SHARED_DEMO_DRIVER_EMAILS
+
+
+def _enforce_single_driver_session(email: str, driver_pk: int, access_token: str) -> None:
+    """One active session per driver: a new login revokes the previous device's token (like Uber).
+
+    Shared demo accounts are exempt so reviewers and testers do not sign each other out.
+    """
+    if (email or "").lower() in _SHARED_DEMO_DRIVER_EMAILS:
+        return
+    try:
+        claims = jwt.get_unverified_claims(access_token)
+        jti, exp = claims.get("jti"), claims.get("exp")
+        if jti and exp:
+            from cache import rotate_active_session
+            ttl = max(int(exp - datetime.utcnow().timestamp()), 60)
+            rotate_active_session(f"driver:{driver_pk}", jti, ttl)
+    except Exception as e:
+        logger.warning(f"single-session enforcement skipped: {e}")
+
+
 @app.post("/api/auth/driver/login")
 def driver_login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Driver login - authenticates driver and returns token"""
@@ -2622,6 +2640,7 @@ def driver_login(request: Request, form_data: OAuth2PasswordRequestForm = Depend
             detail="Driver account is suspended. Please contact support@dollor.ai"
         )
     access_token = create_access_token(data={"sub": user.email, "role": "driver", "driver_id": driver.id})
+    _enforce_single_driver_session(user.email, driver.id, access_token)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -3087,6 +3106,19 @@ def set_driver_online(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Background check not passed. You cannot go online until your background check clears."
+            )
+
+    # A driver cannot go offline in the middle of a ride (riders would be stranded with an unreachable driver).
+    if not online_status:
+        from models import RideRequest, RideRequestStatus
+        in_ride = db.query(RideRequest.id).filter(
+            RideRequest.matched_driver_id == driver.id,
+            RideRequest.status.in_([RideRequestStatus.MATCHED, RideRequestStatus.IN_PROGRESS]),
+        ).first()
+        if in_ride:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Finish or cancel your current ride before going offline."
             )
 
     driver.is_online = online_status
@@ -3881,12 +3913,7 @@ def _check_driver_proximity_to_delivery(driver_id: int, driver_lat: float, drive
 
 def get_fare_tier_description(fare: float) -> str:
     """Get human-readable tier description for a fare amount."""
-    if fare <= 35.00:
-        return "fare <= $35"
-    elif fare <= 70.00:
-        return "fare $35-$70"
-    else:
-        return "fare > $70"
+    return fare_tier_description(fare)
 
 
 @app.post("/api/erp/rides/estimate-fare")
@@ -5431,12 +5458,8 @@ async def complete_ride_and_pay_driver(
     # Fare tiers: ≤$35 → $1, $35-$70 → $2, >$70 → $3
     if ride.platform_fee is not None:
         platform_fee = float(ride.platform_fee)
-    elif ride_fare <= 35:
-        platform_fee = 1.0
-    elif ride_fare <= 70:
-        platform_fee = 2.0
     else:
-        platform_fee = 3.0
+        platform_fee = platform_fee_for(ride_fare)
 
     tip = float(ride.tip_amount or 0)
 
@@ -6354,6 +6377,17 @@ async def get_customer_dashboard(customer: Customer = Depends(require_customer),
     }
 
 
+def _ride_history_total(ride) -> float:
+    """What the rider actually paid for a completed ride, same arithmetic as the receipt
+    (fare + connection fee + CPUC Access-for-All customer share + tip). Other statuses show the fare only."""
+    fare = float(ride.final_price or ride.suggested_price or 0)
+    status = ride.status.value if getattr(ride, "status", None) else ""
+    if status != "completed":
+        return round(fare, 2)
+    cpuc_customer_share = float(getattr(ride, "access_for_all_fee", None) or 0.10) / 2
+    return round(fare + float(ride.platform_fee or 0) + cpuc_customer_share + float(ride.tip_amount or 0), 2)
+
+
 @app.get("/api/customer/rides/history")
 async def get_customer_ride_history(
     limit: int = 20,
@@ -6391,6 +6425,7 @@ async def get_customer_ride_history(
             "fare": float(ride.final_price or ride.suggested_price or 0),
             "platform_fee": float(ride.platform_fee or 0),
             "tip": float(ride.tip_amount or 0),
+            "total": _ride_history_total(ride),
             "driver_name": driver_name,
             "status": ride.status.value if ride.status else "unknown",
             "rating": ride.customer_rating,
@@ -6692,6 +6727,30 @@ def get_driver_dashboard_v5(
         }
 
 
+def _driver_period_total(db: Session, driver_id: int, start_date: datetime) -> float:
+    """Delivered-order and completed-ride earnings (fees and tips included) since start_date."""
+    try:
+        orders = db.query(Order).filter(
+            Order.driver_id == driver_id,
+            Order.status == OrderStatus.DELIVERED,
+            Order.created_at >= start_date,
+        ).all()
+    except Exception:
+        orders = []
+    try:
+        from models import RideRequest, RideRequestStatus
+        rides = db.query(RideRequest).filter(
+            RideRequest.matched_driver_id == driver_id,
+            RideRequest.status == RideRequestStatus.COMPLETED,
+            RideRequest.created_at >= start_date,
+        ).all()
+    except Exception:
+        rides = []
+    total = sum(float(o.delivery_fee or 0) + float(o.tip or 0) for o in orders)
+    total += sum(float(r.driver_payout or 0) + float(r.tip_amount or 0) for r in rides)
+    return round(total, 2)
+
+
 @app.get("/api/driver/earnings")
 async def get_driver_earnings(
     period: str = "today",  # today, week, month, all
@@ -6760,10 +6819,10 @@ async def get_driver_earnings(
         "total_earnings": total,
         "platform_fee": 0.00,  # Drivers pay $0 commission per CLAUDE.md
         "note": "100% of your earnings go to you. Dollor.ai charges $0 commission to drivers.",
-        # Period totals for iOS/Android apps
-        "today": total if period == "today" else 0,
-        "week": total if period == "week" else 0,
-        "month": total if period == "month" else 0,
+        # Period totals for iOS/Android apps: always all three, whichever period was requested
+        "today": _driver_period_total(db, driver.id, now.replace(hour=0, minute=0, second=0, microsecond=0)),
+        "week": _driver_period_total(db, driver.id, now - timedelta(days=7)),
+        "month": _driver_period_total(db, driver.id, now - timedelta(days=30)),
         "pending": 0.0  # Pending payout amount
     }
 
@@ -8697,9 +8756,14 @@ def get_platform_revenue(
         RideRequest.status == RideRequestStatus.COMPLETED,
         RideRequest.created_at >= start_date
     ).all()
-    tier1 = sum(float(r.platform_fee or 0) for r in completed_rides if float(r.final_price or r.suggested_price or 0) <= 35)
-    tier2 = sum(float(r.platform_fee or 0) for r in completed_rides if 35 < float(r.final_price or r.suggested_price or 0) <= 70)
-    tier3 = sum(float(r.platform_fee or 0) for r in completed_rides if float(r.final_price or r.suggested_price or 0) > 70)
+    tier_cfg = pricing_engine.config
+
+    def _ride_price(r):
+        return float(r.final_price or r.suggested_price or 0)
+
+    tier1 = sum(float(r.platform_fee or 0) for r in completed_rides if _ride_price(r) <= tier_cfg.TIER_1_MAX)
+    tier2 = sum(float(r.platform_fee or 0) for r in completed_rides if tier_cfg.TIER_1_MAX < _ride_price(r) <= tier_cfg.TIER_2_MAX)
+    tier3 = sum(float(r.platform_fee or 0) for r in completed_rides if _ride_price(r) > tier_cfg.TIER_2_MAX)
     rideshare_total = tier1 + tier2 + tier3
 
     total_rides = len(completed_rides)
@@ -9338,7 +9402,6 @@ app.include_router(order_flow_router)
 # driver/customer apps to call /erp/* ride paths without the /api prefix.
 
 @app.get("/erp/rides/available")
-@app.get("/api/erp/rides/available")
 async def get_available_rides_ios_alias(
     request: Request,
     driver_lat: Optional[float] = None,
@@ -9364,7 +9427,6 @@ async def get_available_rides_ios_alias(
     )
 
 @app.post("/erp/rides/{ride_id}/accept")
-@app.post("/api/erp/rides/{ride_id}/accept")
 async def accept_ride_ios_alias(ride_id: int, request: AssignDriverRequest, _auth: dict = Depends(require_any_auth), db: Session = Depends(get_db)):
     """Alias for iOS Driver app - accept ride (legacy - actual flow uses bid system).
     This sets status to MATCHED directly for backward compatibility.
@@ -9407,7 +9469,6 @@ async def accept_ride_ios_alias(ride_id: int, request: AssignDriverRequest, _aut
     return {"success": True, "message": "Ride accepted", "ride_id": ride.id, "status": "matched"}
 
 @app.post("/erp/rides/{ride_id}/picked-up")
-@app.post("/api/erp/rides/{ride_id}/picked-up")
 async def ride_picked_up_ios_alias(ride_id: int, _auth: dict = Depends(require_any_auth), db: Session = Depends(get_db)):
     """Alias for iOS Driver app - mark ride picked up (transitions to IN_PROGRESS).
     iOS calls: POST /api/erp/rides/{rideId}/picked-up
@@ -9448,7 +9509,7 @@ async def track_ride_ios_alias(ride_id: int, _auth: dict = Depends(require_any_a
     """Alias for iOS Customer app - track ride
     iOS calls: GET /api/erp/rides/{rideId}/track
     """
-    return await track_ride(ride_id, db)
+    return await track_ride(ride_id, db, _auth)
 
 @app.post("/erp/rides/{ride_id}/cancel")
 @app.post("/api/erp/rides/{ride_id}/cancel")
@@ -9486,12 +9547,7 @@ async def negotiate_ride_ios_alias(
     is_driver_offer = request.get("is_driver_offer", True)
 
     # Calculate platform fee based on fare (tiered: $1/$2/$3)
-    if proposed_fare <= 35:
-        platform_fee = 1.0
-    elif proposed_fare <= 70:
-        platform_fee = 2.0
-    else:
-        platform_fee = 3.0
+    platform_fee = platform_fee_for(proposed_fare)
 
     # Update ride with the offer (use customer_preferred_price for both since no driver_offer field)
     if not is_driver_offer:
@@ -9670,6 +9726,10 @@ app.include_router(realtime_router, dependencies=[Depends(require_any_auth)])
 # Include Ride Bidding routes (Matchmaking platform)
 from bid_routes import router as bid_router
 app.include_router(bid_router)
+
+# Public rideshare config (fees, bidding presets, dispatch, support) read by every app
+from rideshare_config import router as rideshare_config_router
+app.include_router(rideshare_config_router)
 
 # Include Rideshare Payment routes (Stripe integration for drivers)
 from rideshare_payments import router as rideshare_payments_router, get_tier_fee
@@ -10260,7 +10320,6 @@ def get_driver_bids(
     }
 
 
-@app.get("/api/rides/available")
 def get_available_ride_requests(
     driver_id: Optional[int] = None,
     latitude: Optional[float] = None,
@@ -10384,6 +10443,36 @@ class RideChatMessageRequest(BaseModel):
     sender_type: str = Field(..., pattern="^(customer|driver)$")
 
 
+def _require_ride_chat_participant(db: Session, ride_request_id: int, auth: dict) -> str:
+    """Only the ride's rider and its matched driver (or an admin) may read or write its chat.
+
+    Returns the caller's role for the ride ("customer", "driver" or "admin"); the sender is taken from the token,
+    never from the request body.
+    """
+    from models import RideRequest
+
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_request_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    if auth.get("role") == "admin":
+        return "admin"
+    customer_id = auth.get("customer_id")
+    driver_id = auth.get("driver_id")
+    if not customer_id and not driver_id and auth.get("sub"):
+        # Tokens issued without an id claim: resolve the account from the token's email
+        email = str(auth["sub"]).lower()
+        account = db.query(Customer).filter(func.lower(Customer.email) == email).first()
+        customer_id = account.id if account else None
+        if not account:
+            driver_account = db.query(Driver).filter(func.lower(Driver.email) == email).first()
+            driver_id = driver_account.id if driver_account else None
+    if customer_id and customer_id == ride.customer_id:
+        return "customer"
+    if driver_id and driver_id == ride.matched_driver_id:
+        return "driver"
+    raise HTTPException(status_code=403, detail="You are not a participant in this ride")
+
+
 @app.get("/api/p2p/ride-requests/{ride_request_id}/chat")
 def get_ride_request_chat(
     ride_request_id: int,
@@ -10392,6 +10481,8 @@ def get_ride_request_chat(
 ):
     """Get chat messages for a ride request"""
     from models import RideChatMessage
+
+    _require_ride_chat_participant(db, ride_request_id, _auth)
 
     messages = db.query(RideChatMessage).filter(
         RideChatMessage.ride_request_id == ride_request_id
@@ -10424,15 +10515,20 @@ def send_ride_request_chat(
     """Send a chat message for a ride request"""
     from models import RideChatMessage
 
-    # Determine sender_id based on sender_type using JWT payload
-    if chat_request.sender_type == "customer":
-        sender_id = _auth.get("customer_id") or 0
+    # The sender comes from the token, not the request body, so nobody can post as the other party
+    role = _require_ride_chat_participant(db, ride_request_id, _auth)
+    from models import RideRequest
+    ride_for_chat = db.query(RideRequest).filter(RideRequest.id == ride_request_id).first()
+    if role == "admin":
+        sender_type, sender_id = chat_request.sender_type, 0
+    elif role == "customer":
+        sender_type, sender_id = "customer", ride_for_chat.customer_id
     else:
-        sender_id = _auth.get("driver_id") or 0
+        sender_type, sender_id = "driver", ride_for_chat.matched_driver_id
 
     chat_msg = RideChatMessage(
         ride_request_id=ride_request_id,
-        sender_type=chat_request.sender_type,
+        sender_type=sender_type,
         sender_id=sender_id,
         message=chat_request.message,
     )
@@ -10442,9 +10538,11 @@ def send_ride_request_chat(
 
     return {
         "success": True,
+        "id": chat_msg.id,
         "message_id": chat_msg.id,
         "ride_request_id": ride_request_id,
-        "sender_type": chat_request.sender_type,
+        "sender_type": sender_type,
+        "sender_id": sender_id,
         "message": chat_request.message,
         "created_at": chat_msg.created_at.isoformat() if chat_msg.created_at else datetime.utcnow().isoformat()
     }
@@ -11153,30 +11251,6 @@ async def proxy_create_refund(http_request: Request, request: dict, _auth: dict 
     if result:
         return result
     return {"error": "Payment service unavailable", "fallback": True}
-
-
-@app.put("/api/erp/drivers/{driver_id}/status")
-async def proxy_update_driver_status(driver_id: int, request: dict, driver: Driver = Depends(require_driver)):
-    """Proxy to driver-service: Update driver status (kept: iOS calls this path)"""
-    # SECURITY: Verify the authenticated driver owns this account
-    if driver.id != driver_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    result = await proxy_request(DRIVER_SERVICE_URL, f"/erp/drivers/{driver_id}/status", method="PATCH", json_data=request)
-    if result:
-        return result
-    return {"error": "Driver service unavailable", "fallback": True}
-
-
-@app.put("/api/erp/drivers/{driver_id}/location")
-async def proxy_update_driver_location(driver_id: int, request: dict, driver: Driver = Depends(require_driver)):
-    """Proxy to driver-service: Update driver location (kept: iOS calls this path)"""
-    # SECURITY: Verify the authenticated driver owns this account
-    if driver.id != driver_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    result = await proxy_request(DRIVER_SERVICE_URL, "/api/driver/location", method="PUT", json_data=request)
-    if result:
-        return result
-    return {"error": "Driver service unavailable", "fallback": True}
 
 
 # ==================== FCM TOKEN REGISTRATION ENDPOINTS ====================
@@ -13658,7 +13732,6 @@ app.add_api_route("/customers/{customer_id}/delete", delete_customer_account, me
 app.add_api_route("/customer/email/send-verification", send_verification_email, methods=["POST"])
 app.add_api_route("/customer/email/verify", verify_customer_email, methods=["POST"])
 app.add_api_route("/customer/email/status", get_email_verification_status, methods=["GET"])
-app.add_api_route("/api/erp/rides/estimate", estimate_fare_frontend, methods=["POST"])
 app.add_api_route("/api/erp/drivers/{driver_id}", get_driver_profile_by_id, methods=["GET"])
 app.add_api_route("/api/drivers/{driver_id}", update_driver_profile_by_id, methods=["PUT"])
 app.add_api_route("/erp/drivers/{driver_id}", update_driver_profile_by_id, methods=["PUT"])
@@ -13678,7 +13751,8 @@ app.add_api_route("/customer/apple-auth", customer_apple_auth, methods=["POST"])
 # - POST /bid/{bid_id}/accept-counter -> accept_counter_offer
 # - POST /bid/{bid_id}/reject-counter -> reject_counter_offer
 app.add_api_route("/driver/bids", get_driver_bids, methods=["GET"])
-app.add_api_route("/rides/available", get_available_ride_requests, methods=["GET"])
+from bid_routes import get_available_ride_requests as _live_available_rides
+app.add_api_route("/rides/available", _live_available_rides, methods=["GET"])  # same handler as /api/rides/available
 app.add_api_route("/p2p/ride-requests/{ride_request_id}/chat", get_ride_request_chat, methods=["GET"])
 app.add_api_route("/p2p/ride-requests/{ride_request_id}/chat", send_ride_request_chat, methods=["POST"])
 app.add_api_route("/chat/ride/{ride_id}", get_ride_chat_messages_alias, methods=["GET"])

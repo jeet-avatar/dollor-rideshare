@@ -20,6 +20,7 @@ import os
 import logging
 
 from database import get_db
+from pricing_config import platform_fee_for
 from models import RideRequest, RideRequestStatus, Driver, Customer
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")  # SECURITY: No hardcoded fallback
@@ -37,13 +38,8 @@ DEMO_CUSTOMER_EMAILS = [
 
 
 def get_tier_fee(fare: float) -> float:
-    """Get platform fee based on fare tier."""
-    if fare <= 35.00:
-        return 1.00
-    elif fare <= 70.00:
-        return 2.00
-    else:
-        return 3.00
+    """Get platform fee based on fare tier (configured in pricing_config)."""
+    return platform_fee_for(fare)
 
 
 class CreatePaymentIntent(BaseModel):

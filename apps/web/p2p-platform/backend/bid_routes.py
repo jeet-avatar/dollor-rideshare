@@ -28,7 +28,7 @@ from websocket_server import (
     broadcast_bid_update, broadcast_bid_withdrawn, broadcast_counter_offer_response,
     broadcast_ride_status
 )
-from pricing_config import pricing_engine, get_fare_estimate, get_bid_label
+from pricing_config import pricing_engine, get_fare_estimate, get_bid_label, platform_fee_for
 from email_service import (
     send_ride_request_confirmation_email,
     send_ride_bid_received_email,
@@ -44,6 +44,27 @@ import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def _bg_email(name: str, *args, **kwargs):
+    """Send a ride email without making the API caller wait on SMTP.
+
+    Runs the (blocking) sender in a worker thread so request handlers return immediately and the event loop is
+    not blocked. The sender is looked up by name at call time so tests can still patch `bid_routes.<name>`.
+    Without a running event loop (scripts, sync callers) it runs inline as before.
+    """
+    fn = globals()[name]
+
+    def _run():
+        try:
+            fn(*args, **kwargs)
+        except Exception as exc:  # emails must never break a ride
+            logger.error(f"Background email {name} failed: {exc}")
+
+    try:
+        asyncio.get_running_loop().run_in_executor(None, _run)
+    except RuntimeError:
+        _run()
 
 # Public endpoint rate limiter — prevents scrapers from hammering the fare estimate endpoint
 _public_estimate_rate_limiter = RateLimiter(max_requests=20, window_seconds=60)  # 20/min per IP
@@ -68,6 +89,9 @@ def _notify_customer(db: Session, customer_id: int, title: str, message: str,
         logger.warning(f"Failed to create in-app notification: {e}")
 
 
+import ride_dispatch
+from ride_dispatch import SHARED_DEMO_DRIVER_EMAILS, is_driver_notified
+
 router = APIRouter(prefix="/api/rides", tags=["Ride Bidding"])
 
 
@@ -91,7 +115,7 @@ class CreateRideRequestInput(BaseModel):
     special_requests: Optional[str] = None
     accessibility_requested: bool = False  # TNC-12: Passenger needs wheelchair-accessible or disability-accessible vehicle
     accessibility_notes: Optional[str] = None  # TNC-12: Specific accessibility needs
-    bidding_duration_minutes: int = 5  # How long to accept bids
+    bidding_duration_minutes: int = pricing_engine.config.BIDDING_WINDOW_MINUTES  # How long to accept bids
 
     # A1/A6/A7: Input validation for API security
     @field_validator('pickup_latitude', 'dropoff_latitude')
@@ -576,7 +600,7 @@ async def create_ride_request(data: CreateRideRequestInput, request: Request, cu
 
     # Send confirmation email to customer
     try:
-        send_ride_request_confirmation_email(
+        _bg_email("send_ride_request_confirmation_email",
             to_email=customer.email,
             customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
             request_id=ride_request.request_id,
@@ -708,6 +732,148 @@ async def get_bids_for_request(request_id: int, request: Request, customer: Cust
     }
 
 
+def _authorize_ride_payment(db: Session, ride_request: RideRequest, bid: RideBid, amount: float) -> None:
+    """Authorize (not capture) the rider's card for the agreed fare. Capture happens when the ride completes.
+
+    Shared by every path that matches a ride (rider accepts a bid, driver accepts the rider's counter) so no
+    matched ride can complete without a pre-authorization. A card failure cancels the ride and raises 402.
+    """
+    # Create Stripe PaymentIntent for customer charge (authorize now, capture on completion)
+    try:
+        import stripe
+        import os
+        stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+
+        customer_obj = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
+        if customer_obj and stripe.api_key:
+            # Demo accounts (App Store review): skip real Stripe, set demo marker so
+            # /create-intent idempotency path returns the demo secret correctly
+            _demo_emails = ["demo.customer@dollor.ai", "demo.driver@dollor.ai"]
+            if customer_obj.email and customer_obj.email.lower() in _demo_emails:
+                ride_request.stripe_payment_intent_id = "demo_pi_appstore_review"
+                db.commit()
+                logger.info(f"Ride {ride_request.id} demo account — skipping Stripe pre-auth")
+            else:
+                # Ensure customer has Stripe customer ID
+                stripe_customer_id = getattr(customer_obj, 'stripe_customer_id', None)
+                if not stripe_customer_id:
+                    stripe_cust = stripe.Customer.create(
+                        email=customer_obj.email,
+                        name=getattr(customer_obj, 'name', None) or getattr(customer_obj, 'full_name', None) or customer_obj.email,
+                        metadata={"dollor_customer_id": str(customer_obj.id)},
+                        idempotency_key=f"ride-cust-{customer_obj.id}"
+                    )
+                    customer_obj.stripe_customer_id = stripe_cust.id
+                    stripe_customer_id = stripe_cust.id
+                    db.commit()
+
+                # Require a saved payment method before charging. Previously this created
+                # an unconfirmed PaymentIntent with no payment_method attached, which just
+                # sat in requires_payment_method forever — no charge, no error, no signal
+                # to the customer, driver, or anyone watching logs that anything was wrong.
+                stripe_customer = stripe.Customer.retrieve(stripe_customer_id)
+                default_payment_method = stripe_customer.invoice_settings.default_payment_method
+                if not default_payment_method:
+                    # No explicit default — fall back to any attached card.
+                    # This covers Apple Pay cards (added via SetupIntent) and manually
+                    # added cards that the customer never tapped "Set as Default".
+                    pms = stripe.PaymentMethod.list(customer=stripe_customer_id, type="card", limit=1)
+                    if pms.data:
+                        default_payment_method = pms.data[0].id
+                        # Auto-promote so future rides skip this fallback path.
+                        stripe.Customer.modify(
+                            stripe_customer_id,
+                            invoice_settings={"default_payment_method": default_payment_method}
+                        )
+                        logger.info(f"Auto-set default payment method {default_payment_method} for customer {customer_obj.id}")
+                    else:
+                        # CardError is a StripeError subclass, caught below (ride-cancel + notify).
+                        raise stripe.error.CardError(
+                            message="No payment method on file for this ride.",
+                            param="payment_method", code="no_payment_method"
+                        )
+
+                final_price_cents = int(float(amount) * 100)
+                if final_price_cents > 0:
+                    payment_intent = stripe.PaymentIntent.create(
+                        amount=final_price_cents,
+                        currency="usd",
+                        customer=stripe_customer_id,
+                        payment_method=default_payment_method,
+                        off_session=True,
+                        confirm=True,
+                        description=f"Rideshare #{ride_request.request_id}",
+                        metadata={
+                            "ride_request_id": str(ride_request.id),
+                            "request_id": ride_request.request_id,
+                            "driver_id": str(bid.driver_id),
+                            "type": "rideshare"
+                        },
+                        capture_method="manual",
+                        idempotency_key=f"ride-pi-{ride_request.id}"
+                    )
+                    if payment_intent.status not in ("succeeded", "requires_capture"):
+                        raise stripe.error.CardError(
+                            message=f"PaymentIntent confirm landed in unexpected status: {payment_intent.status}",
+                            param=None, code="confirm_incomplete"
+                        )
+                    ride_request.stripe_payment_intent_id = payment_intent.id
+                    db.commit()
+                    logger.info(f"Ride {ride_request.id} PaymentIntent {payment_intent.id} confirmed, status={payment_intent.status} (${amount:.2f})")
+    except stripe.error.StripeError as stripe_err:
+        # Blocking failure: card declined / Stripe error — auto-cancel the ride
+        logger.error(f"Ride {ride_request.id} Stripe pre-auth FAILED ({type(stripe_err).__name__}): {stripe_err} — auto-cancelling")
+        ride_request.status = RideRequestStatus.CANCELLED
+        ride_request.cancelled_at = datetime.utcnow()
+        ride_request.payment_status = "pre_auth_failed"
+        ride_request.matched_bid_id = None
+        ride_request.matched_driver_id = None
+        ride_request.final_price = None
+        db.commit()
+
+        # Notify customer
+        try:
+            send_push_notification(
+                "customer", ride_request.customer_id,
+                "Payment Failed",
+                "Your card could not be pre-authorized. Please update your payment method and try booking again.",
+                data={"type": "payment_failed", "ride_request_id": str(ride_request.id)},
+                db=db
+            )
+            _notify_customer(
+                db, ride_request.customer_id,
+                "Payment Failed",
+                "Your card could not be pre-authorized for this ride. Please update your payment method.",
+                "ride", ride_request.id, "ride"
+            )
+        except Exception as notify_err:
+            logger.warning(f"Ride {ride_request.id} customer payment-failed notification error: {notify_err}")
+
+        # Notify driver
+        try:
+            send_push_notification(
+                "driver", bid.driver_id,
+                "Ride Cancelled",
+                "The customer's payment method failed. The ride has been cancelled.",
+                data={"type": "payment_failed", "ride_request_id": str(ride_request.id)},
+                db=db
+            )
+        except Exception as notify_err:
+            logger.warning(f"Ride {ride_request.id} driver payment-failed notification error: {notify_err}")
+
+        try:
+            db.commit()
+        except Exception:
+            pass
+
+        raise HTTPException(
+            status_code=402,
+            detail={"error": "payment_failed", "message": "Your card was declined. Please update your payment method and try again."}
+        )
+    except Exception as e:
+        logger.error(f"Ride {ride_request.id} Stripe PaymentIntent creation failed (non-blocking): {e}")
+
+
 @router.post("/bid/{bid_id}/respond")
 async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request, customer: Customer = Depends(require_customer), db: Session = Depends(get_db)):
     """
@@ -784,12 +950,12 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
         except Exception as e:
             logging.warning(f"Insurance event (bid accept) failed: {e}")
 
-        # Reject all other pending bids
+        # Close every other open bid (pending or countered) so none of them can match this ride again
         other_bids = db.query(RideBid).filter(
             and_(
                 RideBid.ride_request_id == ride_request.id,
                 RideBid.id != bid.id,
-                RideBid.status == BidStatus.PENDING
+                RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED])
             )
         ).all()
 
@@ -808,140 +974,7 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
 
         db.commit()
 
-        # Create Stripe PaymentIntent for customer charge (authorize now, capture on completion)
-        try:
-            import stripe
-            import os
-            stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-
-            customer_obj = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
-            if customer_obj and stripe.api_key:
-                # Demo accounts (App Store review): skip real Stripe, set demo marker so
-                # /create-intent idempotency path returns the demo secret correctly
-                _demo_emails = ["demo.customer@dollor.ai", "demo.driver@dollor.ai"]
-                if customer_obj.email and customer_obj.email.lower() in _demo_emails:
-                    ride_request.stripe_payment_intent_id = "demo_pi_appstore_review"
-                    db.commit()
-                    logger.info(f"Ride {ride_request.id} demo account — skipping Stripe pre-auth")
-                else:
-                    # Ensure customer has Stripe customer ID
-                    stripe_customer_id = getattr(customer_obj, 'stripe_customer_id', None)
-                    if not stripe_customer_id:
-                        stripe_cust = stripe.Customer.create(
-                            email=customer_obj.email,
-                            name=getattr(customer_obj, 'name', None) or getattr(customer_obj, 'full_name', None) or customer_obj.email,
-                            metadata={"dollor_customer_id": str(customer_obj.id)},
-                            idempotency_key=f"ride-cust-{customer_obj.id}"
-                        )
-                        customer_obj.stripe_customer_id = stripe_cust.id
-                        stripe_customer_id = stripe_cust.id
-                        db.commit()
-
-                    # Require a saved payment method before charging. Previously this created
-                    # an unconfirmed PaymentIntent with no payment_method attached, which just
-                    # sat in requires_payment_method forever — no charge, no error, no signal
-                    # to the customer, driver, or anyone watching logs that anything was wrong.
-                    stripe_customer = stripe.Customer.retrieve(stripe_customer_id)
-                    default_payment_method = stripe_customer.invoice_settings.default_payment_method
-                    if not default_payment_method:
-                        # No explicit default — fall back to any attached card.
-                        # This covers Apple Pay cards (added via SetupIntent) and manually
-                        # added cards that the customer never tapped "Set as Default".
-                        pms = stripe.PaymentMethod.list(customer=stripe_customer_id, type="card", limit=1)
-                        if pms.data:
-                            default_payment_method = pms.data[0].id
-                            # Auto-promote so future rides skip this fallback path.
-                            stripe.Customer.modify(
-                                stripe_customer_id,
-                                invoice_settings={"default_payment_method": default_payment_method}
-                            )
-                            logger.info(f"Auto-set default payment method {default_payment_method} for customer {customer_obj.id}")
-                        else:
-                            # CardError is a StripeError subclass, caught below (ride-cancel + notify).
-                            raise stripe.error.CardError(
-                                message="No payment method on file for this ride.",
-                                param="payment_method", code="no_payment_method"
-                            )
-
-                    final_price_cents = int(float(bid.proposed_price) * 100)
-                    if final_price_cents > 0:
-                        payment_intent = stripe.PaymentIntent.create(
-                            amount=final_price_cents,
-                            currency="usd",
-                            customer=stripe_customer_id,
-                            payment_method=default_payment_method,
-                            off_session=True,
-                            confirm=True,
-                            description=f"Rideshare #{ride_request.request_id}",
-                            metadata={
-                                "ride_request_id": str(ride_request.id),
-                                "request_id": ride_request.request_id,
-                                "driver_id": str(bid.driver_id),
-                                "type": "rideshare"
-                            },
-                            capture_method="manual",
-                            idempotency_key=f"ride-pi-{ride_request.id}"
-                        )
-                        if payment_intent.status not in ("succeeded", "requires_capture"):
-                            raise stripe.error.CardError(
-                                message=f"PaymentIntent confirm landed in unexpected status: {payment_intent.status}",
-                                param=None, code="confirm_incomplete"
-                            )
-                        ride_request.stripe_payment_intent_id = payment_intent.id
-                        db.commit()
-                        logger.info(f"Ride {ride_request.id} PaymentIntent {payment_intent.id} confirmed, status={payment_intent.status} (${bid.proposed_price:.2f})")
-        except stripe.error.StripeError as stripe_err:
-            # Blocking failure: card declined / Stripe error — auto-cancel the ride
-            logger.error(f"Ride {ride_request.id} Stripe pre-auth FAILED ({type(stripe_err).__name__}): {stripe_err} — auto-cancelling")
-            ride_request.status = RideRequestStatus.CANCELLED
-            ride_request.cancelled_at = datetime.utcnow()
-            ride_request.payment_status = "pre_auth_failed"
-            ride_request.matched_bid_id = None
-            ride_request.matched_driver_id = None
-            ride_request.final_price = None
-            db.commit()
-
-            # Notify customer
-            try:
-                send_push_notification(
-                    "customer", ride_request.customer_id,
-                    "Payment Failed",
-                    "Your card could not be pre-authorized. Please update your payment method and try booking again.",
-                    data={"type": "payment_failed", "ride_request_id": str(ride_request.id)},
-                    db=db
-                )
-                _notify_customer(
-                    db, ride_request.customer_id,
-                    "Payment Failed",
-                    "Your card could not be pre-authorized for this ride. Please update your payment method.",
-                    "ride", ride_request.id, "ride"
-                )
-            except Exception as notify_err:
-                logger.warning(f"Ride {ride_request.id} customer payment-failed notification error: {notify_err}")
-
-            # Notify driver
-            try:
-                send_push_notification(
-                    "driver", bid.driver_id,
-                    "Ride Cancelled",
-                    "The customer's payment method failed. The ride has been cancelled.",
-                    data={"type": "payment_failed", "ride_request_id": str(ride_request.id)},
-                    db=db
-                )
-            except Exception as notify_err:
-                logger.warning(f"Ride {ride_request.id} driver payment-failed notification error: {notify_err}")
-
-            try:
-                db.commit()
-            except Exception:
-                pass
-
-            raise HTTPException(
-                status_code=402,
-                detail={"error": "payment_failed", "message": "Your card was declined. Please update your payment method and try again."}
-            )
-        except Exception as e:
-            logger.error(f"Ride {ride_request.id} Stripe PaymentIntent creation failed (non-blocking): {e}")
+        _authorize_ride_payment(db, ride_request, bid, bid.proposed_price)
 
         # Send WebSocket update - ride matched
         try:
@@ -975,7 +1008,7 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
         try:
             customer = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
             if customer and customer.email and driver:
-                send_ride_matched_email(
+                _bg_email("send_ride_matched_email",
                     to_email=customer.email,
                     customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                     request_id=ride_request.request_id,
@@ -1109,7 +1142,7 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
             raise HTTPException(status_code=400, detail="Counter price required")
 
         # Multi-round negotiation: Check customer counter limit (max 3 total)
-        MAX_CUSTOMER_COUNTERS = 3
+        MAX_CUSTOMER_COUNTERS = pricing_engine.config.MAX_CUSTOMER_COUNTERS
         current_counter_count = ride_request.customer_counter_count or 0
 
         if current_counter_count >= MAX_CUSTOMER_COUNTERS:
@@ -1119,7 +1152,7 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
             )
 
         # Check negotiation round for this bid (max 2 rounds per bid)
-        MAX_ROUNDS_PER_BID = 2
+        MAX_ROUNDS_PER_BID = pricing_engine.config.MAX_ROUNDS_PER_BID
         current_round = bid.negotiation_round or 1
 
         if current_round >= MAX_ROUNDS_PER_BID and bid.last_offer_by == "customer":
@@ -1296,7 +1329,7 @@ async def cancel_ride_request(request_id: int, request: Request, customer: Custo
     try:
         customer = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
         if customer and customer.email:
-            send_ride_cancelled_email(
+            _bg_email("send_ride_cancelled_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
@@ -1324,13 +1357,17 @@ async def get_available_ride_requests(
     driver_id: Optional[int] = None,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
-    radius_km: float = 15.0,
+    radius_km: Optional[float] = None,
     driver: Driver = Depends(require_driver),
     db: Session = Depends(get_db)
 ):
     """
     Get available ride requests near the driver for bidding. Requires driver auth.
     """
+    # Default search radius is the widest dispatch step, so every driver the policy notifies can see the ride
+    if radius_km is None:
+        radius_km = ride_dispatch.max_radius_miles() * 1.609344
+
     # Only online drivers receive bids
     if not driver.is_online:
         return {"success": True, "available_requests": [], "count": 0}
@@ -1375,8 +1412,35 @@ async def get_available_ride_requests(
         for eb in existing_bids:
             driver_existing_bids[eb.ride_request_id] = eb
 
+    # Dispatch policy (ride_dispatch.py): offer each request to the nearest drivers around the pickup,
+    # widening the search if nobody bids. Only applies when the app sent a live location; without one
+    # (e.g. no GPS fix) every open request stays visible rather than hiding rides from the driver.
+    dispatch_enabled = (
+        latitude is not None and longitude is not None
+        and (driver.email or "").lower() not in SHARED_DEMO_DRIVER_EMAILS
+    )
+    online_points = []
+    if dispatch_enabled:
+        online_points = [
+            (d.id, d.current_latitude, d.current_longitude)
+            for d in db.query(Driver).filter(
+                Driver.is_online == True,  # noqa: E712
+                Driver.current_latitude.isnot(None),
+                Driver.current_longitude.isnot(None),
+                Driver.id != driver.id,
+            ).all()
+        ]
+        online_points.append((driver.id, latitude, longitude))
+
     nearby_requests = []
     for request in open_requests:
+        if dispatch_enabled:
+            age_seconds = (now - (request.created_at or now)).total_seconds()
+            if not is_driver_notified(
+                driver.id, request.pickup_latitude, request.pickup_longitude,
+                online_points, age_seconds, has_bids=bool(getattr(request, "bids", None)),
+            ):
+                continue
         # Calculate distance if driver location provided
         distance = None
         if latitude is not None and longitude is not None and request.pickup_latitude and request.pickup_longitude:
@@ -1422,9 +1486,19 @@ async def get_driver_active_rides(
             RideRequest.status.in_(active_statuses)
         )
     ).order_by(RideRequest.matched_at.desc()).limit(10).all()
+    # The matched driver may call the rider; the phone is only included here, never in the public serializer
+    phones = {}
+    customer_ids = {r.customer_id for r in rides}
+    if customer_ids:
+        phones = {c.id: c.phone for c in db.query(Customer).filter(Customer.id.in_(customer_ids)).all()}
+    active_rides = []
+    for r in rides:
+        payload = serialize_ride_request(r)
+        payload["customer_phone"] = phones.get(r.customer_id)
+        active_rides.append(payload)
     return {
         "success": True,
-        "active_rides": [serialize_ride_request(r) for r in rides],
+        "active_rides": active_rides,
         "count": len(rides)
     }
 
@@ -1636,7 +1710,7 @@ async def submit_bid(request_id: int, data: SubmitBidInput, request: Request, dr
                 RideBid.status == BidStatus.PENDING
             ).count()
 
-            send_ride_bid_received_email(
+            _bg_email("send_ride_bid_received_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
@@ -1784,7 +1858,7 @@ async def driver_counter_offer(bid_id: int, data: DriverCounterInput, request: R
             detail=f"Counter must be more than customer's offer of ${bid.customer_counter_price:.2f}"
         )
 
-    MAX_ROUNDS_PER_BID = 2
+    MAX_ROUNDS_PER_BID = pricing_engine.config.MAX_ROUNDS_PER_BID
     if bid.negotiation_round >= MAX_ROUNDS_PER_BID:
         raise HTTPException(
             status_code=400,
@@ -1864,6 +1938,10 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
     if not ride_request:
         raise HTTPException(status_code=404, detail="Ride request not found")
 
+    # A counter can only be accepted while the ride is still open; otherwise this would overwrite another driver's match
+    if ride_request.status not in (RideRequestStatus.OPEN, RideRequestStatus.BIDDING):
+        raise HTTPException(status_code=409, detail="This ride is no longer available")
+
     now = datetime.utcnow()
 
     # Save original price before updating (for history tracking)
@@ -1884,12 +1962,12 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
     ride_request.final_price = bid.customer_counter_price
     ride_request.matched_at = now
 
-    # Reject other pending bids
+    # Close every other open bid (pending or countered) so none of them can match this ride again
     other_bids = db.query(RideBid).filter(
         and_(
             RideBid.ride_request_id == ride_request.id,
             RideBid.id != bid.id,
-            RideBid.status == BidStatus.PENDING
+            RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED])
         )
     ).all()
 
@@ -1898,6 +1976,17 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
         other_bid.customer_response = "Another bid was accepted"
 
     db.commit()
+
+    # Authorize the rider's card for the countered fare, same as when the rider accepts a bid
+    try:
+        _authorize_ride_payment(db, ride_request, bid, bid.customer_counter_price)
+    except HTTPException as payment_error:
+        if payment_error.status_code == 402:
+            raise HTTPException(
+                status_code=402,
+                detail={"error": "payment_failed", "message": "The rider's card could not be authorized, so the ride was cancelled."},
+            )
+        raise
 
     # Send push notification to customer - COUNTER ACCEPTED
     try:
@@ -1940,7 +2029,7 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
         customer = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
         driver = db.query(Driver).filter(Driver.id == bid.driver_id).first()
         if customer and customer.email and driver:
-            send_ride_matched_email(
+            _bg_email("send_ride_matched_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
@@ -2254,7 +2343,6 @@ async def driver_cancel_ride(request_id: int, request: Request, data: DriverCanc
     }
 
 
-NOSHOW_CANCELLATION_FEE = 5.00
 
 @router.post("/request/{request_id}/no-show")
 async def mark_passenger_no_show(request_id: int, request: Request, auth_driver: Driver = Depends(require_driver), db: Session = Depends(get_db)):
@@ -2276,11 +2364,12 @@ async def mark_passenger_no_show(request_id: int, request: Request, auth_driver:
 
     # Verify wait time (minimum 5 minutes after arrival)
     wait_seconds = (datetime.utcnow() - ride_request.driver_arrived_at).total_seconds()
-    if wait_seconds < 300:  # 5 minutes = 300 seconds
-        remaining = int(300 - wait_seconds)
+    noshow_wait = pricing_engine.config.NOSHOW_WAIT_SECONDS
+    if wait_seconds < noshow_wait:
+        remaining = int(noshow_wait - wait_seconds)
         raise HTTPException(
             status_code=400,
-            detail=f"Please wait {remaining} more seconds before marking no-show (minimum 5 minutes)"
+            detail=f"Please wait {remaining} more seconds before marking no-show (minimum {noshow_wait // 60} minutes)"
         )
 
     # Cancel the ride with no-show flag
@@ -2288,11 +2377,11 @@ async def mark_passenger_no_show(request_id: int, request: Request, auth_driver:
     ride_request.cancelled_at = datetime.utcnow()
 
     # Apply cancellation fee to customer
-    cancellation_fee = NOSHOW_CANCELLATION_FEE
+    cancellation_fee = pricing_engine.config.NOSHOW_FEE
     ride_request.platform_fee = cancellation_fee
 
     # Pay driver a portion for their time
-    ride_request.driver_payout = round(cancellation_fee * 0.8, 2)  # Driver gets 80% of no-show fee
+    ride_request.driver_payout = round(cancellation_fee * pricing_engine.config.NOSHOW_DRIVER_SHARE, 2)
 
     db.commit()
 
@@ -2540,7 +2629,7 @@ async def start_ride(request_id: int, request: Request, auth_driver: Driver = De
         customer = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
         driver = db.query(Driver).filter(Driver.id == ride_request.matched_driver_id).first()
         if customer and customer.email and driver:
-            send_ride_started_email(
+            _bg_email("send_ride_started_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
@@ -2637,14 +2726,9 @@ async def complete_ride(request_id: int, request: Request, auth_driver: Driver =
 
     # Calculate and persist platform fee + driver payout (fare-tiered Model A)
     final_price = float(ride_request.final_price or ride_request.suggested_price or 0)
-    if final_price <= 35:
-        platform_fee = 1.00
-    elif final_price <= 70:
-        platform_fee = 2.00
-    else:
-        platform_fee = 3.00
+    platform_fee = platform_fee_for(final_price)
     ride_request.platform_fee = platform_fee
-    driver_a4a_share = 0.05  # TNC-13: driver's share of Access for All fee
+    driver_a4a_share = pricing_engine.config.ACCESS_FOR_ALL_DRIVER_SHARE  # TNC-13
     ride_request.driver_payout = round(final_price - platform_fee - driver_a4a_share, 2)
 
     # Prop 22: compute per-ride floor data (non-blocking — failure must not block ride completion)
@@ -2809,7 +2893,7 @@ async def complete_ride(request_id: int, request: Request, auth_driver: Driver =
             # Convert km to miles for receipt
             distance_miles = (ride_request.estimated_distance_km or 0) * 0.621371
 
-            send_ride_completed_email(
+            _bg_email("send_ride_completed_email",
                 to_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}".strip() or "Customer",
                 request_id=ride_request.request_id,
