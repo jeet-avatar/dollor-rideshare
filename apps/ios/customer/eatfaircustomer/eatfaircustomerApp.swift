@@ -230,6 +230,8 @@ struct EatfaircustomerApp: App {
         WindowGroup {
             MainAppView()
                 .environmentObject(addressViewModel)
+                .preferredColorScheme(.dark)
+                .tint(Lx.Palette.orange)
                 .onAppear {
                     // Clear badge on app launch
                     NotificationManager.shared.clearBadge()

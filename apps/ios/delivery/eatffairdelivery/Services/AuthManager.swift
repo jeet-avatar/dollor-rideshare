@@ -22,6 +22,21 @@ class AuthManager: ObservableObject {
     private var approvalObserver: NSObjectProtocol?
 
     init() {
+        #if DEBUG
+        // UITest screenshot bypass: inject pre-obtained driver token to skip SSL-pinned login
+        if let token = ProcessInfo.processInfo.environment["UITEST_DRIVER_TOKEN"] {
+            SecureStorage.shared.driverAccessToken = token
+            UserDefaults.standard.set(48, forKey: UserDefaultsKeys.driverId)
+            UserDefaults.standard.set("Marcus Johnson", forKey: UserDefaultsKeys.driverName)
+            UserDefaults.standard.set("demo.driver@dollor.ai", forKey: UserDefaultsKeys.driverEmail)
+            UserDefaults.standard.set(true, forKey: UserDefaultsKeys.driverTermsAccepted)
+            self.isLoggedIn = true
+            self.isApproved = true
+            self.driverName = "Marcus Johnson"
+            self.driverEmail = "demo.driver@dollor.ai"
+            return
+        }
+        #endif
         // Check if driver is already logged in
         checkLoginState()
 

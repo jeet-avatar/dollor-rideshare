@@ -51,8 +51,8 @@ struct TermsAndConditionsView: View {
                         .foregroundColor(Theme.lxOrange)
                         .padding()
                         .background(Theme.lxOrange.opacity(0.12))
-                        .cornerRadius(12)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxOrange.opacity(0.4), lineWidth: 1))
+                        .cornerRadius(Lx.Radius.button)
+                        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxOrange.opacity(0.4), lineWidth: 1))
                     }
                     .padding(.horizontal)
 
@@ -70,8 +70,8 @@ struct TermsAndConditionsView: View {
                     .toggleStyle(SwitchToggleStyle(tint: Theme.lxOrange))
                     .padding()
                     .background(Theme.lxSurface)
-                    .cornerRadius(12)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+                    .cornerRadius(Lx.Radius.button)
+                    .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
                     .shadow(color: .black.opacity(0.4), radius: 4)
                     .padding(.horizontal)
 
@@ -79,7 +79,7 @@ struct TermsAndConditionsView: View {
                     Button(action: acceptTerms) {
                         if isLoading {
                             ProgressView()
-                                .tint(.white)
+                                .tint(Lx.Palette.onAccent)
                         } else {
                             Text("Accept & Continue")
                                 .fontWeight(.bold)
@@ -88,8 +88,8 @@ struct TermsAndConditionsView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(hasAccepted ? AnyShapeStyle(Theme.lxButtonGradient) : AnyShapeStyle(Theme.lxSurface2))
-                    .foregroundColor(.white)
-                    .cornerRadius(14)
+                    .foregroundColor(Lx.Palette.onAccent)
+                    .cornerRadius(Lx.Radius.button)
                     .shadow(color: hasAccepted ? Theme.lxOrange.opacity(0.4) : .clear, radius: 10, x: 0, y: 4)
                     .padding(.horizontal)
                     .disabled(!hasAccepted || isLoading)
@@ -148,7 +148,7 @@ struct TermsHeader: View {
                     .frame(width: 100, height: 100)
 
                 Text("$")
-                    .font(.system(size: 50, weight: .bold))
+                    .font(Lx.Typography.iconLarge.weight(.bold))
                     .foregroundColor(Theme.lxOrange)
             }
 
@@ -183,7 +183,7 @@ struct TermsHeader: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(Theme.lxOrange.opacity(0.12))
-            .cornerRadius(20)
+            .cornerRadius(Lx.Radius.sheet)
             .overlay(Capsule().stroke(Theme.lxOrange.opacity(0.4), lineWidth: 1))
         }
         .frame(maxWidth: .infinity)
@@ -226,8 +226,8 @@ struct PlatformFeeCard: View {
 
                 FeeRow(
                     title: "Platform Fee",
-                    amount: String(format: "$%.2f", config.restaurantPlatformFee),
-                    description: "$1 up to $25 fare, $2 for $25–$50, $3 over $50 — per ride"
+                    amount: "$\(Int(config.rideshareTier1Fee))–$\(Int(config.rideshareTier3Fee))",
+                    description: "\(AppConfig.shared.rideshareFeeSummary) — per ride"
                 )
 
                 FeeRow(
@@ -256,13 +256,13 @@ struct PlatformFeeCard: View {
             .padding()
             .frame(maxWidth: .infinity)
             .background(Theme.lxSuccess.opacity(0.12))
-            .cornerRadius(12)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxSuccess.opacity(0.35), lineWidth: 1))
+            .cornerRadius(Lx.Radius.button)
+            .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxSuccess.opacity(0.35), lineWidth: 1))
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(16)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.card)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.card).stroke(Theme.lxHairline, lineWidth: 1))
         .shadow(color: .black.opacity(0.4), radius: 8)
         .padding(.horizontal)
     }
@@ -363,8 +363,8 @@ struct BenefitRow: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
     }
 }
 
@@ -405,8 +405,8 @@ struct HowItWorksSection: View {
             }
             .padding()
             .background(Theme.lxSurface)
-            .cornerRadius(16)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.lxHairline, lineWidth: 1))
+            .cornerRadius(Lx.Radius.card)
+            .overlay(RoundedRectangle(cornerRadius: Lx.Radius.card).stroke(Theme.lxHairline, lineWidth: 1))
         }
         .padding(.horizontal)
     }
@@ -429,7 +429,7 @@ struct StepRow: View {
 
                     Text("\(number)")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(Lx.Palette.onAccent)
                 }
 
                 if !isLast {
@@ -477,8 +477,8 @@ struct DriverRightsSection: View {
             }
             .padding()
             .background(Theme.lxSurface)
-            .cornerRadius(16)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.lxHairline, lineWidth: 1))
+            .cornerRadius(Lx.Radius.card)
+            .overlay(RoundedRectangle(cornerRadius: Lx.Radius.card).stroke(Theme.lxHairline, lineWidth: 1))
         }
         .padding(.horizontal)
     }
@@ -537,8 +537,8 @@ struct DirectOrderSection: View {
                         .foregroundColor(Theme.lxTextSecondary)
                         .padding()
                         .background(Theme.lxSurface2)
-                        .cornerRadius(8)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.lxHairline, lineWidth: 1))
+                        .cornerRadius(Lx.Radius.chip)
+                        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.chip).stroke(Theme.lxHairline, lineWidth: 1))
 
                     Text("You have the freedom to accept direct ride requests and earn more!")
                         .font(.caption)
@@ -547,8 +547,8 @@ struct DirectOrderSection: View {
             }
             .padding()
             .background(Theme.lxSurface)
-            .cornerRadius(16)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.lxHairline, lineWidth: 1))
+            .cornerRadius(Lx.Radius.card)
+            .overlay(RoundedRectangle(cornerRadius: Lx.Radius.card).stroke(Theme.lxHairline, lineWidth: 1))
         }
         .padding(.horizontal)
     }
@@ -600,8 +600,8 @@ struct PrivacySection: View {
             }
             .padding()
             .background(Theme.lxSurface)
-            .cornerRadius(16)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.lxHairline, lineWidth: 1))
+            .cornerRadius(Lx.Radius.card)
+            .overlay(RoundedRectangle(cornerRadius: Lx.Radius.card).stroke(Theme.lxHairline, lineWidth: 1))
         }
         .padding(.horizontal)
     }
@@ -676,9 +676,7 @@ struct FullTermsView: View {
                             PLATFORM FEES (for use of our matching platform):
                             • Rider Connection Fee: $1.00 per connection
                             • Driver Platform Fee (per ride):
-                               - $1.00 for fares up to $25
-                               - $2.00 for fares $25–$50
-                               - $3.00 for fares over $50
+                               - \(AppConfig.shared.rideshareFeeSummary)
 
                             As an INDEPENDENT DRIVER, you retain 100% of:
                             - Fares negotiated directly with riders (less the per-ride platform fee above)
@@ -767,7 +765,7 @@ struct FullTermsView: View {
                             • YOU set your own prices for rides
                             • Riders make offers which you can accept, decline, or counter
                             • All negotiated fares go directly to you
-                            • Dollor AI Service only charges a per-ride platform fee ($1 for fares up to $25, $2 for fares $25–$50, $3 for fares over $50)
+                            • Dollor AI Service only charges a per-ride platform fee (\(AppConfig.shared.rideshareFeeSummary))
                             • Tips are 100% yours
 
                             Payment Schedule:

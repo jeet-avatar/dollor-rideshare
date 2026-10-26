@@ -149,14 +149,14 @@ struct DisputeRideView: View {
 
                                 if selectedReason == reason {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.white)
+                                        .foregroundColor(Lx.Palette.onAccent)
                                 }
                             }
                             .padding()
                             .background(selectedReason == reason ? Theme.lxOrange : Theme.lxSurface)
-                            .cornerRadius(12)
+                            .cornerRadius(Lx.Radius.button)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: Lx.Radius.button)
                                     .stroke(selectedReason == reason ? Color.clear : Theme.lxHairline, lineWidth: 1)
                             )
                         }
@@ -175,9 +175,9 @@ struct DisputeRideView: View {
                         .scrollContentBackground(.hidden)
                         .foregroundColor(Theme.lxText)
                         .background(Theme.lxSurface2)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
 
@@ -194,7 +194,7 @@ struct DisputeRideView: View {
                         .foregroundColor(Theme.lxError)
                         .padding(8)
                         .background(Theme.lxError.opacity(0.1))
-                        .cornerRadius(8)
+                        .cornerRadius(Lx.Radius.chip)
                 }
 
                 // Submit
@@ -202,18 +202,18 @@ struct DisputeRideView: View {
                     HStack {
                         if isSubmitting {
                             ProgressView()
-                                .tint(.white)
+                                .tint(Lx.Palette.onAccent)
                         } else {
                             Image(systemName: "paperplane.fill")
                             Text("Submit Report")
                         }
                     }
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(selectedReason != nil ? AnyShapeStyle(Theme.lxButtonGradient) : AnyShapeStyle(Theme.lxTextMuted))
-                    .cornerRadius(14)
+                    .cornerRadius(Lx.Radius.button)
                     .shadow(color: selectedReason != nil ? Theme.lxOrange.opacity(0.4) : Color.clear, radius: 14, x: 0, y: 6)
                 }
                 .disabled(selectedReason == nil || isSubmitting)
@@ -257,11 +257,11 @@ struct DisputeRideView: View {
 
             Button("Done") { dismiss() }
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(Lx.Palette.onAccent)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Theme.lxButtonGradient)
-                .cornerRadius(14)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                 .padding(.horizontal)
                 .padding(.bottom)

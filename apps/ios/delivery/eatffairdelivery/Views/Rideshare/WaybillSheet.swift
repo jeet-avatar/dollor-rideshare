@@ -100,9 +100,9 @@ struct WaybillSheet: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }

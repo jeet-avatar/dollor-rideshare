@@ -292,9 +292,9 @@ struct RideReceiptView: View {
             }
         }
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }
@@ -343,9 +343,9 @@ struct RideReceiptView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }
@@ -416,16 +416,16 @@ struct RideReceiptView: View {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Theme.lxSurface2)
-                            .cornerRadius(4)
+                            .cornerRadius(Lx.Radius.grabber)
                     }
                 }
             }
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }
@@ -484,9 +484,9 @@ struct RideReceiptView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }
@@ -515,14 +515,14 @@ struct RideReceiptView: View {
                 HStack {
                     if isSendingEmail {
                         ProgressView()
-                            .tint(.white)
+                            .tint(Lx.Palette.onAccent)
                     } else {
                         Image(systemName: emailSent ? "checkmark.circle.fill" : "envelope.fill")
                     }
                     Text(emailSent ? "Receipt Sent" : "Email Receipt")
                 }
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(Lx.Palette.onAccent)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(
@@ -534,7 +534,7 @@ struct RideReceiptView: View {
                         }
                     }
                 )
-                .cornerRadius(14)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: emailSent ? .clear : Theme.lxOrange.opacity(0.4), radius: 14, y: 6)
             }
             .disabled(isSendingEmail || emailSent)
@@ -552,7 +552,7 @@ struct RideReceiptView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Theme.lxError.opacity(0.12))
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
             }
 
             // TNC-10: Safety Report
@@ -569,7 +569,7 @@ struct RideReceiptView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Theme.lxError.opacity(0.08))
-                    .cornerRadius(12)
+                    .cornerRadius(Lx.Radius.button)
                 }
                 .sheet(isPresented: $showSafetyReport) {
                     SafetyReportSheet(driverId: driverId, rideRequestId: rideId)

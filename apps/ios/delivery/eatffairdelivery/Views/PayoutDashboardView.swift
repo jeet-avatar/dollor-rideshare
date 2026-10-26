@@ -219,7 +219,7 @@ struct PayoutDashboardView: View {
                     .font(.subheadline)
                     .foregroundColor(Theme.lxTextSecondary)
                 Text("$\(String(format: "%.2f", summary.totalNet))")
-                    .font(.system(size: 36, weight: .bold))
+                    .font(Lx.Typography.icon.weight(.bold))
                     .foregroundColor(Theme.lxText)
             }
 
@@ -259,8 +259,8 @@ struct PayoutDashboardView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
     }
 
     @ViewBuilder
@@ -312,8 +312,8 @@ struct PayoutDashboardView: View {
             }
             .padding()
             .background(Theme.lxSurface)
-            .cornerRadius(12)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+            .cornerRadius(Lx.Radius.button)
+            .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
         }
     }
 
@@ -413,7 +413,7 @@ struct PayoutDashboardView: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(color.opacity(0.15))
-            .cornerRadius(4)
+            .cornerRadius(Lx.Radius.grabber)
             .padding(.trailing, 8)
     }
 
@@ -559,9 +559,9 @@ struct PayoutDashboardView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
-        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
+        .shadow(color: Lx.Palette.shadow.opacity(0.06), radius: 4, x: 0, y: 2)
     }
 
     @ViewBuilder
@@ -584,7 +584,7 @@ struct PayoutDashboardView: View {
             .padding(.vertical, 4)
             .background(color.opacity(0.15))
             .foregroundColor(color)
-            .cornerRadius(6)
+            .cornerRadius(Lx.Radius.chip)
     }
 
     private func fetchProp22Periods() {
@@ -751,8 +751,8 @@ struct Prop22PeriodDetailView: View {
                     }
                     .padding()
                     .background(Theme.lxSurface2)
-                    .cornerRadius(10)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.lxHairline, lineWidth: 1))
+                    .cornerRadius(Lx.Radius.chip)
+                    .overlay(RoundedRectangle(cornerRadius: Lx.Radius.chip).stroke(Theme.lxHairline, lineWidth: 1))
                     .padding(.horizontal)
                 }
 

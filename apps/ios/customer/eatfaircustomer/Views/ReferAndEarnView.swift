@@ -25,7 +25,7 @@ struct ReferAndEarnView: View {
                     // Header Card
                     VStack(spacing: 15) {
                         Image(systemName: "gift.fill")
-                            .font(.system(size: 60))
+                            .font(Lx.Typography.iconHero)
                             .foregroundColor(Theme.lxOrange)
 
                         Text("Refer Friends, Earn Rewards")
@@ -42,9 +42,9 @@ struct ReferAndEarnView: View {
                     .padding(.vertical, 30)
                     .frame(maxWidth: .infinity)
                     .background(Theme.lxSurface)
-                    .cornerRadius(16)
+                    .cornerRadius(Lx.Radius.card)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: Lx.Radius.card)
                             .stroke(Theme.lxHairline, lineWidth: 1)
                     )
                     .padding(.horizontal)
@@ -58,7 +58,7 @@ struct ReferAndEarnView: View {
 
                         HStack {
                             Text(referralCode.isEmpty ? "LOADING..." : referralCode)
-                                .font(.system(size: 24, weight: .bold, design: .monospaced))
+                                .font(Lx.Typography.title.weight(.bold))
                                 .foregroundColor(Theme.lxText)
 
                             Spacer()
@@ -71,9 +71,9 @@ struct ReferAndEarnView: View {
                         }
                         .padding()
                         .background(Theme.lxSurface2)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
 
@@ -85,11 +85,11 @@ struct ReferAndEarnView: View {
                                     Text("Share")
                                 }
                                 .font(.headline)
-                                .foregroundColor(.white)
+                                .foregroundColor(Lx.Palette.onAccent)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .background(Theme.lxButtonGradient)
-                                .cornerRadius(14)
+                                .cornerRadius(Lx.Radius.button)
                                 .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                             }
 
@@ -103,9 +103,9 @@ struct ReferAndEarnView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .background(Theme.lxSurface2)
-                                .cornerRadius(14)
+                                .cornerRadius(Lx.Radius.button)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 14)
+                                    RoundedRectangle(cornerRadius: Lx.Radius.button)
                                         .stroke(Theme.lxOrange, lineWidth: 2)
                                 )
                             }
@@ -113,9 +113,9 @@ struct ReferAndEarnView: View {
                     }
                     .padding(20)
                     .background(Theme.lxSurface)
-                    .cornerRadius(16)
+                    .cornerRadius(Lx.Radius.card)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: Lx.Radius.card)
                             .stroke(Theme.lxHairline, lineWidth: 1)
                     )
                     .padding(.horizontal)
@@ -179,9 +179,9 @@ struct ReferAndEarnView: View {
                             )
                         }
                         .background(Theme.lxSurface)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
                     }
@@ -264,9 +264,9 @@ struct StatCard: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }
@@ -291,7 +291,7 @@ struct HowItWorksRow: View {
                     Text(step)
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(Lx.Palette.onAccent)
                 }
 
                 if !isLast {

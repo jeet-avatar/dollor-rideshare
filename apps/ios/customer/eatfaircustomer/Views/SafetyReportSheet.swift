@@ -43,38 +43,38 @@ struct SafetyReportSheet: View {
 
                     TextEditor(text: $description)
                         .frame(minHeight: 100)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.3)))
+                        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.chip).stroke(Lx.Palette.textMuted.opacity(0.3)))
 
                     if description.count < 10 && !description.isEmpty {
                         Text("Please provide at least 10 characters")
                             .font(.caption)
-                            .foregroundColor(.red)
+                            .foregroundColor(Lx.Palette.error)
                     }
 
                     Button(action: submitReport) {
                         HStack {
                             if isSubmitting {
-                                ProgressView().tint(.white)
+                                ProgressView().tint(Lx.Palette.onAccent)
                             }
                             Text("Submit Safety Report")
                                 .fontWeight(.semibold)
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(description.count >= 10 ? Color.red : Color.gray)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .background(description.count >= 10 ? Lx.Palette.error : Lx.Palette.textMuted)
+                        .foregroundColor(Lx.Palette.onAccent)
+                        .cornerRadius(Lx.Radius.button)
                     }
                     .disabled(description.count < 10 || isSubmitting)
 
                     if let error = errorMessage {
-                        Text(error).font(.caption).foregroundColor(.red)
+                        Text(error).font(.caption).foregroundColor(Lx.Palette.error)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
                         Divider()
                         Text("Dollor.ai has a zero-tolerance policy for drug or alcohol use by drivers. Report a suspected violation with this form, by phone, or by email:")
-                            .font(.caption).foregroundColor(.secondary)
+                            .font(.caption).foregroundColor(Lx.Palette.textSecondary)
                         HStack {
                             Image(systemName: "phone.fill").font(.caption)
                             Text("+1-800-365-5671").font(.caption.weight(.medium))
@@ -84,7 +84,7 @@ struct SafetyReportSheet: View {
                             Text("support@dollor.ai").font(.caption.weight(.medium))
                         }
                         Text("You may also contact CPUC directly:")
-                            .font(.caption).foregroundColor(.secondary)
+                            .font(.caption).foregroundColor(Lx.Palette.textSecondary)
                             .padding(.top, 4)
                         HStack {
                             Image(systemName: "phone.fill").font(.caption)
@@ -95,7 +95,7 @@ struct SafetyReportSheet: View {
                             Text("CIU_intake@cpuc.ca.gov").font(.caption.weight(.medium))
                         }
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Lx.Palette.textSecondary)
                 }
                 .padding()
             }

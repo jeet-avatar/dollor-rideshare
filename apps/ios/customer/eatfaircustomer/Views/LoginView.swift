@@ -4,18 +4,18 @@ import EatFairShared
 
 // MARK: - Dollor Luxury Theme (black + orange)
 // Orange is the brand accent (matches the orange smiley ID stickers on driver cars).
-private let lxBlack        = Color(hex: "0B0B0D")   // page canvas
-private let lxSurface      = Color(hex: "17171A")   // inputs / cards
-private let lxSurface2     = Color(hex: "202024")   // elevated
-private let lxHairline     = Color(hex: "2A2A2E")   // borders / dividers
-private let lxOrange       = Color(hex: "FF7A1A")   // primary accent
-private let lxOrangeBright = Color(hex: "FF9A3D")   // gradient top / highlight
-private let lxOrangeDeep   = Color(hex: "E85D04")   // pressed
-private let lxText         = Color.white            // primary text
-private let lxTextSecondary = Color(hex: "A1A1AA")  // secondary text
-private let lxTextMuted    = Color(hex: "6E6E78")   // muted / placeholders
-private let lxError        = Color(hex: "FF453A")
-private let lxSuccess      = Color(hex: "30D158")
+private let lxBlack        = Lx.Palette.bg   // page canvas
+private let lxSurface      = Lx.Palette.surface   // inputs / cards
+private let lxSurface2     = Lx.Palette.surface2   // elevated
+private let lxHairline     = Lx.Palette.hairline   // borders / dividers
+private let lxOrange       = Lx.Palette.orange   // primary accent
+private let lxOrangeBright = Lx.Palette.orangeBright   // gradient top / highlight
+private let lxOrangeDeep   = Lx.Palette.orangeDeep   // pressed
+private let lxText         = Lx.Palette.onAccent            // primary text
+private let lxTextSecondary = Lx.Palette.textSecondary  // secondary text
+private let lxTextMuted    = Lx.Palette.textMuted   // muted / placeholders
+private let lxError        = Lx.Palette.error
+private let lxSuccess      = Lx.Palette.success
 
 struct LoginView: View {
     @ObservedObject var authViewModel: AuthViewModel
@@ -73,20 +73,20 @@ struct LoginView: View {
     private var brandMark: some View {
         VStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: Lx.Radius.sheet, style: .continuous)
                     .fill(LinearGradient(colors: [lxOrangeBright, lxOrange],
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 74, height: 74)
                     .shadow(color: lxOrange.opacity(0.5), radius: 20, y: 8)
                 Image(systemName: "face.smiling.fill")
-                    .font(.system(size: 40, weight: .medium))
+                    .font(Lx.Typography.icon.weight(.medium))
                     .foregroundColor(lxBlack)
             }
             HStack(spacing: 0) {
                 Text("Dollor").foregroundColor(lxText)
                 Text(".ai").foregroundColor(lxOrange)
             }
-            .font(.system(size: 26, weight: .bold))
+            .font(Lx.Typography.title.weight(.bold))
             .tracking(0.5)
         }
     }
@@ -95,10 +95,10 @@ struct LoginView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text(isSignUp ? "Create your account" : "Welcome back")
-                .font(.system(size: 30, weight: .bold))
+                .font(Lx.Typography.largeTitle.weight(.bold))
                 .foregroundColor(lxText)
             Text(isSignUp ? "Ride for a flat $1 platform fee." : "Sign in to continue")
-                .font(.system(size: 15))
+                .font(Lx.Typography.subheadline)
                 .foregroundColor(lxTextSecondary)
         }
     }
@@ -110,17 +110,17 @@ struct LoginView: View {
             Button(action: { authViewModel.signInWithApple() }) {
                 HStack(spacing: 10) {
                     if authViewModel.isLoading {
-                        ProgressView().tint(.black)
+                        ProgressView().tint(Lx.Palette.onSuccess)
                     } else {
-                        Image(systemName: "apple.logo").font(.system(size: 18))
-                        Text("Continue with Apple").font(.system(size: 16, weight: .semibold))
+                        Image(systemName: "apple.logo").font(Lx.Typography.body)
+                        Text("Continue with Apple").font(Lx.Typography.callout.weight(.semibold))
                     }
                 }
-                .foregroundColor(.black)
+                .foregroundColor(Lx.Palette.onSuccess)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
-                .background(Color.white)
-                .cornerRadius(14)
+                .background(Lx.Palette.onAccent)
+                .cornerRadius(Lx.Radius.button)
             }
             .disabled(authViewModel.isLoading)
             .accessibilityLabel("Sign in with Apple")
@@ -130,21 +130,21 @@ struct LoginView: View {
             Button(action: { authViewModel.signInWithGoogle() }) {
                 HStack(spacing: 10) {
                     if authViewModel.isLoading {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(Lx.Palette.onAccent)
                     } else {
                         Text("G")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color(hex: "4285F4"))
+                            .font(Lx.Typography.body.weight(.bold))
+                            .foregroundColor(Lx.Palette.googleBlue)
                         Text("Continue with Google")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(Lx.Typography.callout.weight(.semibold))
                             .foregroundColor(lxText)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
                 .background(lxSurface)
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(lxHairline, lineWidth: 1))
-                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(lxHairline, lineWidth: 1))
+                .cornerRadius(Lx.Radius.button)
             }
             .disabled(authViewModel.isLoading)
             .accessibilityLabel("Sign in with Google")
@@ -158,7 +158,7 @@ struct LoginView: View {
         HStack {
             Rectangle().fill(lxHairline).frame(height: 1)
             Text("or")
-                .font(.system(size: 13))
+                .font(Lx.Typography.footnote)
                 .foregroundColor(lxTextMuted)
                 .padding(.horizontal, 14)
             Rectangle().fill(lxHairline).frame(height: 1)
@@ -185,7 +185,7 @@ struct LoginView: View {
 
                 if let error = emailError {
                     Text(error)
-                        .font(.system(size: 12))
+                        .font(Lx.Typography.caption)
                         .foregroundColor(lxError)
                         .padding(.leading, 4)
                 }
@@ -203,7 +203,7 @@ struct LoginView: View {
                 Spacer()
                 Button(action: { authViewModel.showForgotPassword = true }) {
                     Text("Forgot password?")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(Lx.Typography.footnote.weight(.semibold))
                         .foregroundColor(lxOrange)
                 }
                 .accessibilityLabel("Forgot password")
@@ -230,20 +230,20 @@ struct LoginView: View {
         }) {
             Group {
                 if authViewModel.isLoading {
-                    ProgressView().tint(.white)
+                    ProgressView().tint(Lx.Palette.onAccent)
                 } else {
                     Text(isSignUp ? "Create account" : "Continue")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(Lx.Typography.callout.weight(.bold))
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(Lx.Palette.onAccent)
             .frame(maxWidth: .infinity)
             .frame(height: 54)
             .background(
                 LinearGradient(colors: [lxOrangeBright, lxOrange],
                                startPoint: .top, endPoint: .bottom)
             )
-            .cornerRadius(14)
+            .cornerRadius(Lx.Radius.button)
             .shadow(color: lxOrange.opacity(0.45), radius: 16, y: 8)
         }
         .padding(.horizontal, 24)
@@ -257,7 +257,7 @@ struct LoginView: View {
     @ViewBuilder private var messages: some View {
         if let errorMessage = authViewModel.errorMessage {
             Text(errorMessage)
-                .font(.system(size: 14))
+                .font(Lx.Typography.footnote)
                 .foregroundColor(lxError)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
@@ -265,7 +265,7 @@ struct LoginView: View {
         }
         if authViewModel.passwordResetSuccess {
             Text("Password reset successful! You can now log in.")
-                .font(.system(size: 14))
+                .font(Lx.Typography.footnote)
                 .foregroundColor(lxSuccess)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
@@ -277,7 +277,7 @@ struct LoginView: View {
     private var toggleAuth: some View {
         HStack(spacing: 5) {
             Text(isSignUp ? "Already have an account?" : "Don't have an account?")
-                .font(.system(size: 14))
+                .font(Lx.Typography.footnote)
                 .foregroundColor(lxTextSecondary)
             Button(action: {
                 withAnimation {
@@ -286,7 +286,7 @@ struct LoginView: View {
                 }
             }) {
                 Text(isSignUp ? "Log in" : "Sign up")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(Lx.Typography.footnote.weight(.bold))
                     .foregroundColor(lxOrange)
             }
             .accessibilityLabel(isSignUp ? "Switch to log in" : "Switch to sign up")
@@ -299,18 +299,18 @@ struct LoginView: View {
     private var trustLine: some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 15))
+                .font(Lx.Typography.subheadline)
                 .foregroundColor(lxOrange)
             Text("Flat $1 platform fee · 100% of tips go to drivers")
-                .font(.system(size: 13, weight: .medium))
+                .font(Lx.Typography.footnote.weight(.medium))
                 .foregroundColor(lxTextSecondary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity)
         .background(lxSurface)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(lxHairline, lineWidth: 1))
-        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
         .padding(.horizontal, 24)
         .padding(.top, 28)
     }
@@ -324,13 +324,13 @@ struct LoginView: View {
             authViewModel.login(email: email, password: password)
         }) {
             HStack(spacing: 8) {
-                Image(systemName: "play.circle").font(.system(size: 15))
-                Text("Demo Login (Testing)").font(.system(size: 14, weight: .medium))
+                Image(systemName: "play.circle").font(Lx.Typography.subheadline)
+                Text("Demo Login (Testing)").font(Lx.Typography.footnote.weight(.medium))
             }
             .foregroundColor(lxTextSecondary)
             .frame(maxWidth: .infinity)
             .frame(height: 46)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(lxHairline, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(lxHairline, lineWidth: 1))
         }
         .padding(.horizontal, 24)
         .padding(.top, 14)
@@ -348,7 +348,7 @@ struct LoginView: View {
             Link("Privacy Policy", destination: URL(string: AppConstants.privacyPolicyURL)!)
                 .foregroundColor(lxTextSecondary)
         }
-        .font(.system(size: 13))
+        .font(Lx.Typography.footnote)
         .padding(.top, 18)
         .padding(.bottom, 28)
     }
@@ -364,20 +364,20 @@ struct AuthTextField: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(Lx.Typography.callout)
                 .foregroundColor(lxTextMuted)
                 .frame(width: 20)
 
             TextField("", text: $text, prompt: Text(placeholder).foregroundColor(lxTextMuted))
-                .font(.system(size: 16))
+                .font(Lx.Typography.callout)
                 .foregroundColor(lxText)
                 .keyboardType(keyboardType)
         }
         .padding(.horizontal, 16)
         .frame(height: 54)
         .background(lxSurface)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(lxHairline, lineWidth: 1))
-        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
     }
 }
 
@@ -389,19 +389,19 @@ struct AuthSecureField: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "lock")
-                .font(.system(size: 16))
+                .font(Lx.Typography.callout)
                 .foregroundColor(lxTextMuted)
                 .frame(width: 20)
 
             SecureField("", text: $text, prompt: Text(placeholder).foregroundColor(lxTextMuted))
-                .font(.system(size: 16))
+                .font(Lx.Typography.callout)
                 .foregroundColor(lxText)
         }
         .padding(.horizontal, 16)
         .frame(height: 54)
         .background(lxSurface)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(lxHairline, lineWidth: 1))
-        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
     }
 }
 
@@ -445,12 +445,12 @@ struct ForgotPasswordView: View {
 
                 VStack(spacing: 24) {
                     Text("Reset password")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(Lx.Typography.title.weight(.bold))
                         .foregroundColor(lxText)
                         .padding(.top, 30)
 
                     Text("Enter your email address and we'll send you a code to reset your password.")
-                        .font(.system(size: 15))
+                        .font(Lx.Typography.subheadline)
                         .foregroundColor(lxTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -466,7 +466,7 @@ struct ForgotPasswordView: View {
 
                     if let errorMessage = authViewModel.errorMessage {
                         Text(errorMessage)
-                            .font(.system(size: 14))
+                            .font(Lx.Typography.footnote)
                             .foregroundColor(lxError)
                             .padding(.horizontal, 24)
                     }
@@ -476,18 +476,18 @@ struct ForgotPasswordView: View {
                     }) {
                         Group {
                             if authViewModel.isLoading {
-                                ProgressView().tint(.white)
+                                ProgressView().tint(Lx.Palette.onAccent)
                             } else {
                                 Text("Send reset code")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(Lx.Typography.callout.weight(.bold))
                             }
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(Lx.Palette.onAccent)
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
                         .background(LinearGradient(colors: [lxOrangeBright, lxOrange],
                                                    startPoint: .top, endPoint: .bottom))
-                        .cornerRadius(14)
+                        .cornerRadius(Lx.Radius.button)
                         .shadow(color: lxOrange.opacity(0.4), radius: 14, y: 6)
                     }
                     .padding(.horizontal, 24)
@@ -521,12 +521,12 @@ struct ResetCodeEntryView: View {
 
                 VStack(spacing: 24) {
                     Text("Enter reset code")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(Lx.Typography.title.weight(.bold))
                         .foregroundColor(lxText)
                         .padding(.top, 30)
 
                     Text("We sent a code to \(authViewModel.resetEmail). Enter it below along with your new password.")
-                        .font(.system(size: 15))
+                        .font(Lx.Typography.subheadline)
                         .foregroundColor(lxTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -547,7 +547,7 @@ struct ResetCodeEntryView: View {
 
                     if let errorMessage = authViewModel.errorMessage {
                         Text(errorMessage)
-                            .font(.system(size: 14))
+                            .font(Lx.Typography.footnote)
                             .foregroundColor(lxError)
                             .padding(.horizontal, 24)
                     }
@@ -557,18 +557,18 @@ struct ResetCodeEntryView: View {
                     }) {
                         Group {
                             if authViewModel.isLoading {
-                                ProgressView().tint(.white)
+                                ProgressView().tint(Lx.Palette.onAccent)
                             } else {
                                 Text("Reset password")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(Lx.Typography.callout.weight(.bold))
                             }
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(Lx.Palette.onAccent)
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
                         .background(LinearGradient(colors: [lxOrangeBright, lxOrange],
                                                    startPoint: .top, endPoint: .bottom))
-                        .cornerRadius(14)
+                        .cornerRadius(Lx.Radius.button)
                         .shadow(color: lxOrange.opacity(0.4), radius: 14, y: 6)
                     }
                     .padding(.horizontal, 24)

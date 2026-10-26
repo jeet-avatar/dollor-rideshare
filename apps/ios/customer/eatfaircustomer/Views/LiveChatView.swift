@@ -119,9 +119,9 @@ struct LiveChatView: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(Theme.lxSurface2)
-                            .cornerRadius(20)
+                            .cornerRadius(Lx.Radius.sheet)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: Lx.Radius.sheet)
                                     .stroke(Theme.lxHairline, lineWidth: 1)
                             )
                     }
@@ -141,9 +141,9 @@ struct LiveChatView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(Theme.lxSurface2)
-                .cornerRadius(24)
+                .cornerRadius(Lx.Radius.sheet)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: Lx.Radius.sheet)
                         .stroke(Theme.lxHairline, lineWidth: 1)
                 )
                 .focused($isInputFocused)
@@ -155,7 +155,7 @@ struct LiveChatView: View {
             Button(action: sendCurrentMessage) {
                 Image(systemName: "paperplane.fill")
                     .font(.title3)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .frame(width: 44, height: 44)
                     .background(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Theme.lxTextMuted : Theme.lxOrange)
                     .clipShape(Circle())
@@ -227,7 +227,7 @@ private struct ChatBubble: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(isFromUser ? Theme.lxOrange : Theme.lxSurface2)
-                    .cornerRadius(18)
+                    .cornerRadius(Lx.Radius.card)
                     .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
             }
 
@@ -263,7 +263,7 @@ private struct TypingIndicator: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Theme.lxSurface2)
-        .cornerRadius(18)
+        .cornerRadius(Lx.Radius.card)
         .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
         .onAppear { dotOffset = -4 }
     }

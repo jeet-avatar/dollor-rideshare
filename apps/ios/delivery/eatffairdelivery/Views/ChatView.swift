@@ -1,4 +1,5 @@
 import SwiftUI
+import EatFairShared
 import MapKit
 
 // MARK: - Chat View
@@ -170,7 +171,7 @@ struct MessageBubble: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(message.isFromDriver ? Theme.lxOrange : Theme.lxSurface2)
-            .cornerRadius(20)
+            .cornerRadius(Lx.Radius.sheet)
             .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 
@@ -181,7 +182,7 @@ struct MessageBubble: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(Theme.lxSurface)
-            .cornerRadius(12)
+            .cornerRadius(Lx.Radius.button)
     }
 
     private var locationMessageView: some View {
@@ -194,7 +195,7 @@ struct MessageBubble: View {
                     Marker("Location", coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
                 }
                 .frame(width: 200, height: 120)
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
                 .disabled(true)
 
                 HStack {
@@ -206,7 +207,7 @@ struct MessageBubble: View {
                 .padding(8)
                 .frame(width: 200)
                 .background(message.isFromDriver ? Theme.lxOrange : Theme.lxSurface2)
-                .cornerRadius(12, corners: [.bottomLeft, .bottomRight])
+                .cornerRadius(Lx.Radius.button, corners: [.bottomLeft, .bottomRight])
             }
         }
     }
@@ -221,8 +222,8 @@ struct MessageBubble: View {
                 // Audio waveform placeholder
                 HStack(spacing: 2) {
                     ForEach(0..<20, id: \.self) { _ in
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(message.isFromDriver ? Color.white.opacity(0.7) : Theme.lxOrange.opacity(0.5))
+                        RoundedRectangle(cornerRadius: Lx.Radius.grabber)
+                            .fill(message.isFromDriver ? Lx.Palette.onAccent.opacity(0.7) : Theme.lxOrange.opacity(0.5))
                             .frame(width: 3, height: CGFloat.random(in: 8...24))
                     }
                 }
@@ -235,7 +236,7 @@ struct MessageBubble: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(message.isFromDriver ? Theme.lxOrange : Theme.lxSurface2)
-        .cornerRadius(20)
+        .cornerRadius(Lx.Radius.sheet)
     }
 }
 
@@ -281,7 +282,7 @@ struct ChatInputBar: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(Theme.lxSurface2)
-                .cornerRadius(20)
+                .cornerRadius(Lx.Radius.sheet)
 
                 // Send Button
                 Button(action: onSend) {
@@ -320,7 +321,7 @@ struct QuickResponsesBar: View {
                             .padding(.vertical, 8)
                             .background(Theme.lxOrange.opacity(0.1))
                             .foregroundColor(Theme.lxOrange)
-                            .cornerRadius(16)
+                            .cornerRadius(Lx.Radius.card)
                         }
                     }
                 }
@@ -356,14 +357,14 @@ struct ShareLocationSheet: View {
                 )))) {
                     Annotation("You", coordinate: coord) {
                         Image(systemName: "car.fill")
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .padding(8)
                             .background(Theme.lxOrange)
                             .clipShape(Circle())
                     }
                 }
                 .frame(height: 200)
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
                 .padding(.horizontal)
             } else {
                 VStack {
@@ -381,11 +382,11 @@ struct ShareLocationSheet: View {
                     Text("Share Current Location")
                 }
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(Lx.Palette.onAccent)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Theme.lxButtonGradient)
-                .cornerRadius(14)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
             }
             .padding(.horizontal)
@@ -433,11 +434,11 @@ struct ConversationsListView: View {
                     if chatManager.unreadCount > 0 {
                         Text("\(chatManager.unreadCount) unread")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(Theme.lxOrange)
-                            .cornerRadius(12)
+                            .cornerRadius(Lx.Radius.button)
                     }
                 }
             }
@@ -498,11 +499,11 @@ struct ConversationRow: View {
                     if conversation.unreadCountDriver > 0 {
                         Text("\(conversation.unreadCountDriver)")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
                             .background(Theme.lxOrange)
-                            .cornerRadius(10)
+                            .cornerRadius(Lx.Radius.chip)
                     }
                 }
             }
@@ -515,7 +516,7 @@ struct EmptyConversationsView: View {
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "message.fill")
-                .font(.system(size: 60))
+                .font(Lx.Typography.iconHero)
                 .foregroundColor(Theme.lxTextMuted)
 
             Text("No Messages Yet")

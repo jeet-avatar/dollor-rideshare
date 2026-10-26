@@ -123,6 +123,18 @@ struct RideshareDashboardView: View {
                 .interactiveDismissDisabled(true)
             }
             .onAppear { viewModel.refreshData() }
+            // Returning to the app: re-sync with the server so state changed elsewhere never looks stale.
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                viewModel.refreshData()
+            }
+            .onChange(of: viewModel.myBids) { _, bids in
+                // The rider (or support) cancelled the ride we are showing: close the screen instead of leaving a dead ride.
+                if let current = presentedActiveBid,
+                   let latest = bids.first(where: { $0.id == current.id }),
+                   latest.ride_request?.status == "cancelled" {
+                    presentedActiveBid = nil
+                }
+            }
             .onChange(of: viewModel.activeRides) { _, newRides in
                 // Present when a ride appears for the first time; never close from here.
                 if presentedActiveBid == nil, let first = newRides.first {
@@ -198,7 +210,7 @@ struct RideshareDashboardView: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
                             .background(selectedTab == tab ? tab.color : tab.color.opacity(0.2))
-                            .cornerRadius(10)
+                            .cornerRadius(Lx.Radius.chip)
                     }
                     .foregroundColor(selectedTab == tab ? tab.color : Theme.lxTextSecondary)
                     .frame(maxWidth: .infinity)
@@ -273,7 +285,6 @@ struct AvailableRequestsContent: View {
     var onBidSubmitted: (() -> Void)? = nil
     @StateObject private var locationManager = LocationManager.shared
     @State private var selectedRequest: RideRequestForBidding?
-    @State private var showBidSheet = false
 
     var body: some View {
         Group {
@@ -285,12 +296,10 @@ struct AvailableRequestsContent: View {
                 requestsList
             }
         }
-        .sheet(isPresented: $showBidSheet) {
-            if let request = selectedRequest {
-                SubmitBidSheet(request: request, viewModel: viewModel) {
-                    showBidSheet = false
-                    onBidSubmitted?()
-                }
+        .sheet(item: $selectedRequest) { request in
+            SubmitBidSheet(request: request, viewModel: viewModel) {
+                selectedRequest = nil
+                onBidSubmitted?()
             }
         }
     }
@@ -300,7 +309,7 @@ struct AvailableRequestsContent: View {
             Spacer()
             ProgressView()
                 .scaleEffect(1.5)
-                .tint(.blue)
+                .tint(Lx.Palette.orange)
             Text("Finding ride requests...")
                 .font(.headline)
                 .foregroundColor(Theme.textSecondary)
@@ -314,19 +323,18 @@ struct AvailableRequestsContent: View {
 
             ZStack {
                 Circle()
-                    .fill(Color.blue.opacity(0.1))
+                    .fill(Lx.Palette.orange.opacity(0.1))
                     .frame(width: 120, height: 120)
 
                 Image(systemName: "car.2.fill")
-                    .font(.system(size: 44))
-                    .foregroundColor(.blue)
+                    .font(Lx.Typography.largeTitle)
+                    .foregroundColor(Lx.Palette.orange)
             }
 
             VStack(spacing: 8) {
                 Text("No Ride Requests")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(Theme.textPrimary)
+                    .font(Lx.Typography.title)
+                    .foregroundColor(Lx.Palette.text)
 
                 Text("Ride requests will appear here.\nSubmit competitive bids to get matched!")
                     .font(.subheadline)
@@ -335,17 +343,10 @@ struct AvailableRequestsContent: View {
             }
 
             Button(action: { viewModel.fetchAvailableRequests() }) {
-                HStack {
-                    Image(systemName: "arrow.clockwise")
-                    Text("Refresh")
-                }
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding(.horizontal, 32)
-                .padding(.vertical, 14)
-                .background(Color.blue)
-                .cornerRadius(12)
+                Label("Refresh", systemImage: "arrow.clockwise")
             }
+            .buttonStyle(.lxPrimary)
+            .padding(.horizontal, Lx.Spacing.xl)
             .accessibilityLabel("Refresh ride requests")
             .accessibilityHint("Check for new available ride requests")
 
@@ -361,7 +362,6 @@ struct AvailableRequestsContent: View {
                     TinderSwipeCard(
                         onAccept: {
                             selectedRequest = request
-                            showBidSheet = true
                         },
                         onDecline: { /* skip to next card — no-op */ }
                     ) {
@@ -370,7 +370,6 @@ struct AvailableRequestsContent: View {
                             locationManager: locationManager,
                             onBid: {
                                 selectedRequest = request
-                                showBidSheet = true
                             }
                         )
                     }
@@ -394,7 +393,7 @@ struct MyBidsContent: View {
     /// True when there are bids worth showing (pending or countered).
     /// Accepted bids live in the Active tab so they don't count here.
     private var hasVisibleBids: Bool {
-        !viewModel.pendingBids.isEmpty || !viewModel.counteredBids.isEmpty
+        !viewModel.pendingBids.isEmpty || !viewModel.counteredBids.isEmpty || !viewModel.closedBids.isEmpty
     }
 
     var body: some View {
@@ -430,12 +429,12 @@ struct MyBidsContent: View {
 
             ZStack {
                 Circle()
-                    .fill(Color.orange.opacity(0.1))
+                    .fill(Lx.Palette.orange.opacity(0.1))
                     .frame(width: 120, height: 120)
 
                 Image(systemName: "hand.raised.fill")
-                    .font(.system(size: 44))
-                    .foregroundColor(.orange)
+                    .font(Lx.Typography.iconLarge)
+                    .foregroundColor(Lx.Palette.orange)
             }
 
             VStack(spacing: 8) {
@@ -463,7 +462,7 @@ struct MyBidsContent: View {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Image(systemName: "exclamationmark.circle.fill")
-                                .foregroundColor(.blue)
+                                .foregroundColor(Lx.Palette.orange)
                             Text("Counter-Offers (\(viewModel.counteredBids.count))")
                                 .font(.headline)
                                 .foregroundColor(Theme.textPrimary)
@@ -499,12 +498,51 @@ struct MyBidsContent: View {
                         }
                     }
                 }
+
+                // Recent: bids that are no longer live, with the reason
+                if !viewModel.closedBids.isEmpty {
+                    VStack(alignment: .leading, spacing: Lx.Spacing.m) {
+                        Text("Recent")
+                            .font(Lx.Typography.headline)
+                            .foregroundColor(Lx.Palette.text)
+
+                        ForEach(viewModel.closedBids) { bid in
+                            ClosedBidRow(bid: bid)
+                        }
+                    }
+                }
             }
             .padding()
         }
         .refreshable {
             viewModel.fetchMyBids()
         }
+    }
+}
+
+// MARK: - Closed Bid Row
+
+struct ClosedBidRow: View {
+    let bid: RideBid
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Lx.Spacing.xs) {
+            if let ride = bid.ride_request {
+                Text("\(ride.pickup.address) → \(ride.dropoff.address)")
+                    .font(Lx.Typography.subheadline)
+                    .foregroundColor(Lx.Palette.textSecondary)
+                    .lineLimit(2)
+            }
+            Text(bid.closedReason ?? "")
+                .font(Lx.Typography.subheadline.weight(.semibold))
+                .foregroundColor(Lx.Palette.orange)
+            Text("Your offer: $\(String(format: "%.2f", bid.proposed_price))")
+                .font(Lx.Typography.caption)
+                .foregroundColor(Lx.Palette.textMuted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Lx.Spacing.l)
+        .lxCard()
     }
 }
 
@@ -533,12 +571,12 @@ struct ActiveRidesContent: View {
 
             ZStack {
                 Circle()
-                    .fill(Color.green.opacity(0.1))
+                    .fill(Lx.Palette.success.opacity(0.1))
                     .frame(width: 120, height: 120)
 
                 Image(systemName: "location.fill")
-                    .font(.system(size: 44))
-                    .foregroundColor(.green)
+                    .font(Lx.Typography.iconLarge)
+                    .foregroundColor(Lx.Palette.success)
             }
 
             VStack(spacing: 8) {
@@ -600,16 +638,16 @@ struct ActiveRideCard: View {
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
+                        .foregroundColor(Lx.Palette.success)
                     Text("Matched")
                         .font(.subheadline)
                         .fontWeight(.bold)
-                        .foregroundColor(.green)
+                        .foregroundColor(Lx.Palette.success)
                 }
 
                 Spacer()
 
-                Text("$\(String(format: "%.0f", finalPrice))")
+                Text("\(Lx.Money.text(finalPrice))")
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(Theme.textPrimary)
@@ -624,7 +662,7 @@ struct ActiveRideCard: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(Color.green)
+                            .fill(Lx.Palette.success)
                             .frame(width: 10, height: 10)
                         Text(request.pickup.address)
                             .font(.caption)
@@ -635,7 +673,7 @@ struct ActiveRideCard: View {
 
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(Color.red)
+                            .fill(Lx.Palette.error)
                             .frame(width: 10, height: 10)
                         Text(request.dropoff.address)
                             .font(.caption)
@@ -654,16 +692,16 @@ struct ActiveRideCard: View {
             }
             .font(.subheadline)
             .fontWeight(.semibold)
-            .foregroundColor(.white)
+            .foregroundColor(Lx.Palette.onAccent)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .background(Color.green)
-            .cornerRadius(12)
+            .background(Lx.Palette.success)
+            .cornerRadius(Lx.Radius.button)
             .padding()
         }
         .background(Theme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .cornerRadius(Lx.Radius.card)
+        .shadow(color: Lx.Palette.shadow.opacity(0.08), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -680,6 +718,11 @@ struct RideRequestCard: View {
             return String(format: "%.1f mi", miles)
         }
         return "--"
+    }
+
+    /// What the rider is offering to pay; falls back to the suggested fare (same rule as Android).
+    private var riderOffer: Double {
+        request.customer_preferred_price ?? request.suggested_price ?? 0
     }
 
     private var tripDistance: String {
@@ -701,124 +744,75 @@ struct RideRequestCard: View {
         VStack(spacing: 0) {
             // Header - Price & Distance
             HStack {
-                // Suggested Price
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("$\(String(format: "%.0f", request.suggested_price ?? 0))")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    Text("suggested")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.8))
+                VStack(alignment: .leading, spacing: Lx.Spacing.xs) {
+                    Text("$\(String(format: "%.2f", riderOffer))")
+                        .font(Lx.Typography.priceSmall)
+                        .foregroundColor(Lx.Palette.success)
+                    Text(request.customer_preferred_price != nil ? "Rider offers" : "Suggested")
+                        .font(Lx.Typography.caption)
+                        .foregroundColor(Lx.Palette.textSecondary)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    LinearGradient(
-                        colors: [Color.blue, Color.blue.opacity(0.8)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .cornerRadius(12)
 
                 Spacer()
 
-                // Distance & Bid Count
-                VStack(alignment: .trailing, spacing: 4) {
-                    HStack(spacing: 4) {
+                VStack(alignment: .trailing, spacing: Lx.Spacing.xs) {
+                    HStack(spacing: Lx.Spacing.xs) {
                         Image(systemName: "location.fill")
-                            .font(.caption2)
+                            .font(Lx.Typography.caption)
                         Text("\(distanceToPickup) away")
-                            .font(.caption)
-                            .fontWeight(.medium)
+                            .font(Lx.Typography.caption.weight(.medium))
                     }
-                    .foregroundColor(Theme.textSecondary)
+                    .foregroundColor(Lx.Palette.textSecondary)
 
                     if let bidCount = request.bid_count, bidCount > 0 {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Lx.Spacing.xs) {
                             Image(systemName: "person.3.fill")
-                                .font(.caption2)
+                                .font(Lx.Typography.caption)
                             Text("\(bidCount) bid\(bidCount == 1 ? "" : "s")")
-                                .font(.caption2)
-                                .fontWeight(.bold)
+                                .font(Lx.Typography.caption.weight(.bold))
                         }
-                        .foregroundColor(.orange)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.orange.opacity(0.15))
-                        .cornerRadius(8)
+                        .foregroundColor(Lx.Palette.orange)
+                        .padding(.horizontal, Lx.Spacing.s)
+                        .padding(.vertical, Lx.Spacing.xs)
+                        .background(Lx.Palette.orange.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: Lx.Radius.chip, style: .continuous))
                     }
                 }
             }
-            .padding()
+            .padding(Lx.Spacing.l)
 
-            Divider()
-                .padding(.horizontal)
+            Divider().overlay(Lx.Palette.hairline)
 
-            // Pickup Location
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(Color.green.opacity(0.15))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: "person.fill")
-                        .foregroundColor(.green)
-                }
+            // Pickup
+            RideRouteRow(
+                icon: "person.fill",
+                tint: Lx.Palette.pickup,
+                title: "PICKUP",
+                address: request.pickup.address
+            )
+            .padding(.horizontal, Lx.Spacing.l)
+            .padding(.top, Lx.Spacing.m)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("PICKUP")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.textSecondary)
-                    Text(request.pickup.address)
-                        .font(.subheadline)
-                        .foregroundColor(Theme.textPrimary)
-                        .lineLimit(2)
-                }
-
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.top, 12)
-
-            // Route line
             HStack {
                 Rectangle()
-                    .fill(Color.blue.opacity(0.3))
+                    .fill(Lx.Palette.hairline)
                     .frame(width: 2, height: 24)
-                    .padding(.leading, 32)
+                    .padding(.leading, Lx.Spacing.l + 19)
                 Spacer()
             }
 
-            // Dropoff Location
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(Color.red.opacity(0.15))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: "mappin.circle.fill")
-                        .foregroundColor(.red)
-                }
+            // Drop-off
+            RideRouteRow(
+                icon: "mappin.circle.fill",
+                tint: Lx.Palette.dropoff,
+                title: "DROP-OFF",
+                address: request.dropoff.address
+            )
+            .padding(.horizontal, Lx.Spacing.l)
+            .padding(.bottom, Lx.Spacing.m)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("DROP-OFF")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.textSecondary)
-                    Text(request.dropoff.address)
-                        .font(.subheadline)
-                        .foregroundColor(Theme.textPrimary)
-                        .lineLimit(2)
-                }
-
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 12)
-
-            // Trip Stats
-            HStack(spacing: 16) {
+            // Trip stats
+            HStack(spacing: Lx.Spacing.m) {
                 TripStatBadge(icon: "arrow.left.and.right", text: tripDistance, label: "Trip")
                 TripStatBadge(icon: "clock.fill", text: tripDuration, label: "Duration")
 
@@ -830,32 +824,53 @@ struct RideRequestCard: View {
                     TripStatBadge(icon: "figure.roll", text: "Access", label: "Needed")
                 }
             }
-            .padding(.horizontal)
-            .padding(.bottom, 12)
+            .padding(.horizontal, Lx.Spacing.l)
+            .padding(.bottom, Lx.Spacing.m)
 
-            Divider()
-                .padding(.horizontal)
+            Divider().overlay(Lx.Palette.hairline)
 
-            // Bid Button
             Button(action: onBid) {
-                HStack {
-                    Image(systemName: "hand.raised.fill")
-                    Text("Submit Bid")
-                }
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Color.blue)
-                .cornerRadius(12)
+                Label("Submit Bid", systemImage: "hand.raised.fill")
             }
+            .buttonStyle(.lxPrimary)
             .accessibilityLabel("Submit bid for this ride")
             .accessibilityHint("Place your bid to pick up this rider")
-            .padding()
+            .padding(Lx.Spacing.l)
         }
-        .background(Theme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .lxCard()
+    }
+}
+
+// MARK: - Route Row
+
+struct RideRouteRow: View {
+    let icon: String
+    let tint: Color
+    let title: String
+    let address: String
+
+    var body: some View {
+        HStack(spacing: Lx.Spacing.m) {
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.15))
+                    .frame(width: 40, height: 40)
+                Image(systemName: icon)
+                    .foregroundColor(tint)
+            }
+
+            VStack(alignment: .leading, spacing: Lx.Spacing.xs) {
+                Text(title)
+                    .font(Lx.Typography.caption.weight(.semibold))
+                    .foregroundColor(Lx.Palette.textSecondary)
+                Text(address)
+                    .font(Lx.Typography.subheadline)
+                    .foregroundColor(Lx.Palette.text)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+        }
     }
 }
 
@@ -867,24 +882,23 @@ struct TripStatBadge: View {
     let label: String
 
     var body: some View {
-        VStack(spacing: 2) {
-            HStack(spacing: 4) {
+        VStack(spacing: Lx.Spacing.xs) {
+            HStack(spacing: Lx.Spacing.xs) {
                 Image(systemName: icon)
-                    .font(.caption2)
+                    .font(Lx.Typography.caption)
                 Text(text)
-                    .font(.caption)
-                    .fontWeight(.semibold)
+                    .font(Lx.Typography.caption.weight(.semibold))
             }
-            .foregroundColor(.blue)
+            .foregroundColor(Lx.Palette.orange)
 
             Text(label)
-                .font(.caption2)
-                .foregroundColor(Theme.textSecondary)
+                .font(Lx.Typography.caption)
+                .foregroundColor(Lx.Palette.textSecondary)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.blue.opacity(0.1))
-        .cornerRadius(10)
+        .padding(.horizontal, Lx.Spacing.m)
+        .padding(.vertical, Lx.Spacing.s)
+        .background(Lx.Palette.orange.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: Lx.Radius.chip, style: .continuous))
     }
 }
 

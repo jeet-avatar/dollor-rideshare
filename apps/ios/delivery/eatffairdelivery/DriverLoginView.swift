@@ -256,7 +256,7 @@ struct DriverLoginView: View {
                         .frame(width: 120, height: 120)
 
                     Text("$")
-                        .font(.system(size: 60, weight: .bold))
+                        .font(Lx.Typography.iconHero.weight(.bold))
                         .foregroundColor(Theme.lxOrange)
                 }
                 .padding(.bottom, isSignUp ? 10 : 20)
@@ -345,7 +345,7 @@ struct DriverLoginView: View {
                                            passwordStrength.level <= 4 ? Theme.lxOrange : Theme.lxSuccess) :
                                           Theme.lxHairline)
                                     .frame(height: 4)
-                                    .cornerRadius(2)
+                                    .cornerRadius(Lx.Radius.grabber)
                             }
                             Text(passwordStrength.message)
                                 .font(.caption2)
@@ -414,16 +414,16 @@ struct DriverLoginView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Theme.lxButtonGradient)
-                            .cornerRadius(14)
+                            .cornerRadius(Lx.Radius.button)
                             .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                     } else {
                         Text(isSignUp ? "Sign Up" : "Login")
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Theme.lxButtonGradient)
-                            .cornerRadius(14)
+                            .cornerRadius(Lx.Radius.button)
                             .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                     }
                 }
@@ -468,7 +468,11 @@ struct DriverLoginView: View {
                 }
                 .signInWithAppleButtonStyle(.white)
                 .frame(height: 50)
-                .cornerRadius(10)
+                .cornerRadius(Lx.Radius.chip)
+
+                #if DEBUG
+                demoLoginButton
+                #endif
 
                 Spacer()
             }
@@ -496,6 +500,28 @@ struct DriverLoginView: View {
             Text("You need to register as a driver first. Tap 'Register Now' to apply on our website.")
         }
     }
+
+    // MARK: - Demo Login (App Store Review)
+    #if DEBUG
+    private var demoLoginButton: some View {
+        Button(action: {
+            email = "demo.driver@dollor.ai"
+            password = "DemoDriver2025!"
+        }) {
+            HStack {
+                Image(systemName: "bolt.fill")
+                Text("Demo Login (App Review)")
+                    .font(Lx.Typography.footnote.weight(.medium))
+            }
+            .foregroundColor(Theme.lxOrange)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(Theme.lxOrange.opacity(0.12))
+            .cornerRadius(Lx.Radius.chip)
+        }
+        .accessibilityLabel("Demo login for App Store review")
+    }
+    #endif
 
     // MARK: - Apple Sign-In Helper Functions
 
@@ -866,11 +892,11 @@ struct DriverTermsSheet: View {
                     }) {
                         Text("I Agree to Terms & Conditions")
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Theme.lxButtonGradient)
-                            .cornerRadius(14)
+                            .cornerRadius(Lx.Radius.button)
                             .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                     }
                 }
@@ -950,11 +976,11 @@ struct DriverForgotPasswordView: View {
                         Button(action: { isPresented = false }) {
                             Text("Back to Login")
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
+                                .foregroundColor(Lx.Palette.onAccent)
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(Theme.lxButtonGradient)
-                                .cornerRadius(14)
+                                .cornerRadius(Lx.Radius.button)
                                 .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                         }
                         .padding(.horizontal)
@@ -1010,11 +1036,11 @@ struct DriverForgotPasswordView: View {
                                         .fontWeight(.bold)
                                 }
                             }
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Theme.lxButtonGradient)
-                            .cornerRadius(14)
+                            .cornerRadius(Lx.Radius.button)
                             .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                         }
                         .disabled(isLoading || resetCode.isEmpty || newPassword.isEmpty)
@@ -1061,11 +1087,11 @@ struct DriverForgotPasswordView: View {
                                         .fontWeight(.bold)
                                 }
                             }
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Theme.lxButtonGradient)
-                            .cornerRadius(14)
+                            .cornerRadius(Lx.Radius.button)
                             .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                         }
                         .disabled(isLoading || email.isEmpty)
@@ -1176,9 +1202,9 @@ private struct LxFieldModifier: ViewModifier {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(Theme.lxSurface)
-            .cornerRadius(12)
+            .cornerRadius(Lx.Radius.button)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: Lx.Radius.button)
                     .stroke(Theme.lxHairline, lineWidth: 1)
             )
     }

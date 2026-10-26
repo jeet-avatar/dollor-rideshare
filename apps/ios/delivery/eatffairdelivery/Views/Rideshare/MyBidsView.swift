@@ -46,13 +46,13 @@ struct BidCard: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(statusColor.opacity(0.15))
-                .cornerRadius(8)
+                .cornerRadius(Lx.Radius.chip)
 
                 Spacer()
 
                 // Your Bid Amount
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("$\(String(format: "%.0f", bid.proposed_price))")
+                    Text("\(Lx.Money.text(bid.proposed_price))")
                         .font(.title3)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxText)
@@ -72,7 +72,7 @@ struct BidCard: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(Theme.lxSuccess)
+                            .fill(Lx.Palette.pickup)
                             .frame(width: 10, height: 10)
                         Text(request.pickup.address)
                             .font(.caption)
@@ -83,7 +83,7 @@ struct BidCard: View {
 
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(Theme.lxError)
+                            .fill(Lx.Palette.dropoff)
                             .frame(width: 10, height: 10)
                         Text(request.dropoff.address)
                             .font(.caption)
@@ -108,7 +108,7 @@ struct BidCard: View {
                             .font(.caption)
                             .foregroundColor(Theme.lxTextSecondary)
                         HStack(spacing: 4) {
-                            Text("$\(String(format: "%.0f", counterPrice))")
+                            Text("\(Lx.Money.text(counterPrice))")
                                 .font(.headline)
                                 .fontWeight(.bold)
                                 .foregroundColor(Theme.lxOrange)
@@ -129,11 +129,11 @@ struct BidCard: View {
                         Text("Respond")
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
                             .background(Theme.lxButtonGradient)
-                            .cornerRadius(8)
+                            .cornerRadius(Lx.Radius.chip)
                     }
                 }
                 .padding()
@@ -173,7 +173,7 @@ struct BidCard: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(Theme.lxError.opacity(0.15))
-                        .cornerRadius(10)
+                        .cornerRadius(Lx.Radius.chip)
                     }
                 }
                 .padding()
@@ -191,23 +191,23 @@ struct BidCard: View {
                         Text("View Active Ride")
                     }
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(Theme.lxButtonGradient)
-                    .cornerRadius(14)
+                    .cornerRadius(Lx.Radius.button)
                     .shadow(color: Theme.lxOrange.opacity(0.4), radius: 10, x: 0, y: 4)
                 }
                 .padding()
             }
         }
         .background(Theme.lxSurface)
-        .cornerRadius(16)
+        .cornerRadius(Lx.Radius.card)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: Lx.Radius.card)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+        .shadow(color: Lx.Palette.shadow.opacity(0.25), radius: 8, x: 0, y: 4)
         .alert("Withdraw Bid?", isPresented: $showWithdrawAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Withdraw", role: .destructive) {

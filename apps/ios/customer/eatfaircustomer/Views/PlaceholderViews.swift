@@ -28,7 +28,7 @@ struct NotificationsView: View {
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Lx.Palette.textSecondary)
                     }
                 }
             }
@@ -73,29 +73,29 @@ struct LegacyHelpSupportView: View {
     var body: some View {
         List {
             Section(header: Text("Common Questions")) {
-                NavigationLink("How to place an order?", destination: FAQDetailView(
-                    title: "How to place an order?",
-                    content: "1. Browse restaurants and select one\n2. Browse the menu and add items to your cart\n3. Review your cart and proceed to checkout\n4. Add delivery address and payment method\n5. Place your order and track it in real-time!"
+                NavigationLink("How do I request a ride?", destination: FAQDetailView(
+                    title: "How do I request a ride?",
+                    content: "1. Open the Ride tab\n2. Enter your pickup and dropoff locations\n3. Review the fare estimate\n4. Tap 'Find Driver' to send your request\n5. Nearby drivers will bid — accept the offer that works for you!"
                 ))
-                NavigationLink("Where is my order?", destination: FAQDetailView(
-                    title: "Where is my order?",
-                    content: "Go to the 'Orders' tab to see all your orders and track their status in real-time. You'll receive push notifications when your order status changes.\n\nYou can also tap on any active order to see the driver's real-time location on a map."
+                NavigationLink("Where is my driver?", destination: FAQDetailView(
+                    title: "Where is my driver?",
+                    content: "Once a driver accepts your ride, you'll see their live location on the map in the Ride tab. You'll also receive push notifications when the driver is on the way and when they arrive."
                 ))
-                NavigationLink("Multi-restaurant orders", destination: FAQDetailView(
-                    title: "Multi-Restaurant Orders",
-                    content: "Dollor lets you order from up to 3 restaurants in a single delivery!\n\nHow it works:\n1. Add items from your first restaurant\n2. Continue browsing and add from other restaurants\n3. One driver picks up from all locations\n4. Pay a small fee per additional restaurant\n\nPerfect for groups with different cravings!"
+                NavigationLink("How does pricing work?", destination: FAQDetailView(
+                    title: "How does pricing work?",
+                    content: "Dollor uses peer-to-peer bidding. Drivers set their own rates and you can accept, decline, or counter any offer.\n\nA small platform fee ($1–$3) is charged for using the matchmaking service. The driver receives the rest of the fare directly."
                 ))
                 NavigationLink("Payment issues", destination: FAQDetailView(
                     title: "Payment Issues",
                     content: "If you're experiencing payment issues:\n\n1. Make sure your card details are correct\n2. Check if your card has sufficient funds\n3. Try a different payment method (Apple Pay, etc.)\n\nIf the issue persists, please contact our support team."
                 ))
-                NavigationLink("Refund policy", destination: FAQDetailView(
-                    title: "Refund Policy",
-                    content: "We want you to be completely satisfied with your order. If there's an issue:\n\n• Missing items - Full refund for missing items\n• Wrong order - We'll replace it or refund\n• Quality issues - Contact us within 1 hour of delivery\n\nRefunds are typically processed within 3-5 business days."
+                NavigationLink("Cancellation policy", destination: FAQDetailView(
+                    title: "Cancellation Policy",
+                    content: "You can cancel a ride request at any time before a driver is matched at no charge.\n\nIf you cancel after a driver has been assigned, a small cancellation fee may apply depending on how far the driver has traveled."
                 ))
-                NavigationLink("Scheduled deliveries", destination: FAQDetailView(
-                    title: "Scheduled Deliveries",
-                    content: "Plan ahead and schedule your delivery for later!\n\n1. Add items to your cart\n2. In checkout, tap 'Schedule for Later'\n3. Select your preferred date and time slot\n4. Complete your order\n\nScheduled orders can be placed up to 7 days in advance."
+                NavigationLink("Safety & support", destination: FAQDetailView(
+                    title: "Safety & Support",
+                    content: "Your safety is our priority.\n\n• All drivers are background-checked\n• Share your trip with trusted contacts\n• In-app chat and call masking protects your privacy\n\nIf you have an emergency, always call 911 first. For app issues, contact our support team."
                 ))
             }
 
@@ -107,13 +107,13 @@ struct LegacyHelpSupportView: View {
                 }) {
                     HStack {
                         Image(systemName: "envelope.fill")
-                            .foregroundColor(.blue)
+                            .foregroundColor(Lx.Palette.orange)
                         Text(config.supportEmail)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Lx.Palette.text)
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Lx.Palette.textSecondary)
                     }
                 }
 
@@ -125,13 +125,13 @@ struct LegacyHelpSupportView: View {
                 }) {
                     HStack {
                         Image(systemName: "phone.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Lx.Palette.success)
                         Text(config.supportPhone)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Lx.Palette.text)
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Lx.Palette.textSecondary)
                     }
                 }
 
@@ -142,13 +142,13 @@ struct LegacyHelpSupportView: View {
                 }) {
                     HStack {
                         Image(systemName: "globe")
-                            .foregroundColor(.orange)
+                            .foregroundColor(Lx.Palette.orange)
                         Text("Visit Help Center")
-                            .foregroundColor(.primary)
+                            .foregroundColor(Lx.Palette.text)
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Lx.Palette.textSecondary)
                     }
                 }
             }
@@ -161,13 +161,13 @@ struct LegacyHelpSupportView: View {
                 }) {
                     HStack {
                         Image(systemName: "doc.text.fill")
-                            .foregroundColor(.gray)
+                            .foregroundColor(Lx.Palette.textMuted)
                         Text("Terms of Service")
-                            .foregroundColor(.primary)
+                            .foregroundColor(Lx.Palette.text)
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Lx.Palette.textSecondary)
                     }
                 }
 
@@ -178,13 +178,13 @@ struct LegacyHelpSupportView: View {
                 }) {
                     HStack {
                         Image(systemName: "hand.raised.fill")
-                            .foregroundColor(.gray)
+                            .foregroundColor(Lx.Palette.textMuted)
                         Text("Privacy Policy")
-                            .foregroundColor(.primary)
+                            .foregroundColor(Lx.Palette.text)
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Lx.Palette.textSecondary)
                     }
                 }
             }
@@ -203,7 +203,7 @@ struct FAQDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text(content)
                     .font(.body)
-                    .foregroundColor(.primary)
+                    .foregroundColor(Lx.Palette.text)
 
                 Spacer()
 
@@ -214,7 +214,7 @@ struct FAQDetailView: View {
 
                     Text("Contact our support team and we'll get back to you within 24 hours.")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Lx.Palette.textSecondary)
 
                     Button(action: {
                         if let url = URL(string: "mailto:\(AppConfig.shared.supportEmail)") {
@@ -227,14 +227,14 @@ struct FAQDetailView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .background(Lx.Palette.orange)
+                        .foregroundColor(Lx.Palette.onAccent)
+                        .cornerRadius(Lx.Radius.chip)
                     }
                 }
                 .padding()
                 .background(Color(.systemGray6))
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
             }
             .padding()
         }

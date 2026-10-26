@@ -88,8 +88,8 @@ struct ComplianceView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
     }
 
     // MARK: - Vehicle Inspection
@@ -125,8 +125,8 @@ struct ComplianceView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
     }
 
     @ViewBuilder
@@ -210,8 +210,8 @@ struct ComplianceView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
     }
 
     // MARK: - Helpers

@@ -143,11 +143,11 @@ struct ActiveRideView: View {
                         Text("SOS")
                             .font(.caption2)
                             .fontWeight(.heavy)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(Theme.lxError)
-                            .cornerRadius(6)
+                            .cornerRadius(Lx.Radius.chip)
                     }
                     .accessibilityLabel("Emergency SOS")
                     .accessibilityHint("Calls 911 emergency services")
@@ -274,7 +274,7 @@ struct ActiveRideView: View {
 
                         Image(systemName: "car.fill")
                             .font(.title2)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .padding(12)
                             .background(Theme.lxOrange)
                             .clipShape(Circle())
@@ -291,14 +291,14 @@ struct ActiveRideView: View {
                 )) {
                     VStack(spacing: 2) {
                         Image(systemName: "person.fill")
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .padding(10)
                             .background(Theme.lxSuccess)
                             .clipShape(Circle())
                             .shadow(color: Theme.lxSuccess.opacity(0.5), radius: 4)
 
                         Image(systemName: "arrowtriangle.down.fill")
-                            .font(.system(size: 10))
+                            .font(Lx.Typography.caption)
                             .foregroundColor(Theme.lxSuccess)
                             .offset(y: -4)
                     }
@@ -311,15 +311,15 @@ struct ActiveRideView: View {
                 )) {
                     VStack(spacing: 2) {
                         Image(systemName: "mappin.circle.fill")
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .padding(10)
-                            .background(Theme.lxError)
+                            .background(Lx.Palette.dropoff)
                             .clipShape(Circle())
-                            .shadow(color: Theme.lxError.opacity(0.5), radius: 4)
+                            .shadow(color: Lx.Palette.dropoff.opacity(0.5), radius: 4)
 
                         Image(systemName: "arrowtriangle.down.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(Theme.lxError)
+                            .font(Lx.Typography.caption)
+                            .foregroundColor(Lx.Palette.dropoff)
                             .offset(y: -4)
                     }
                 }
@@ -357,7 +357,7 @@ struct ActiveRideView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(rideStatus.color.opacity(0.15))
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
 
                 Spacer()
 
@@ -375,7 +375,7 @@ struct ActiveRideView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Theme.lxOrange.opacity(0.12))
-                    .cornerRadius(10)
+                    .cornerRadius(Lx.Radius.chip)
                 }
 
                 // Earnings
@@ -433,7 +433,7 @@ struct ActiveRideView: View {
                                 .foregroundColor(Theme.lxOrange)
                                 .frame(width: 44, height: 44)
                                 .background(Theme.lxOrange.opacity(0.12))
-                                .cornerRadius(12)
+                                .cornerRadius(Lx.Radius.button)
                         }
 
                         Button(action: callRider) {
@@ -442,7 +442,7 @@ struct ActiveRideView: View {
                                 .foregroundColor(hasRiderPhone ? Theme.lxSuccess : Theme.lxTextMuted)
                                 .frame(width: 44, height: 44)
                                 .background(hasRiderPhone ? Theme.lxSuccess.opacity(0.12) : Theme.lxTextMuted.opacity(0.12))
-                                .cornerRadius(12)
+                                .cornerRadius(Lx.Radius.button)
                         }
                         .disabled(!hasRiderPhone)
                     }
@@ -451,9 +451,9 @@ struct ActiveRideView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(20)
+        .cornerRadius(Lx.Radius.sheet)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: Lx.Radius.sheet)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.35), radius: 10, x: 0, y: 5)
@@ -470,10 +470,10 @@ struct ActiveRideView: View {
                     HStack(spacing: 12) {
                         ZStack {
                             Circle()
-                                .fill(rideStatus == .inProgress ? Theme.lxError : Theme.lxSuccess)
+                                .fill(rideStatus == .inProgress ? Lx.Palette.dropoff : Lx.Palette.pickup)
                                 .frame(width: 40, height: 40)
                             Image(systemName: rideStatus == .inProgress ? "mappin.circle.fill" : "person.fill")
-                                .foregroundColor(.white)
+                                .foregroundColor(Lx.Palette.onAccent)
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
@@ -510,7 +510,7 @@ struct ActiveRideView: View {
                 .padding()
         }
         .background(Theme.lxSurface)
-        .cornerRadius(20, corners: [.topLeft, .topRight])
+        .cornerRadius(Lx.Radius.sheet, corners: [.topLeft, .topRight])
         .overlay(
             RoundedCorner(radius: 20, corners: [.topLeft, .topRight])
                 .stroke(Theme.lxHairline, lineWidth: 1)
@@ -583,7 +583,7 @@ struct ActiveRideView: View {
                         .frame(maxWidth: .infinity)
                         .padding(12)
                         .background(Theme.lxError.opacity(0.15))
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                     }
                 }
             }
@@ -601,7 +601,7 @@ struct ActiveRideView: View {
                     .frame(maxWidth: .infinity)
                     .padding(12)
                     .background(Theme.lxOrange.opacity(0.12))
-                    .cornerRadius(12)
+                    .cornerRadius(Lx.Radius.button)
                 }
 
                 SwipeToConfirmButton(
@@ -634,7 +634,7 @@ struct ActiveRideView: View {
         return VStack(spacing: 16) {
             // Header
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 40))
+                .font(Lx.Typography.icon)
                 .foregroundColor(Theme.lxSuccess)
             Text("Ride Completed!")
                 .font(.title3)
@@ -759,9 +759,9 @@ struct ActiveRideView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(Theme.lxSurface2)
-                        .cornerRadius(10)
+                        .cornerRadius(Lx.Radius.chip)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10)
+                            RoundedRectangle(cornerRadius: Lx.Radius.chip)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
 

@@ -20,7 +20,7 @@ struct AddressListView: View {
             if viewModel.addresses.isEmpty && !viewModel.isLoading {
                 VStack(spacing: 16) {
                     Image(systemName: "mappin.slash")
-                        .font(.system(size: 50))
+                        .font(Lx.Typography.iconLarge)
                         .foregroundColor(Theme.lxTextMuted)
                     Text("No saved addresses")
                         .font(.headline)
@@ -52,7 +52,7 @@ struct AddressListView: View {
                                         .padding(4)
                                         .background(Theme.lxOrange.opacity(0.2))
                                         .foregroundColor(Theme.lxOrange)
-                                        .cornerRadius(4)
+                                        .cornerRadius(Lx.Radius.grabber)
                                 }
                             }
                             Text("\(address.street), \(address.city), \(address.state) \(address.zipCode)")
@@ -223,11 +223,11 @@ struct AddAddressView: View {
                     } else {
                         Text("Save Address")
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Theme.lxButtonGradient)
-                            .cornerRadius(14)
+                            .cornerRadius(Lx.Radius.button)
                             .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                     }
                 }

@@ -104,7 +104,7 @@ struct DriverChatView: View {
     private func errorStateView(_ error: String) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 50))
+                .font(Lx.Typography.iconLarge)
                 .foregroundColor(Theme.lxOrange)
 
             Text("Connection Error")
@@ -130,7 +130,7 @@ struct DriverChatView: View {
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "message.badge.filled.fill")
-                .font(.system(size: 50))
+                .font(Lx.Typography.iconLarge)
                 .foregroundColor(Theme.lxTextMuted)
 
             Text("No messages yet")
@@ -158,9 +158,9 @@ struct DriverChatView: View {
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .background(Theme.lxOrange.opacity(0.12))
-                            .cornerRadius(16)
+                            .cornerRadius(Lx.Radius.card)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
+                                RoundedRectangle(cornerRadius: Lx.Radius.card)
                                     .stroke(Theme.lxHairline, lineWidth: 1)
                             )
                     }
@@ -182,9 +182,9 @@ struct DriverChatView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(Theme.lxSurface2)
-                .cornerRadius(24)
+                .cornerRadius(Lx.Radius.sheet)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: Lx.Radius.sheet)
                         .stroke(Theme.lxHairline, lineWidth: 1)
                 )
                 .focused($isInputFocused)
@@ -196,7 +196,7 @@ struct DriverChatView: View {
                 } else {
                     Image(systemName: "paperplane.fill")
                         .font(.title3)
-                        .foregroundColor(.white)
+                        .foregroundColor(Lx.Palette.onAccent)
                         .frame(width: 44, height: 44)
                         .background(messageText.isEmpty ? AnyShapeStyle(Theme.lxTextMuted) : AnyShapeStyle(Theme.lxButtonGradient))
                         .clipShape(Circle())
@@ -297,7 +297,7 @@ private struct RideChatBubbleCustomer: View {
                     .padding(.vertical, 10)
                     .background(isFromMe ? Theme.lxOrange : Theme.lxSurface2)
                     .foregroundColor(isFromMe ? .white : Theme.lxText)
-                    .cornerRadius(18)
+                    .cornerRadius(Lx.Radius.card)
 
                 Text(formatTime(message.createdAt))
                     .font(.caption2)

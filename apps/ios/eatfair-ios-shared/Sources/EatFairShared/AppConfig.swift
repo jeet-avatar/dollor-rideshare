@@ -103,17 +103,23 @@ public class AppConfig: ObservableObject {
     @Published public var foodDriverFee: Double = 0.00        // FREE - drivers keep 100%
     @Published public var tipPlatformFee: Double = 0.00       // 100% of tips go to driver
 
-    // RIDESHARE - TIERED FARE-BASED PRICING ("25/50/75" scheme — must match backend
-    // founding_members.ride_fee_tier: <=$25 -> $1, <=$50 -> $2, else $3)
+    // RIDESHARE - TIERED FARE-BASED PRICING. Must match the backend charge logic
+    // (rideshare_payments.py get_tier_fee: <=$35 -> $1, <=$70 -> $2, else $3) and Android AppConfig.
+    // NOTE: backend founding_members.ride_fee_tier still uses 25/50 — flagged for the backend team.
     // Fare tier thresholds (in dollars)
-    @Published public var rideshareTier1MaxFare: Double = 25.00   // Fares up to $25
-    @Published public var rideshareTier2MaxFare: Double = 50.00   // Fares $25.01 to $50
-    // Tier 3: Fares above $50 (capped at $3)
+    @Published public var rideshareTier1MaxFare: Double = 35.00   // Fares up to $35
+    @Published public var rideshareTier2MaxFare: Double = 70.00   // Fares $35.01 to $70
+    // Tier 3: Fares above $70 (capped at $3)
 
     // Platform fees per fare tier (both rider AND driver pay)
-    @Published public var rideshareTier1Fee: Double = 1.00   // $1 for fares ≤ $25
-    @Published public var rideshareTier2Fee: Double = 2.00   // $2 for fares $25.01-$50
-    @Published public var rideshareTier3Fee: Double = 3.00   // $3 for fares > $50
+    @Published public var rideshareTier1Fee: Double = 1.00   // $1 for fares ≤ $35
+    @Published public var rideshareTier2Fee: Double = 2.00   // $2 for fares $35.01-$70
+    @Published public var rideshareTier3Fee: Double = 3.00   // $3 for fares > $70
+
+    // Driver bid presets as a share of the suggested fare (same on Android AppConfig)
+    public let bidQuickAcceptFactor: Double = 0.92
+    public let bidFairFactor: Double = 1.00
+    public let bidPremiumFactor: Double = 1.08
 
     // Legacy properties (kept for backwards compatibility)
     @Published public var ridesharePlatformFeePerMile: Double = 0.10  // Deprecated
@@ -188,15 +194,32 @@ public class AppConfig: ObservableObject {
     public func getRidesharePlatformFeeBreakdown(fareAmount: Double) -> (fee: Double, description: String, tier: Int) {
         let fee = calculateRidesharePlatformFee(fareAmount: fareAmount)
         let tier = getRideshareTier(fareAmount: fareAmount)
-        let tierDesc = tier == 1 ? "≤$35" : tier == 2 ? "$35-$70" : ">$70"
+        let tierDesc = tier == 1 ? "≤\(Self.money(rideshareTier1MaxFare))" : tier == 2 ? "\(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare))" : ">\(Self.money(rideshareTier2MaxFare))"
         let description = "$\(String(format: "%.2f", fee)) (Tier \(tier): \(tierDesc))"
         return (fee, description, tier)
+    }
+
+    /// Whole-dollar money text for fee-tier labels, derived from the tier config (never hardcode tiers in UI).
+    static func money(_ value: Double) -> String { "$\(Int(value.rounded()))" }
+
+    /// One-line fee summary for FAQ / legal copy, e.g. "$1 for fares up to $25, $2 for fares $25-$50, $3 for fares over $50".
+    public var rideshareFeeSummary: String {
+        "$\(Int(rideshareTier1Fee)) for fares up to \(Self.money(rideshareTier1MaxFare)), $\(Int(rideshareTier2Fee)) for fares \(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare)), $\(Int(rideshareTier3Fee)) for fares over \(Self.money(rideshareTier2MaxFare))"
+    }
+
+    /// Human-readable fee tiers for UI/legal copy, always in sync with the tier config above.
+    public var rideshareTierRows: [(label: String, fee: String)] {
+        [
+            ("Fares up to \(Self.money(rideshareTier1MaxFare))", "$\(Int(rideshareTier1Fee)) flat"),
+            ("Fares \(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare))", "$\(Int(rideshareTier2Fee)) flat"),
+            ("Fares over \(Self.money(rideshareTier2MaxFare))", "$\(Int(rideshareTier3Fee)) flat")
+        ]
     }
 
     /// Get rideshare tier name for display (fare-based).
     public func getRideshareTierName(fareAmount: Double) -> String {
         let tier = getRideshareTier(fareAmount: fareAmount)
-        let tierDesc = tier == 1 ? "up to $35" : tier == 2 ? "$35-$70" : "above $70"
+        let tierDesc = tier == 1 ? "up to \(Self.money(rideshareTier1MaxFare))" : tier == 2 ? "\(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare))" : "above \(Self.money(rideshareTier2MaxFare))"
         return "Tier \(tier) (\(tierDesc))"
     }
 
@@ -280,8 +303,8 @@ public class AppConfig: ObservableObject {
     @Published public var ridePerMinuteRate: Double = 0.18     // Per minute rate
     @Published public var rideMinFare: Double = 8.00           // Minimum fare (matches backend pricing_config.py:21 MINIMUM_FARE)
     @Published public var rideCancellationFee: Double = 5.00   // Cancellation fee (base)
-    @Published public var rideCancellationFeeDriverEnRoute: Double = 5.00  // Fee when driver assigned
-    @Published public var rideCancellationFeeInProgress: Double = 10.00    // Fee when ride in progress
+    @Published public var rideCancellationFeeDriverEnRoute: Double = 0.00  // Server charges no rider cancel fee today (bid_routes.py cancel); keep UI truthful
+    @Published public var rideCancellationFeeInProgress: Double = 0.00    // Server blocks cancelling in-progress rides; no fee is charged
     @Published public var rideSurgeEnabled: Bool = true        // Surge pricing enabled
     @Published public var rideMaxSurgeMultiplier: Double = 3.0 // Maximum surge multiplier
 

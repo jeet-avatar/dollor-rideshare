@@ -62,7 +62,7 @@ struct FoundingMemberView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: "star.circle.fill")
-                .font(.system(size: 44))
+                .font(Lx.Typography.iconLarge)
                 .foregroundColor(Theme.lxOrange)
             Text("Become a Founding Driver")
                 .font(.title2).fontWeight(.bold)
@@ -85,8 +85,8 @@ struct FoundingMemberView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
     }
 
     private var statePicker: some View {
@@ -110,9 +110,9 @@ struct FoundingMemberView: View {
                 }
                 .padding()
                 .background(Theme.lxSurface)
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: Lx.Radius.button)
                         .stroke(Theme.lxHairline, lineWidth: 1)
                 )
             }
@@ -135,8 +135,8 @@ struct FoundingMemberView: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
     }
 
     private var memberBadge: some View {
@@ -153,8 +153,8 @@ struct FoundingMemberView: View {
         .frame(maxWidth: .infinity)
         .padding()
         .background(Theme.lxSuccess.opacity(0.12))
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxSuccess.opacity(0.4), lineWidth: 1))
+        .cornerRadius(Lx.Radius.button)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxSuccess.opacity(0.4), lineWidth: 1))
     }
 
     @ViewBuilder
@@ -168,7 +168,7 @@ struct FoundingMemberView: View {
                     .frame(height: 44)
                     .padding(.horizontal, 8)
                     .background(Theme.lxSurface)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.lxHairline, lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: Lx.Radius.chip).stroke(Theme.lxHairline, lineWidth: 1))
             } else {
                 Text("Demo account — no charge will be made.")
                     .font(.caption).foregroundColor(Theme.lxTextSecondary)
@@ -177,7 +177,7 @@ struct FoundingMemberView: View {
             Button(action: { model.join(state: selectedState, params: cardParams) }) {
                 HStack {
                     if model.isJoining {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(Lx.Palette.onAccent)
                     } else {
                         Text("Join for $\(Int(model.feeAmount)) · \(selectedState)")
                             .fontWeight(.bold)
@@ -186,8 +186,8 @@ struct FoundingMemberView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(canJoin ? AnyShapeStyle(Theme.lxButtonGradient) : AnyShapeStyle(Theme.lxSurface2))
-                .foregroundColor(.white)
-                .cornerRadius(14)
+                .foregroundColor(Lx.Palette.onAccent)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: canJoin ? Theme.lxOrange.opacity(0.4) : .clear, radius: 10, x: 0, y: 4)
             }
             .disabled(!canJoin)

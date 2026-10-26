@@ -117,6 +117,24 @@ final class OnlineStatusManager: ObservableObject {
         }
     }
 
+    /// Adopts the server's online flag (relaunch, or the driver went online from another device)
+    /// so the toggle never contradicts what riders see. Never overrides an in-flight toggle.
+    func syncFromServer() {
+        guard !isRequestInFlight else { return }
+        p2pService.getDriverMe { [weak self] result in
+            guard let self = self, !self.isRequestInFlight else { return }
+            guard case .success(let json) = result,
+                  let serverOnline = json["is_online"] as? Bool,
+                  serverOnline != self.isOnline else { return }
+            self.isOnline = serverOnline
+            if serverOnline {
+                LocationManager.shared.startTracking()
+            } else {
+                LocationManager.shared.stopTracking()
+            }
+        }
+    }
+
     /// Called by EarningsViewModel.startSession() when session is written to Firebase.
     /// Sets isOnline=true WITHOUT calling the backend (session flow already handles this
     /// via updateOnlineStatus which calls backend separately).

@@ -49,9 +49,9 @@ struct SettingsView: View {
                                 isOn: $emailNotifications
                             )
                         }
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .background(Lx.Palette.onAccent)
+                        .cornerRadius(Lx.Radius.button)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -80,18 +80,18 @@ struct SettingsView: View {
 
                                     Text(selectedLanguage)
                                         .font(.subheadline)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(Lx.Palette.textMuted)
 
                                     Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(Lx.Palette.textMuted)
                                         .font(.caption)
                                 }
                                 .padding()
                             }
                         }
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .background(Lx.Palette.onAccent)
+                        .cornerRadius(Lx.Radius.button)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -113,9 +113,9 @@ struct SettingsView: View {
                                 SettingsOptionRow(icon: "doc.text.fill", title: "Terms & Conditions")
                             }
                         }
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .background(Lx.Palette.onAccent)
+                        .cornerRadius(Lx.Radius.button)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -137,9 +137,9 @@ struct SettingsView: View {
                                 SettingsOptionRow(icon: "questionmark.circle.fill", title: "Help Center")
                             }
                         }
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .background(Lx.Palette.onAccent)
+                        .cornerRadius(Lx.Radius.button)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -167,13 +167,13 @@ struct SettingsView: View {
 
                                 Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")
                                     .font(.subheadline)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(Lx.Palette.textMuted)
                             }
                             .padding()
                         }
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .background(Lx.Palette.onAccent)
+                        .cornerRadius(Lx.Radius.button)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -182,7 +182,7 @@ struct SettingsView: View {
                         Text("DANGER ZONE")
                             .font(.caption)
                             .fontWeight(.bold)
-                            .foregroundColor(.red)
+                            .foregroundColor(Lx.Palette.error)
                             .padding(.leading, 20)
                             .padding(.bottom, 10)
 
@@ -190,18 +190,18 @@ struct SettingsView: View {
                             HStack {
                                 if isDeletingAccount {
                                     ProgressView()
-                                        .tint(.red)
+                                        .tint(Lx.Palette.error)
                                         .frame(width: 30)
                                 } else {
                                     Image(systemName: "trash.fill")
-                                        .foregroundColor(.red)
+                                        .foregroundColor(Lx.Palette.error)
                                         .font(.title3)
                                         .frame(width: 30)
                                 }
 
                                 Text("Delete Account")
                                     .font(.body)
-                                    .foregroundColor(.red)
+                                    .foregroundColor(Lx.Palette.error)
 
                                 Spacer()
 
@@ -212,8 +212,8 @@ struct SettingsView: View {
                             .padding()
                         }
                         .disabled(isDeletingAccount)
-                        .background(Color.red.opacity(0.1))
-                        .cornerRadius(12)
+                        .background(Lx.Palette.error.opacity(0.1))
+                        .cornerRadius(Lx.Radius.button)
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 30)
@@ -235,7 +235,7 @@ struct SettingsView: View {
                 showDeleteConfirmation = true
             }
         } message: {
-            Text("This will permanently delete your account, including all your order history, saved addresses, and payment methods. This action cannot be undone.")
+            Text("This will permanently delete your account, including all your ride history, saved addresses, and payment methods. This action cannot be undone.")
         }
         .alert("Final Confirmation", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -281,7 +281,7 @@ struct SettingsView: View {
         let customerKeys = [
             "p2p_customer_id", "p2p_customer_name", "p2p_customer_email",
             "p2p_customer_access_token", "p2p_access_token",
-            "saved_addresses", "favorites", "cart_items"
+            "saved_addresses", "favorites"
         ]
         for key in customerKeys {
             UserDefaults.standard.removeObject(forKey: key)
@@ -336,7 +336,7 @@ struct SettingsOptionRow: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
+                .foregroundColor(Lx.Palette.textMuted)
                 .font(.caption)
         }
         .padding()
@@ -418,7 +418,7 @@ struct BugReportView: View {
                 Section {
                     Text("Include as much detail as possible: what you were trying to do, what happened, and any error messages you saw.")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Lx.Palette.textSecondary)
                 }
 
                 Section {
@@ -468,7 +468,7 @@ struct PrivacyPolicyView: View {
 
                 Text("Last Updated: December 2024")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Lx.Palette.textSecondary)
 
                 Group {
                     PolicySection(title: "Information We Collect", content: """
@@ -529,7 +529,7 @@ struct TermsOfServiceView: View {
 
                 Text("Last Updated: December 2024")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Lx.Palette.textSecondary)
 
                 Group {
                     PolicySection(title: "Acceptance of Terms", content: """

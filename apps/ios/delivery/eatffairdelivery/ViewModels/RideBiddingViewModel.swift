@@ -48,8 +48,14 @@ class RideBiddingViewModel: ObservableObject {
     // MARK: - Computed Properties
 
     /// Bids waiting for customer response
+    /// A bid is only actionable while its ride is still open for bidding (same rule as Android).
+    private func isRideStillOpen(_ bid: RideBid) -> Bool {
+        guard let status = bid.ride_request?.status else { return true }
+        return status == "open" || status == "bidding"
+    }
+
     var pendingBids: [RideBid] {
-        myBids.filter { $0.status == "pending" }
+        myBids.filter { $0.status == "pending" && isRideStillOpen($0) }
     }
 
     /// Bids that were accepted
@@ -59,7 +65,12 @@ class RideBiddingViewModel: ObservableObject {
 
     /// Bids with counter-offers from customers
     var counteredBids: [RideBid] {
-        myBids.filter { $0.status == "countered" }
+        myBids.filter { $0.status == "countered" && isRideStillOpen($0) }
+    }
+
+    /// Most recent bids that are no longer live (lost, declined, expired, withdrawn), newest first.
+    var closedBids: [RideBid] {
+        Array(myBids.filter { $0.closedReason != nil }.sorted { $0.id > $1.id }.prefix(3))
     }
 
     /// Platform connection fee (fare-tiered: $1/$2/$3)
@@ -84,6 +95,7 @@ class RideBiddingViewModel: ObservableObject {
     // MARK: - Initialization
 
     init() {
+        OnlineStatusManager.shared.syncFromServer()
         setupRefreshTimer()
         connectWebSocket()
     }
@@ -102,6 +114,10 @@ class RideBiddingViewModel: ObservableObject {
 
     /// Delegates to OnlineStatusManager — single API call, single location tracking start/stop.
     func setOnlineStatus(_ online: Bool) {
+        if !online && !activeRides.isEmpty {
+            showErrorMessage("Finish or cancel your current ride before going offline.")
+            return
+        }
         OnlineStatusManager.shared.setOnlineStatus(online)
     }
 
@@ -113,12 +129,15 @@ class RideBiddingViewModel: ObservableObject {
             guard let self = self else { return }
             // Only poll when app is active
             guard UIApplication.shared.applicationState == .active else { return }
+            // The server is the source of truth for online/offline. Check it on every tick, even while the
+            // app believes it is offline, or a stale "Offline" would never correct itself.
+            OnlineStatusManager.shared.syncFromServer()
             // Skip poll if driver is offline — reads OnlineStatusManager.shared.isOnline via computed proxy.
             // This intentionally guards both the timer-based poll and the wsManager.onNewBid WS handler
             // (see connectWebSocket — both paths check self.isOnline via the same computed proxy).
             guard self.isOnline else { return }
-            // Skip poll if WebSocket is delivering real-time updates
-            if self.wsManager.isConnected { return }
+            // Always poll: the WebSocket can report "connected" without the server pushing new
+            // ride requests, which left drivers staring at an empty list until they relaunched.
             self.refreshData()
         }
     }
@@ -188,8 +207,8 @@ class RideBiddingViewModel: ObservableObject {
         }
 
         let location = LocationManager.shared.currentLocation
-        let latitude = location?.coordinate.latitude ?? 0.0
-        let longitude = location?.coordinate.longitude ?? 0.0
+        let latitude = location?.coordinate.latitude
+        let longitude = location?.coordinate.longitude
 
         // Cap radius — prevents fetching ALL rides globally when location unavailable
         let radiusKm: Double = AppConfig.shared.rideshareSearchRadiusKm
@@ -203,7 +222,8 @@ class RideBiddingViewModel: ObservableObject {
                 guard let self = self else { return }
                 switch result {
                 case .success(let requests):
-                    self.availableRequests = requests
+                    // Rides this driver already bid on live under My Bids, not Available (same as Android).
+                    self.availableRequests = requests.filter { $0.already_bid != true }
                     self.pollingFailureCount = 0  // Reset on success
                     self.showConnectionWarning = false
 
@@ -231,7 +251,7 @@ class RideBiddingViewModel: ObservableObject {
                 case .success(let bids):
                     // Check for NEW counter-offers (wasn't countered before, is now)
                     let previousCountered = Set(self.pendingCounterOffers.map { $0.id })
-                    let newCountered = bids.filter { $0.status == "countered" && !previousCountered.contains($0.id) }
+                    let newCountered = bids.filter { $0.status == "countered" && self.isRideStillOpen($0) && !previousCountered.contains($0.id) }
 
                     // Active ride = bid accepted AND ride still live (matched or in_progress).
                     // bid.status stays "accepted" even after completion/cancellation — so we
@@ -246,7 +266,7 @@ class RideBiddingViewModel: ObservableObject {
 
                     // Update state
                     self.myBids = bids
-                    self.pendingCounterOffers = bids.filter { $0.status == "countered" }
+                    self.pendingCounterOffers = bids.filter { $0.status == "countered" && self.isRideStillOpen($0) }
                     self.activeRides = newActiveRides
                     self.pollingFailureCount = 0  // Reset on success
                     self.showConnectionWarning = false
@@ -470,7 +490,7 @@ class RideBiddingViewModel: ObservableObject {
 
                 switch result {
                 case .success:
-                    self?.showSuccessMessage("Customer has been notified you've arrived!")
+                    // No alert here: the ride screen already switches state, and a dashboard-level alert would close the ride cover.
                     self?.refreshData()
                     completion(true)
 
@@ -498,7 +518,7 @@ class RideBiddingViewModel: ObservableObject {
 
                 switch result {
                 case .success:
-                    self?.showSuccessMessage("Ride started!")
+                    // No alert here: the ride screen already switches state, and a dashboard-level alert would close the ride cover.
                     self?.refreshData()
                     completion(true)
 
@@ -681,10 +701,11 @@ class RideBiddingViewModel: ObservableObject {
 
     /// Calculate suggested bid options (Quick Accept 92%, Fair Price 100%, Premium 108%)
     func calculateSuggestedBids(baseFare: Double) -> (quickAccept: Double, fairPrice: Double, premium: Double) {
-        let quickAccept = baseFare * 0.92  // 8% discount to win quickly
-        let fairPrice = baseFare             // Market rate
-        let premium = baseFare * 1.08       // 8% premium for guaranteed earnings
-        return (quickAccept, fairPrice, premium)
+        let config = AppConfig.shared
+        func cents(_ value: Double) -> Double { (value * 100).rounded() / 100 }
+        return (cents(baseFare * config.bidQuickAcceptFactor),
+                cents(baseFare * config.bidFairFactor),
+                cents(baseFare * config.bidPremiumFactor))
     }
 
     /// Calculate earnings per mile
@@ -726,3 +747,25 @@ extension RideBiddingViewModel {
     }
 }
 #endif
+
+extension RideBid {
+    /// Why this bid is no longer live, or nil while it is still open. The server marks every losing
+    /// bid `rejected`, which a rider's explicit decline also does, so the ride's own status tells them apart.
+    var closedReason: String? {
+        switch status {
+        case "rejected":
+            let takenStatuses: Set<String> = ["matched", "in_progress", "completed"]
+            return takenStatuses.contains(ride_request?.status ?? "") ? "Accepted by another driver" : "Declined by rider"
+        case "expired": return "Offer expired"
+        case "pending", "countered":
+            switch ride_request?.status ?? "" {
+            case "expired": return "Offer expired"
+            case "cancelled": return "Ride cancelled"
+            case "matched", "in_progress", "completed": return "Accepted by another driver"
+            default: return nil
+            }
+        case "withdrawn": return "You withdrew this offer"
+        default: return nil
+        }
+    }
+}

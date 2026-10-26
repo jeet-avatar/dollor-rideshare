@@ -58,8 +58,8 @@ struct ProfileView: View {
                                     .frame(width: 100, height: 100)
                                     .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                                 Text(String(userName.prefix(1)))
-                                    .font(.system(size: 40, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .font(Lx.Typography.icon.weight(.bold))
+                                    .foregroundColor(Lx.Palette.onAccent)
 
                                 // Edit Badge - Tappable
                                 VStack {
@@ -114,12 +114,12 @@ struct ProfileView: View {
                                 }
                             }
                             .background(Theme.lxSurface)
-                            .cornerRadius(12)
+                            .cornerRadius(Lx.Radius.button)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: Lx.Radius.button)
                                     .stroke(Theme.lxHairline, lineWidth: 1)
                             )
-                            .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
+                            .shadow(color: Lx.Palette.shadow.opacity(0.25), radius: 5, x: 0, y: 2)
                         }
                         .padding(.horizontal)
                         
@@ -152,12 +152,12 @@ struct ProfileView: View {
                                 // materializes recurring rides yet). Re-enable when the scheduler ships.
                             }
                             .background(Theme.lxSurface)
-                            .cornerRadius(12)
+                            .cornerRadius(Lx.Radius.button)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: Lx.Radius.button)
                                     .stroke(Theme.lxHairline, lineWidth: 1)
                             )
-                            .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
+                            .shadow(color: Lx.Palette.shadow.opacity(0.25), radius: 5, x: 0, y: 2)
                         }
                         .padding(.horizontal)
 
@@ -184,12 +184,12 @@ struct ProfileView: View {
                                 }
                             }
                             .background(Theme.lxSurface)
-                            .cornerRadius(12)
+                            .cornerRadius(Lx.Radius.button)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: Lx.Radius.button)
                                     .stroke(Theme.lxHairline, lineWidth: 1)
                             )
-                            .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
+                            .shadow(color: Lx.Palette.shadow.opacity(0.25), radius: 5, x: 0, y: 2)
                         }
                         .padding(.horizontal)
 
@@ -219,9 +219,9 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Theme.lxError.opacity(0.15))
-                            .cornerRadius(12)
+                            .cornerRadius(Lx.Radius.button)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: Lx.Radius.button)
                                     .stroke(Theme.lxError.opacity(0.4), lineWidth: 1)
                             )
                         }
@@ -346,23 +346,23 @@ struct EditProfileView: View {
 
                     HStack {
                         Text("Email")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Lx.Palette.textSecondary)
                         Spacer()
                         Text(userEmail)
-                            .foregroundColor(.gray)
+                            .foregroundColor(Lx.Palette.textMuted)
                     }
                 }
 
                 Section {
                     Text("Your email cannot be changed. Contact support if you need to update it.")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Lx.Palette.textSecondary)
                 }
 
                 if let error = saveError {
                     Section {
                         Text(error)
-                            .foregroundColor(.red)
+                            .foregroundColor(Lx.Palette.error)
                             .font(.caption)
                     }
                 }
@@ -474,7 +474,7 @@ struct LanguageSelectionSheet: View {
                 // Note about language
                 Text("Language changes will take effect on next app launch.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Lx.Palette.textSecondary)
                     .padding()
             }
             .navigationTitle("Select Language")
@@ -537,22 +537,22 @@ struct AuthActionButton: View {
             Button(action: onLogout) {
                 Text("Log Out")
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Theme.lxError)
-                    .cornerRadius(14)
+                    .cornerRadius(Lx.Radius.button)
                     .shadow(color: Theme.lxError.opacity(0.4), radius: 14, x: 0, y: 6)
             }
         } else {
             NavigationLink(destination: LoginView(authViewModel: authViewModel)) {
                 Text("Log In")
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Theme.lxButtonGradient)
-                    .cornerRadius(14)
+                    .cornerRadius(Lx.Radius.button)
                     .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
             }
         }

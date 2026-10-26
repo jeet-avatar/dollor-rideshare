@@ -94,7 +94,7 @@ struct CounterOfferResponseSheet: View {
                     .frame(width: 100, height: 100)
 
                 Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 40))
+                    .font(Lx.Typography.icon)
                     .foregroundColor(Theme.lxOrange)
             }
 
@@ -120,7 +120,7 @@ struct CounterOfferResponseSheet: View {
                     Text("Your Bid")
                         .font(.caption)
                         .foregroundColor(Theme.lxTextSecondary)
-                    Text("$\(String(format: "%.0f", originalPrice))")
+                    Text("\(Lx.Money.text(originalPrice))")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxText)
@@ -140,7 +140,7 @@ struct CounterOfferResponseSheet: View {
                     Text("Their Offer")
                         .font(.caption)
                         .foregroundColor(Theme.lxTextSecondary)
-                    Text("$\(String(format: "%.0f", customerCounterPrice))")
+                    Text("\(Lx.Money.text(customerCounterPrice))")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxOrange)
@@ -148,21 +148,21 @@ struct CounterOfferResponseSheet: View {
             }
             .padding()
             .background(Theme.lxOrange.opacity(0.08))
-            .cornerRadius(12)
+            .cornerRadius(Lx.Radius.button)
 
             // Difference Badge
             HStack {
                 if priceDifference > 0 {
                     Image(systemName: "arrow.up.circle.fill")
                         .foregroundColor(Theme.lxSuccess)
-                    Text("+$\(String(format: "%.0f", priceDifference)) more than your bid")
+                    Text("+\(Lx.Money.text(priceDifference)) more than your bid")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(Theme.lxSuccess)
                 } else if priceDifference < 0 {
                     Image(systemName: "arrow.down.circle.fill")
                         .foregroundColor(Theme.lxOrange)
-                    Text("$\(String(format: "%.0f", abs(priceDifference))) less than your bid")
+                    Text("\(Lx.Money.text(abs(priceDifference))) less than your bid")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(Theme.lxOrange)
@@ -178,7 +178,7 @@ struct CounterOfferResponseSheet: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(priceDifference >= 0 ? Theme.lxSuccess.opacity(0.12) : Theme.lxOrange.opacity(0.12))
-            .cornerRadius(10)
+            .cornerRadius(Lx.Radius.chip)
 
             // Earnings Preview
             HStack {
@@ -191,7 +191,7 @@ struct CounterOfferResponseSheet: View {
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxSuccess)
-                    Text("after $\(String(format: "%.0f", platformFee)) fee")
+                    Text("after \(Lx.Money.text(platformFee)) fee")
                         .font(.caption2)
                         .foregroundColor(Theme.lxTextSecondary)
                 }
@@ -199,9 +199,9 @@ struct CounterOfferResponseSheet: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(16)
+        .cornerRadius(Lx.Radius.card)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: Lx.Radius.card)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }
@@ -276,9 +276,9 @@ struct CounterOfferResponseSheet: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(16)
+        .cornerRadius(Lx.Radius.card)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: Lx.Radius.card)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }
@@ -293,27 +293,27 @@ struct CounterOfferResponseSheet: View {
 
             HStack {
                 Text("$")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(Lx.Typography.largeTitle.weight(.bold))
                     .foregroundColor(Theme.lxTextSecondary)
 
                 TextField("0", text: $newCounterPrice)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(Lx.Typography.largeTitle.weight(.bold))
                     .keyboardType(.decimalPad)
                     .foregroundColor(Theme.lxText)
                     .focused($isPriceFocused)
             }
             .padding()
             .background(Theme.lxSurface2)
-            .cornerRadius(12)
+            .cornerRadius(Lx.Radius.button)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: Lx.Radius.button)
                     .stroke(Theme.lxOrange, lineWidth: 2)
             )
 
             // Quick adjustments
             HStack(spacing: 8) {
                 Button(action: {
-                    newCounterPrice = String(format: "%.0f", customerCounterPrice)
+                    newCounterPrice = String(format: "%.2f", customerCounterPrice)
                 }) {
                     Text("Match Offer")
                         .font(.caption)
@@ -322,12 +322,12 @@ struct CounterOfferResponseSheet: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(Theme.lxOrange.opacity(0.12))
-                        .cornerRadius(8)
+                        .cornerRadius(Lx.Radius.chip)
                 }
 
                 Button(action: {
                     let middle = (originalPrice + customerCounterPrice) / 2
-                    newCounterPrice = String(format: "%.0f", middle)
+                    newCounterPrice = String(format: "%.2f", middle)
                 }) {
                     Text("Split Difference")
                         .font(.caption)
@@ -336,7 +336,7 @@ struct CounterOfferResponseSheet: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(Theme.lxOrange.opacity(0.12))
-                        .cornerRadius(8)
+                        .cornerRadius(Lx.Radius.chip)
                 }
             }
 
@@ -356,9 +356,9 @@ struct CounterOfferResponseSheet: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(16)
+        .cornerRadius(Lx.Radius.card)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: Lx.Radius.card)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
     }
@@ -370,13 +370,13 @@ struct CounterOfferResponseSheet: View {
             Image(systemName: "info.circle.fill")
                 .foregroundColor(Theme.lxSuccess)
 
-            Text("Only $\(String(format: "%.0f", platformFee)) connection fee deducted from your earnings")
+            Text("Only \(Lx.Money.text(platformFee)) connection fee deducted from your earnings")
                 .font(.caption)
                 .foregroundColor(Theme.lxTextSecondary)
         }
         .padding()
         .background(Theme.lxSuccess.opacity(0.1))
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
     }
 
     // MARK: - Action Buttons
@@ -386,7 +386,7 @@ struct CounterOfferResponseSheet: View {
             if showNewCounterInput {
                 // Send New Counter
                 SwipeToConfirmButton(
-                    label: "Slide to Send $\(String(format: "%.0f", newCounterAmount)) Offer",
+                    label: "Slide to Send \(Lx.Money.text(newCounterAmount)) Offer",
                     accentColor: Theme.lxOrange,
                     isDisabled: newCounterAmount <= 0 || viewModel.isLoading,
                     onConfirm: {
@@ -413,7 +413,7 @@ struct CounterOfferResponseSheet: View {
             } else {
                 // Accept Counter-Offer
                 SwipeToConfirmButton(
-                    label: "Slide to Accept $\(String(format: "%.0f", customerCounterPrice))",
+                    label: "Slide to Accept \(Lx.Money.text(customerCounterPrice))",
                     accentColor: Theme.lxSuccess,
                     isDisabled: viewModel.isLoading,
                     onConfirm: { viewModel.acceptCounterOffer(bid) }
@@ -425,7 +425,7 @@ struct CounterOfferResponseSheet: View {
                 Button(action: {
                     withAnimation {
                         showNewCounterInput = true
-                        newCounterPrice = String(format: "%.0f", originalPrice)
+                        newCounterPrice = String(format: "%.2f", originalPrice)
                     }
                 }) {
                     HStack {
@@ -437,7 +437,7 @@ struct CounterOfferResponseSheet: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Theme.lxOrange.opacity(0.12))
-                    .cornerRadius(16)
+                    .cornerRadius(Lx.Radius.card)
                 }
 
                 // Reject

@@ -48,6 +48,19 @@ class AuthViewModel: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        #if DEBUG
+        // UITest screenshot bypass: inject pre-obtained token to skip SSL-pinned login
+        if let token = ProcessInfo.processInfo.environment["UITEST_ACCESS_TOKEN"] {
+            SecureStorage.shared.customerAccessToken = token
+            UserDefaults.standard.set(74, forKey: "p2p_customer_id")
+            UserDefaults.standard.set("Demo Customer", forKey: "p2p_customer_name")
+            UserDefaults.standard.set("demo.customer@dollor.ai", forKey: "p2p_customer_email")
+            self.isAuthenticated = true
+            self.customerName = "Demo Customer"
+            self.customerEmail = "demo.customer@dollor.ai"
+            return
+        }
+        #endif
         // Check if already logged in via P2P
         if p2pService.isCustomerLoggedIn {
             self.isAuthenticated = true

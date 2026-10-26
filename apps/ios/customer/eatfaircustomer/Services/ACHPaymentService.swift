@@ -378,7 +378,7 @@ struct ACHPaymentButton: View {
                             .font(.headline)
                         Text("Save $\(String(format: "%.2f", fees.savings)) vs card")
                             .font(.caption)
-                            .foregroundColor(.green)
+                            .foregroundColor(Lx.Palette.success)
                     }
 
                     Spacer()
@@ -389,13 +389,13 @@ struct ACHPaymentButton: View {
                         if fees.discount > 0 {
                             Text("-$\(String(format: "%.2f", fees.discount)) discount")
                                 .font(.caption)
-                                .foregroundColor(.green)
+                                .foregroundColor(Lx.Palette.success)
                         }
                     }
                 }
                 .padding()
                 .background(Color(.systemGray6))
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
             }
 
             // Pay button
@@ -411,9 +411,9 @@ struct ACHPaymentButton: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(12)
+                .background(Lx.Palette.orange)
+                .foregroundColor(Lx.Palette.onAccent)
+                .cornerRadius(Lx.Radius.button)
             }
             .disabled(isLoading)
         }

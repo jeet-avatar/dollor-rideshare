@@ -6120,8 +6120,8 @@ public class P2PAPIService: ObservableObject {
 
     /// Fetch available ride requests near the driver for bidding
     public func fetchAvailableRideRequests(
-        latitude: Double,
-        longitude: Double,
+        latitude: Double?,
+        longitude: Double?,
         radiusKm: Double = 15.0,
         completion: @escaping (Result<[RideRequestForBidding], Error>) -> Void
     ) {
@@ -6131,12 +6131,14 @@ public class P2PAPIService: ObservableObject {
         }
 
         var urlComponents = URLComponents(string: "\(baseURL)/rides/available")
-        urlComponents?.queryItems = [
-            URLQueryItem(name: "driver_id", value: String(driverId)),
-            URLQueryItem(name: "latitude", value: String(latitude)),
-            URLQueryItem(name: "longitude", value: String(longitude)),
-            URLQueryItem(name: "radius_km", value: String(radiusKm))
-        ]
+        var queryItems = [URLQueryItem(name: "driver_id", value: String(driverId))]
+        // Without a GPS fix, omit coordinates: sending 0,0 makes the server's radius filter hide every ride.
+        if let latitude = latitude, let longitude = longitude {
+            queryItems.append(URLQueryItem(name: "latitude", value: String(latitude)))
+            queryItems.append(URLQueryItem(name: "longitude", value: String(longitude)))
+            queryItems.append(URLQueryItem(name: "radius_km", value: String(radiusKm)))
+        }
+        urlComponents?.queryItems = queryItems
 
         guard let url = urlComponents?.url else {
             completion(.failure(P2PAPIError.invalidURL))
@@ -8381,11 +8383,13 @@ public class P2PAPIService: ObservableObject {
             }
 
             DispatchQueue.main.async {
-                do {
-                    let messages = try JSONDecoder().decode([RideChatMessage].self, from: data)
+                // Server returns {"messages": [...]}; older builds expected a bare array.
+                struct ChatEnvelope: Decodable { let messages: [RideChatMessage] }
+                if let envelope = try? JSONDecoder().decode(ChatEnvelope.self, from: data) {
+                    completion(.success(envelope.messages))
+                } else if let messages = try? JSONDecoder().decode([RideChatMessage].self, from: data) {
                     completion(.success(messages))
-                } catch {
-                    // Try to parse as empty array if no messages
+                } else {
                     completion(.success([]))
                 }
             }
@@ -11283,6 +11287,8 @@ public struct RideHistoryItem: Codable, Identifiable {
     public let fare: Double?
     public let platform_fee: Double?
     public let tip: Double?
+    /// What the rider actually paid (server-computed, equals the receipt total).
+    public let total: Double?
     public let driver_name: String?
     public let status: String?
 }

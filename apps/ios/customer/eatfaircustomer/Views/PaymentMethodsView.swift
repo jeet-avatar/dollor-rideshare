@@ -8,12 +8,14 @@ import Stripe
 import EatFairShared
 
 struct PaymentMethodsView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = PaymentMethodsViewModel()
     @State private var showAddCard = false
     @State private var cardToDelete: StripeCard?
     @State private var showDeleteConfirmation = false
 
     var body: some View {
+        NavigationStack {
         ZStack {
             Theme.lxBg.edgesIgnoringSafeArea(.all)
 
@@ -27,7 +29,7 @@ struct PaymentMethodsView: View {
                     // Empty state
                     VStack(spacing: 16) {
                         Image(systemName: "creditcard")
-                            .font(.system(size: 50))
+                            .font(Lx.Typography.iconLarge)
                             .foregroundColor(Theme.lxTextMuted)
                         Text("No payment method")
                             .font(.headline)
@@ -70,11 +72,11 @@ struct PaymentMethodsView: View {
                 }) {
                     Text("Add Payment Method")
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(Lx.Palette.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Theme.lxButtonGradient)
-                        .cornerRadius(14)
+                        .cornerRadius(Lx.Radius.button)
                         .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, y: 6)
                         .padding(.horizontal)
                 }
@@ -83,6 +85,13 @@ struct PaymentMethodsView: View {
         }
         .preferredColorScheme(.dark)
         .navigationTitle("Payment Methods")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") { dismiss() }
+                    .foregroundColor(Theme.lxOrange)
+            }
+        }
         .sheet(isPresented: $showAddCard) {
             StripeAddCardView(onCardAdded: { card in
                 viewModel.savedCards.append(card)
@@ -114,6 +123,7 @@ struct PaymentMethodsView: View {
                 Text("Are you sure you want to remove this card?")
             }
         }
+        } // NavigationStack
     }
 }
 
@@ -235,7 +245,7 @@ struct PaymentCardRow: View {
                             .padding(.vertical, 2)
                             .background(Theme.lxOrange.opacity(0.2))
                             .foregroundColor(Theme.lxOrange)
-                            .cornerRadius(4)
+                            .cornerRadius(Lx.Radius.grabber)
                     }
                 }
                 Text(subtitle)
@@ -270,12 +280,12 @@ struct PaymentCardRow: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
+        .shadow(color: Lx.Palette.shadow.opacity(0.25), radius: 5, x: 0, y: 2)
     }
 }
 
@@ -321,8 +331,8 @@ struct StripeAddCardView: View {
                                 Spacer()
                             }
                         }
-                        .listRowBackground(Color.black)
-                        .foregroundColor(.white)
+                        .listRowBackground(Lx.Palette.shadow)
+                        .foregroundColor(Lx.Palette.onAccent)
                         .disabled(isProcessing)
                     }
 
@@ -377,7 +387,7 @@ struct StripeAddCardView: View {
                         }
                     }
                     .listRowBackground(cardParams != nil ? Theme.lxOrange : Theme.lxSurface2)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .disabled(cardParams == nil || isProcessing)
                 }
             }

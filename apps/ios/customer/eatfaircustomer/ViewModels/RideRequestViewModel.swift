@@ -15,7 +15,6 @@ class RideRequestViewModel: ObservableObject {
     @Published var pickupAddress: RideAddressInput?
     @Published var dropoffAddress: RideAddressInput?
     @Published var notes: String = ""
-    @Published var tip: Double = 0.0
     @Published var accessibilityRequested: Bool = false
     @Published var accessibilityNotes: String = ""
     @Published var selectedAccessibilityOptions: Set<AccessibilityOption> = []
@@ -188,12 +187,11 @@ class RideRequestViewModel: ObservableObject {
         return remainder > 0.005 ? remainder : 0
     }
 
-    /// What driver receives (fare - driver's platform fee + tip)
-    /// Driver pays tiered fee based on fare: $1 (≤$35), $2 ($35-$70), $3 (>$70)
+    /// What driver receives (fare - driver's platform fee). Tip is added post-ride.
     var driverEarnings: Double {
         let driverPortion = (baseFare + distanceFee + timeFee) * surgeMultiplier
         let fare = max(driverPortion, minimumFare)
-        return fare - driverPlatformFee + tip
+        return fare - driverPlatformFee
     }
 
     /// Connection fee for matchmaking service (tiered: $1-$3 based on fare)
@@ -207,9 +205,9 @@ class RideRequestViewModel: ObservableObject {
         estimatedFare
     }
 
-    /// Total amount the customer pays (includes the platform fee, regulatory fee, and tip).
+    /// Total amount the customer pays (fare + platform fee + regulatory fee). Tip is added post-ride.
     var totalAmount: Double {
-        estimatedFare + tip
+        estimatedFare
     }
 
     /// Estimated fare (used in UI before tip)
@@ -624,6 +622,15 @@ class RideRequestViewModel: ObservableObject {
 
                 switch result {
                 case .success(let response):
+                    // The driver may have accepted the rider's counter-offer: the match then happens
+                    // server-side and no bid stays actionable, so detect it here or the rider would
+                    // wait on "Waiting for drivers…" forever.
+                    if self.acceptedDriver == nil,
+                       let accepted = response.bids.first(where: { $0.status == "accepted" }) {
+                        self.completeMatch(with: accepted)
+                        return
+                    }
+
                     // Show bids the customer can act on:
                     // - "pending" = driver just bid, awaiting customer response
                     // - "countered" where last_offer_by == "driver" = driver countered back,
@@ -648,6 +655,31 @@ class RideRequestViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    /// Moves the rider into the matched state for a bid the driver accepted (counter-offer path).
+    private func completeMatch(with bid: RideBid) {
+        stopBidPolling()
+        showBidsSheet = false
+        incomingBids = []
+        isNegotiating = false
+        let vehicleParts = (bid.driver_vehicle ?? "").split(separator: " ")
+        acceptedDriver = AcceptedDriverInfo(
+            id: bid.driver_id,
+            name: bid.driver_name,
+            phone: nil,
+            rating: bid.driver_rating,
+            photo_url: bid.driver_photo_url,
+            vehicle_make: vehicleParts.first.map(String.init),
+            vehicle_model: vehicleParts.count >= 2 ? vehicleParts.dropFirst().joined(separator: " ") : nil,
+            vehicle_color: nil,
+            vehicle_year: nil,
+            license_plate: nil,
+            vehicle_photo_url: nil
+        )
+        driverETA = bid.estimated_arrival_minutes
+        currentStep = .driverEnRoute
+        negotiationMessage = nil
     }
 
     // MARK: - Accept/Reject Driver Bids
@@ -931,6 +963,21 @@ class RideRequestViewModel: ObservableObject {
         }
     }
 
+    /// Replaces the pre-negotiation estimate with the server's final numbers
+    /// (accepted bid + connection fee + regulatory fee) so the summary matches the receipt.
+    private func refreshCompletedFare() {
+        guard let rideId = activeRide?.rideId else { return }
+        p2pService.fetchRideReceipt(rideId: rideId) { [weak self] result in
+            guard case .success(let json) = result,
+                  let receipt = json["receipt"] as? [String: Any],
+                  let breakdown = receipt["fare_breakdown"] as? [String: Any],
+                  let baseFare = breakdown["base_fare"] as? Double,
+                  let total = breakdown["total"] as? Double else { return }
+            self?.backendSubtotal = baseFare
+            self?.backendTotal = total
+        }
+    }
+
     private func updateRideStep(from status: String) {
         switch status.lowercased() {
         case "open", "bidding", "preparing", "waiting_for_driver":
@@ -942,6 +989,7 @@ class RideRequestViewModel: ObservableObject {
         case "delivered", "completed":
             currentStep = .completed
             stopTracking()
+            refreshCompletedFare()
         case "expired":
             stopTracking()
             NotificationCenter.default.post(name: NSNotification.Name("RideRequestExpired"), object: nil)
@@ -1057,7 +1105,6 @@ class RideRequestViewModel: ObservableObject {
         pickupAddress = nil
         dropoffAddress = nil
         notes = ""
-        tip = 0.0
         activeRide = nil
         rideTracking = nil
         isRideActive = false
@@ -1094,6 +1141,12 @@ class RideRequestViewModel: ObservableObject {
         // Payment state
         paymentIntentClientSecret = nil
         showPaymentSheet = false
+
+        // Sheet visibility — must be cleared so stale state from a prior ride
+        // doesn't block sheets on the next request (e.g. showBidsSheet staying
+        // true after expiry causes SwiftUI sheet conflict with showPaymentMethodsSheet)
+        showBidsSheet = false
+        showPaymentMethodsSheet = false
 
         // Cancellation state
         showCancelSheet = false

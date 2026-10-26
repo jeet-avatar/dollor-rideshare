@@ -112,8 +112,8 @@ struct ProfileHeaderView: View {
                 if viewModel.isEditing {
                     PhotosPicker(selection: $selectedItem, matching: .images) {
                         Image(systemName: "camera.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
+                            .font(Lx.Typography.footnote)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .frame(width: 36, height: 36)
                             .background(Theme.lxOrange)
                             .clipShape(Circle())
@@ -186,11 +186,11 @@ struct ProfileHeaderView: View {
         }
         .font(.caption)
         .fontWeight(.semibold)
-        .foregroundColor(.white)
+        .foregroundColor(Lx.Palette.onAccent)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(color)
-        .cornerRadius(16)
+        .cornerRadius(Lx.Radius.card)
     }
 
     private var verifiedBadge: some View {
@@ -200,11 +200,11 @@ struct ProfileHeaderView: View {
         }
         .font(.caption)
         .fontWeight(.semibold)
-        .foregroundColor(.white)
+        .foregroundColor(Lx.Palette.onAccent)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(Theme.lxSuccess)
-        .cornerRadius(16)
+        .cornerRadius(Lx.Radius.card)
     }
 
     private func statusInfo(for status: String) -> (Color, String, String) {
@@ -265,8 +265,8 @@ struct StatsOverviewCard: View {
         }
         .padding(.vertical, 16)
         .background(Theme.lxSurface)
-        .cornerRadius(16)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.card)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.card).stroke(Theme.lxHairline, lineWidth: 1))
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
         .padding(.horizontal)
         .padding(.bottom, 16)
@@ -314,7 +314,7 @@ struct ProfileTabSelector: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(selectedTab == index ? Theme.lxOrange : Theme.lxSurface)
-                            .cornerRadius(20)
+                            .cornerRadius(Lx.Radius.sheet)
                     }
                     .accessibilityLabel("\(tabs[index]) tab")
                     .accessibilityHint(selectedTab == index ? "Currently selected" : "Tap to view \(tabs[index].lowercased()) information")
@@ -370,7 +370,7 @@ struct PersonalInfoSection: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(Theme.lxSurface2)
-                        .cornerRadius(8)
+                        .cornerRadius(Lx.Radius.chip)
                     } else if let dob = viewModel.dateOfBirth {
                         HStack {
                             Image(systemName: "calendar")
@@ -431,7 +431,7 @@ struct PersonalInfoSection: View {
                     longitude: locationManager.currentCoordinate?.longitude ?? viewModel.driver?.currentLongitude ?? 0
                 )
                 .frame(height: 200)
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
             }
 
             // Save Button
@@ -439,7 +439,7 @@ struct PersonalInfoSection: View {
                 Button(action: { viewModel.saveProfile() }) {
                     if viewModel.isLoading {
                         ProgressView()
-                            .tint(.white)
+                            .tint(Lx.Palette.onAccent)
                     } else {
                         Text("Save Changes")
                             .fontWeight(.semibold)
@@ -448,8 +448,8 @@ struct PersonalInfoSection: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Theme.lxButtonGradient)
-                .foregroundColor(.white)
-                .cornerRadius(14)
+                .foregroundColor(Lx.Palette.onAccent)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                 .padding(.horizontal)
                 .disabled(viewModel.isLoading)
@@ -503,7 +503,7 @@ struct VehicleDocumentsSection: View {
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
                                 .background(Theme.lxSurface2)
-                                .cornerRadius(8)
+                                .cornerRadius(Lx.Radius.chip)
                             }
                         } else {
                             ProfileField(
@@ -594,7 +594,7 @@ struct VehicleDocumentsSection: View {
                         }
                         .padding()
                         .background((response.allVerified ? Theme.lxSuccess : Theme.lxOrange).opacity(0.1))
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
 
                         // Document Status List (Read-only)
                         if !response.documents.isEmpty {
@@ -617,7 +617,7 @@ struct VehicleDocumentsSection: View {
                         // No documents yet
                         VStack(spacing: 12) {
                             Image(systemName: "doc.badge.plus")
-                                .font(.system(size: 40))
+                                .font(Lx.Typography.icon)
                                 .foregroundColor(Theme.lxTextMuted)
                             Text("No Documents Submitted")
                                 .font(.headline)
@@ -646,11 +646,11 @@ struct VehicleDocumentsSection: View {
                             }
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
+                            .foregroundColor(Lx.Palette.onAccent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Theme.lxButtonGradient)
-                            .cornerRadius(14)
+                            .cornerRadius(Lx.Radius.button)
                             .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                         }
                         .accessibilityLabel("Upload documents on web")
@@ -664,7 +664,7 @@ struct VehicleDocumentsSection: View {
                 Button(action: { viewModel.saveProfile() }) {
                     if viewModel.isLoading {
                         ProgressView()
-                            .tint(.white)
+                            .tint(Lx.Palette.onAccent)
                     } else {
                         Text("Save Changes")
                             .fontWeight(.semibold)
@@ -673,8 +673,8 @@ struct VehicleDocumentsSection: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Theme.lxButtonGradient)
-                .foregroundColor(.white)
-                .cornerRadius(14)
+                .foregroundColor(Lx.Palette.onAccent)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                 .padding(.horizontal)
                 .disabled(viewModel.isLoading)
@@ -699,7 +699,7 @@ struct DocumentStatusRowItem: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(Lx.Typography.footnote)
                 .foregroundColor(Theme.lxOrange)
                 .frame(width: 24)
             Text(text)
@@ -746,7 +746,7 @@ struct VehiclePhotoUploadView: View {
                             .frame(height: 150)
                             .frame(maxWidth: .infinity)
                             .clipped()
-                            .cornerRadius(12)
+                            .cornerRadius(Lx.Radius.button)
                     case .failure:
                         placeholderView
                     @unknown default:
@@ -758,7 +758,7 @@ struct VehiclePhotoUploadView: View {
                         PhotosPicker(selection: $selectedItem, matching: .images) {
                             Image(systemName: "pencil.circle.fill")
                                 .font(.title2)
-                                .foregroundColor(.white)
+                                .foregroundColor(Lx.Palette.onAccent)
                                 .background(Circle().fill(Theme.lxOrange))
                                 .padding(8)
                         }
@@ -776,7 +776,7 @@ struct VehiclePhotoUploadView: View {
                                 .scaleEffect(1.2)
                         } else {
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 32))
+                                .font(Lx.Typography.largeTitle)
                                 .foregroundColor(Theme.lxOrange)
                             Text("Add Vehicle Photo")
                                 .font(.subheadline)
@@ -790,9 +790,9 @@ struct VehiclePhotoUploadView: View {
                     .frame(height: 150)
                     .frame(maxWidth: .infinity)
                     .background(Theme.lxSurface)
-                    .cornerRadius(12)
+                    .cornerRadius(Lx.Radius.button)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: Lx.Radius.button)
                             .stroke(style: StrokeStyle(lineWidth: 2, dash: [8]))
                             .foregroundColor(Theme.lxOrange.opacity(0.3))
                     )
@@ -810,7 +810,7 @@ struct VehiclePhotoUploadView: View {
     private var placeholderView: some View {
         VStack(spacing: 8) {
             Image(systemName: "car.fill")
-                .font(.system(size: 32))
+                .font(Lx.Typography.largeTitle)
                 .foregroundColor(Theme.lxTextMuted)
             Text("No photo uploaded")
                 .font(.caption)
@@ -819,7 +819,7 @@ struct VehiclePhotoUploadView: View {
         .frame(height: 150)
         .frame(maxWidth: .infinity)
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
     }
 
     private func handleImageSelection(_ item: PhotosPickerItem?) {
@@ -868,14 +868,9 @@ struct EarningsPaymentSection: View {
                                 .font(.caption)
                                 .foregroundColor(Theme.lxTextSecondary)
                             HStack(spacing: 4) {
-                                Text("\(earningsViewModel.weekDeliveries)")
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                if earningsViewModel.weekRideshareRides > 0 {
-                                    Text("(\(earningsViewModel.weekFoodDeliveries)d + \(earningsViewModel.weekRideshareRides)r)")
-                                        .font(.caption2)
-                                        .foregroundColor(Theme.lxTextSecondary)
-                                }
+                                Text("\(earningsViewModel.weekRideshareRides)")
+                                    .font(Lx.Typography.title)
+                                    .foregroundColor(Lx.Palette.text)
                             }
                         }
 
@@ -984,8 +979,8 @@ struct EarningsPaymentSection: View {
                 }
                 .padding()
                 .background(Theme.lxSurface)
-                .cornerRadius(12)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+                .cornerRadius(Lx.Radius.button)
+                .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
             }
             .disabled(viewModel.isLoadingStripeLink)
@@ -1003,8 +998,8 @@ struct EarningsPaymentSection: View {
                 }
                 .padding()
                 .background(Theme.lxSurface)
-                .cornerRadius(12)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+                .cornerRadius(Lx.Radius.button)
+                .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
             }
             .padding(.horizontal)
@@ -1014,7 +1009,7 @@ struct EarningsPaymentSection: View {
                 Button(action: { viewModel.saveProfile() }) {
                     if viewModel.isLoading {
                         ProgressView()
-                            .tint(.white)
+                            .tint(Lx.Palette.onAccent)
                     } else {
                         Text("Save Changes")
                             .fontWeight(.semibold)
@@ -1023,8 +1018,8 @@ struct EarningsPaymentSection: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Theme.lxButtonGradient)
-                .foregroundColor(.white)
-                .cornerRadius(14)
+                .foregroundColor(Lx.Palette.onAccent)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
                 .padding(.horizontal)
                 .disabled(viewModel.isLoading)
@@ -1184,8 +1179,8 @@ struct SettingsSection: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Theme.lxSurface)
-                .cornerRadius(12)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.lxHairline, lineWidth: 1))
+                .cornerRadius(Lx.Radius.button)
+                .overlay(RoundedRectangle(cornerRadius: Lx.Radius.button).stroke(Theme.lxHairline, lineWidth: 1))
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
             }
             .accessibilityLabel("Logout from account")
@@ -1211,7 +1206,7 @@ struct SettingsSection: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Theme.lxError.opacity(0.1))
-                .cornerRadius(12)
+                .cornerRadius(Lx.Radius.button)
             }
             .accessibilityLabel("Delete account permanently")
             .accessibilityHint("This action cannot be undone")
@@ -1360,8 +1355,8 @@ struct ProfileCard<Content: View>: View {
         }
         .padding()
         .background(Theme.lxSurface)
-        .cornerRadius(16)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.lxHairline, lineWidth: 1))
+        .cornerRadius(Lx.Radius.card)
+        .overlay(RoundedRectangle(cornerRadius: Lx.Radius.card).stroke(Theme.lxHairline, lineWidth: 1))
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
         .padding(.horizontal)
     }
@@ -1402,7 +1397,7 @@ struct ProfileField: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(isEditing ? Theme.lxSurface2 : Color.clear)
-            .cornerRadius(8)
+            .cornerRadius(Lx.Radius.chip)
         }
     }
 }
@@ -1421,7 +1416,7 @@ struct VerificationStatusBadge: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background((isVerified ? Theme.lxSuccess : Theme.lxOrange).opacity(0.1))
-        .cornerRadius(8)
+        .cornerRadius(Lx.Radius.chip)
     }
 }
 
@@ -1464,7 +1459,7 @@ struct DocumentStatusRow: View {
         HStack(spacing: 12) {
             // Document type icon
             Image(systemName: documentIcon)
-                .font(.system(size: 18))
+                .font(Lx.Typography.body)
                 .foregroundColor(Theme.lxOrange)
                 .frame(width: 28)
 
@@ -1496,12 +1491,12 @@ struct DocumentStatusRow: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(statusColor.opacity(0.1))
-            .cornerRadius(6)
+            .cornerRadius(Lx.Radius.chip)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Theme.lxSurface2)
-        .cornerRadius(8)
+        .cornerRadius(Lx.Radius.chip)
     }
 
     private var documentIcon: String {
@@ -1562,7 +1557,7 @@ struct CurrentLocationMapView: View {
             Annotation("Your Location", coordinate: driverLocation) {
                 VStack(spacing: 0) {
                     Image(systemName: "car.fill")
-                        .foregroundColor(.white)
+                        .foregroundColor(Lx.Palette.onAccent)
                         .padding(8)
                         .background(Theme.lxOrange)
                         .clipShape(Circle())
@@ -1570,7 +1565,7 @@ struct CurrentLocationMapView: View {
 
                     Image(systemName: "arrowtriangle.down.fill")
                         .foregroundColor(Theme.lxOrange)
-                        .font(.system(size: 10))
+                        .font(Lx.Typography.caption)
                         .offset(y: -3)
                 }
             }
@@ -1676,7 +1671,7 @@ struct ExpirationAlertsBanner: View {
                             .fill(urgentColor.opacity(0.2))
                             .frame(width: 40, height: 40)
                         Image(systemName: hasExpired ? "exclamationmark.triangle.fill" : "clock.badge.exclamationmark.fill")
-                            .font(.system(size: 18))
+                            .font(Lx.Typography.body)
                             .foregroundColor(urgentColor)
                     }
 
@@ -1715,9 +1710,9 @@ struct ExpirationAlertsBanner: View {
                 .background(urgentColor.opacity(0.05))
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: Lx.Radius.button))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(urgentColor.opacity(0.3), lineWidth: 1)
         )
         .padding(.horizontal)
@@ -1741,7 +1736,7 @@ struct ExpirationAlertRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: alert.icon)
-                .font(.system(size: 16))
+                .font(Lx.Typography.callout)
                 .foregroundColor(alert.color)
                 .frame(width: 24)
 
@@ -1755,11 +1750,11 @@ struct ExpirationAlertRow: View {
                 Text("EXPIRED")
                     .font(.caption2)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Theme.lxError)
-                    .cornerRadius(4)
+                    .cornerRadius(Lx.Radius.grabber)
             } else {
                 Text(formattedDate)
                     .font(.caption)
@@ -1769,7 +1764,7 @@ struct ExpirationAlertRow: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Theme.lxSurface)
-        .cornerRadius(8)
+        .cornerRadius(Lx.Radius.chip)
     }
 
     private var formattedDate: String {

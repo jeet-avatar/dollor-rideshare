@@ -430,19 +430,15 @@ struct ChatMessage: Identifiable, Codable {
 enum QuickResponse: String, CaseIterable {
     case onMyWay = "on_my_way"
     case arrivedPickup = "arrived_pickup"
-    case gotFood = "got_food"
     case arrivedDelivery = "arrived_delivery"
-    case cantFind = "cant_find"
     case runningLate = "running_late"
     case thanks = "thanks"
 
     var message: String {
         switch self {
-        case .onMyWay: return "On my way to pick up your order!"
-        case .arrivedPickup: return "I've arrived at the restaurant"
-        case .gotFood: return "Got your food! Heading to you now"
+        case .onMyWay: return "On my way!"
+        case .arrivedPickup: return "I've arrived at the pickup location"
         case .arrivedDelivery: return "I'm at your location"
-        case .cantFind: return "Having trouble finding the address. Can you provide more details?"
         case .runningLate: return "Running a bit late due to traffic. Will be there soon!"
         case .thanks: return "Thank you!"
         }
@@ -451,10 +447,8 @@ enum QuickResponse: String, CaseIterable {
     var icon: String {
         switch self {
         case .onMyWay: return "car.fill"
-        case .arrivedPickup: return "building.2.fill"
-        case .gotFood: return "bag.fill"
-        case .arrivedDelivery: return "mappin.circle.fill"
-        case .cantFind: return "questionmark.circle.fill"
+        case .arrivedPickup: return "mappin.circle.fill"
+        case .arrivedDelivery: return "person.fill"
         case .runningLate: return "clock.fill"
         case .thanks: return "hand.thumbsup.fill"
         }

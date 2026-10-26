@@ -23,7 +23,7 @@ struct WhatDriversSeePage: View {
                                 .frame(width: 80, height: 80)
 
                             Image(systemName: "eye.fill")
-                                .font(.system(size: 36))
+                                .font(Lx.Typography.icon)
                                 .foregroundColor(Theme.lxOrange)
                         }
 
@@ -86,12 +86,12 @@ struct WhatDriversSeePage: View {
                             )
                         }
                         .background(Theme.lxSurface)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -141,12 +141,12 @@ struct WhatDriversSeePage: View {
                             )
                         }
                         .background(Theme.lxSurface)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -178,7 +178,7 @@ struct YourPrivacyPage: View {
                                 .frame(width: 80, height: 80)
 
                             Image(systemName: "lock.shield.fill")
-                                .font(.system(size: 36))
+                                .font(Lx.Typography.icon)
                                 .foregroundColor(Theme.lxOrange)
                         }
 
@@ -230,12 +230,12 @@ struct YourPrivacyPage: View {
                             )
                         }
                         .background(Theme.lxSurface)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -258,12 +258,12 @@ struct YourPrivacyPage: View {
                             PrivacyRightRow(icon: "equal.circle.fill", title: "Non-Discrimination", description: "Equal service for all choices")
                         }
                         .background(Theme.lxSurface)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -295,12 +295,12 @@ struct YourPrivacyPage: View {
                         }
                         .padding()
                         .background(Theme.lxSurface)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -332,7 +332,7 @@ struct SafetyFeaturesPage: View {
                                 .frame(width: 80, height: 80)
 
                             Image(systemName: "checkmark.shield.fill")
-                                .font(.system(size: 36))
+                                .font(Lx.Typography.icon)
                                 .foregroundColor(Theme.lxOrange)
                         }
 
@@ -388,12 +388,12 @@ struct SafetyFeaturesPage: View {
                             )
                         }
                         .background(Theme.lxSurface)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -429,12 +429,12 @@ struct SafetyFeaturesPage: View {
                             )
                         }
                         .background(Theme.lxSurface)
-                        .cornerRadius(12)
+                        .cornerRadius(Lx.Radius.button)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Lx.Radius.button)
                                 .stroke(Theme.lxHairline, lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        .shadow(color: Lx.Palette.shadow.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
                     .padding(.horizontal)
 
@@ -459,9 +459,9 @@ struct SafetyFeaturesPage: View {
                     .padding()
                     .frame(maxWidth: .infinity)
                     .background(Theme.lxSurface)
-                    .cornerRadius(12)
+                    .cornerRadius(Lx.Radius.button)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: Lx.Radius.button)
                             .stroke(Theme.lxHairline, lineWidth: 1)
                     )
                     .padding(.horizontal)

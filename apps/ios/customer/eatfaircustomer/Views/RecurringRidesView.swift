@@ -155,10 +155,10 @@ struct RecurringRidesView: View {
                     Text("Add Recurring Ride")
                 }
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(Lx.Palette.onAccent)
                 .padding()
                 .background(Theme.lxButtonGradient)
-                .cornerRadius(14)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
             }
         }
@@ -243,7 +243,7 @@ struct RecurringRidesView: View {
                 Spacer()
 
                 if let maxPrice = ride.maxPrice {
-                    Text("Max $\(String(format: "%.0f", maxPrice))")
+                    Text("Max \(Lx.Money.text(maxPrice))")
                         .font(.caption2)
                         .foregroundColor(Theme.lxTextSecondary)
                 }
@@ -438,7 +438,7 @@ struct RecurringRideSetupSheet: View {
                                         .frame(width: 36, height: 36)
                                         .background(selectedDays.contains(day.0) ? Theme.lxOrange : Theme.lxSurface2)
                                         .foregroundColor(selectedDays.contains(day.0) ? .white : Theme.lxText)
-                                        .cornerRadius(8)
+                                        .cornerRadius(Lx.Radius.chip)
                                 }
                                 .buttonStyle(.plain)
                             }

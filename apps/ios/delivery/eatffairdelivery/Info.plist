@@ -10,8 +10,6 @@
 	<string>Dollor Driver - Earn More</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -23,12 +21,47 @@
 			</array>
 		</dict>
 	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>tel</string>
+		<string>sms</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access allows you to take profile photos and scan documents for driver verification.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Contacts access allows you to quickly call riders from your contacts.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Dollor AI Service needs your location to track rides in real-time and provide accurate updates to riders even when the app is in the background.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Dollor AI Service needs your location to track rides and navigate to pickup and dropoff locations.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access enables voice commands and voice messages for hands-free operation while driving.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access allows you to upload profile photos and driver documentation.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Voice commands allow hands-free control while driving - accept rides, navigate, and send messages safely.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>audio</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -40,38 +73,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>UIRequiresFullScreen</key>
-	<true/>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Dollor AI Service needs your location to track rides and navigate to pickup and dropoff locations.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Dollor AI Service needs your location to track rides in real-time and provide accurate updates to riders even when the app is in the background.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Voice commands allow hands-free control while driving - accept rides, navigate, and send messages safely.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access enables voice commands and voice messages for hands-free operation while driving.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Camera access allows you to take profile photos and scan documents for driver verification.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Photo library access allows you to upload profile photos and driver documentation.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Contacts access allows you to quickly call riders from your contacts.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-		<string>audio</string>
-		<string>remote-notification</string>
-	</array>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-	</dict>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>comgooglemaps</string>
-		<string>tel</string>
-		<string>sms</string>
-	</array>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 </dict>
 </plist>

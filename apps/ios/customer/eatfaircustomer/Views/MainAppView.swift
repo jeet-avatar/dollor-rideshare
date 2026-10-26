@@ -46,7 +46,7 @@ struct MainAppView: View {
                     }
                     .tag(2)
                 }
-                .accentColor(Color(hex: "FF7A1A"))
+                .accentColor(Lx.Palette.orange)
                 // Luxury black+orange theme: the whole app is dark. Every screen uses explicit
                 // dark colors (Theme.lx*), so force dark to keep system chrome consistent.
                 .preferredColorScheme(.dark)

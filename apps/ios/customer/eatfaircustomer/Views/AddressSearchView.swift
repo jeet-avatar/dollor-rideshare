@@ -1,4 +1,5 @@
 import SwiftUI
+import EatFairShared
 import MapKit
 
 struct AddressSearchView: View {
@@ -13,7 +14,7 @@ struct AddressSearchView: View {
                 // Search Bar
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
+                        .foregroundColor(Lx.Palette.textMuted)
                     TextField("Search for your address", text: $viewModel.searchQuery)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
@@ -21,13 +22,13 @@ struct AddressSearchView: View {
                     if !viewModel.searchQuery.isEmpty {
                         Button(action: { viewModel.searchQuery = "" }) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
+                                .foregroundColor(Lx.Palette.textMuted)
                         }
                     }
                 }
                 .padding()
                 .background(Color(.systemGray6))
-                .cornerRadius(10)
+                .cornerRadius(Lx.Radius.chip)
                 .padding()
                 
                 if viewModel.isLoading {
@@ -47,7 +48,7 @@ struct AddressSearchView: View {
                                 .font(.headline)
                             Text(result.subtitle)
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(Lx.Palette.textMuted)
                         }
                     }
                 }

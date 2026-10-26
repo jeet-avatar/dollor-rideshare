@@ -75,9 +75,9 @@ struct HelpSupportView: View {
         }
         .padding(12)
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.25), radius: 5, y: 2)
@@ -173,7 +173,7 @@ struct HelpSupportView: View {
     private var stillNeedHelpCard: some View {
         VStack(spacing: 12) {
             Image(systemName: "questionmark.circle.fill")
-                .font(.system(size: 40))
+                .font(Lx.Typography.icon)
                 .foregroundColor(Theme.lxOrange)
 
             Text("Still need help?")
@@ -190,19 +190,19 @@ struct HelpSupportView: View {
             } label: {
                 Text("Contact Support")
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(Theme.lxButtonGradient)
-                    .cornerRadius(14)
+                    .cornerRadius(Lx.Radius.button)
                     .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, y: 6)
             }
         }
         .padding(20)
         .background(Theme.lxSurface)
-        .cornerRadius(16)
+        .cornerRadius(Lx.Radius.card)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: Lx.Radius.card)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.25), radius: 5, y: 2)
@@ -277,7 +277,7 @@ private let allFAQs: [FAQItem] = [
     FAQItem(
         id: "2",
         question: "What are the platform fees?",
-        answer: "We charge a $1 platform fee for fares up to $25, $2 for fares $25-$50, and $3 for fares over $50. 100% of tips go directly to drivers.",
+        answer: "We charge a platform fee of \(AppConfig.shared.rideshareFeeSummary). 100% of tips go directly to drivers.",
         category: .payments
     ),
     FAQItem(
@@ -342,7 +342,7 @@ struct ContactOptionCard: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(Lx.Typography.title)
                     .foregroundColor(color)
 
                 Text(title)
@@ -358,9 +358,9 @@ struct ContactOptionCard: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(Theme.lxSurface)
-            .cornerRadius(12)
+            .cornerRadius(Lx.Radius.button)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: Lx.Radius.button)
                     .stroke(Theme.lxHairline, lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.25), radius: 5, y: 2)
@@ -387,9 +387,9 @@ struct FAQCategoryChip: View {
             .padding(.vertical, 8)
             .background(isSelected ? Theme.lxOrange : Theme.lxSurface)
             .foregroundColor(isSelected ? .white : Theme.lxText)
-            .cornerRadius(20)
+            .cornerRadius(Lx.Radius.sheet)
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: Lx.Radius.sheet)
                     .stroke(isSelected ? Color.clear : Theme.lxHairline, lineWidth: 1)
             )
         }
@@ -430,9 +430,9 @@ struct FAQItemView: View {
             }
         }
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.25), radius: 3, y: 1)

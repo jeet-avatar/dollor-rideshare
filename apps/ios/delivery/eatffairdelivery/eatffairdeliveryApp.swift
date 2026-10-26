@@ -130,29 +130,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
     private func handleNotificationAction(_ payload: NotificationPayload) {
         switch payload.type {
-        case .newOrder, .orderReady:
-            // Navigate to available orders or specific order
-            if let orderId = payload.orderId {
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("NavigateToOrder"),
-                    object: nil,
-                    userInfo: ["orderId": orderId]
-                )
-            } else {
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("NavigateToAvailableOrders"),
-                    object: nil
-                )
-            }
-        case .driverAssigned:
-            // Navigate to my deliveries
-            if let orderId = payload.orderId {
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("NavigateToActiveDelivery"),
-                    object: nil,
-                    userInfo: ["orderId": orderId]
-                )
-            }
         case .driverApproved:
             // Driver has been approved - refresh status and navigate to dashboard
             deliveryLogger.info("Driver approved notification received")
@@ -252,9 +229,9 @@ struct EatffairdeliveryApp: App {
             .onOpenURL { url in
                 GIDSignIn.sharedInstance.handle(url)
             }
-            // Force light mode so adaptive `.primary` text never renders white-on-white
-            // in device dark mode (keeps all screens readable until the luxury-dark redesign).
-            .preferredColorScheme(.light)
+            // The app is dark-only (luxury black + orange); the shared tint recolors every default control.
+            .preferredColorScheme(.dark)
+            .tint(Lx.Palette.orange)
             .onAppear {
                 // Clear badge on app launch
                 NotificationManager.shared.clearBadge()

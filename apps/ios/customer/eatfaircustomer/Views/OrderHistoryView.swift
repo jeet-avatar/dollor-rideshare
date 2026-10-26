@@ -72,7 +72,7 @@ struct RideHistorySection: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "car.fill")
-                .font(.system(size: 60))
+                .font(Lx.Typography.iconHero)
                 .foregroundColor(Theme.lxOrange)
             Text("No rides yet")
                 .font(.title2)
@@ -149,8 +149,9 @@ struct RideHistoryCard: View {
         }
     }
 
+    /// The server's total matches the receipt; the sum is only a fallback for an older server.
     private var totalPaid: Double {
-        (ride.fare ?? 0) + (ride.platform_fee ?? 0) + (ride.tip ?? 0)
+        ride.total ?? ((ride.fare ?? 0) + (ride.platform_fee ?? 0) + (ride.tip ?? 0))
     }
 
     var body: some View {
@@ -170,14 +171,14 @@ struct RideHistoryCard: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(statusColor.opacity(0.15))
-                    .cornerRadius(6)
+                    .cornerRadius(Lx.Radius.chip)
             }
 
             // Pickup → Dropoff
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(Theme.lxSuccess)
+                        .fill(Lx.Palette.pickup)
                         .frame(width: 8, height: 8)
                     Text(ride.pickup ?? "Pickup")
                         .font(.subheadline)
@@ -187,7 +188,7 @@ struct RideHistoryCard: View {
 
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(Theme.lxError)
+                        .fill(Lx.Palette.dropoff)
                         .frame(width: 8, height: 8)
                     Text(ride.dropoff ?? "Dropoff")
                         .font(.subheadline)
@@ -239,15 +240,15 @@ struct RideHistoryCard: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                     .background(Theme.lxOrange.opacity(0.15))
-                    .cornerRadius(8)
+                    .cornerRadius(Lx.Radius.chip)
                 }
             }
         }
         .padding(16)
         .background(Theme.lxSurface)
-        .cornerRadius(12)
+        .cornerRadius(Lx.Radius.button)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Lx.Radius.button)
                 .stroke(Theme.lxHairline, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)

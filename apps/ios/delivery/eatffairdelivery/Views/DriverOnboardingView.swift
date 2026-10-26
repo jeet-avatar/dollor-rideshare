@@ -190,7 +190,7 @@ struct DriverOnboardingView: View {
             Text(title)
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(Lx.Palette.onAccent)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(
@@ -202,7 +202,7 @@ struct DriverOnboardingView: View {
                         }
                     }
                 )
-                .cornerRadius(14)
+                .cornerRadius(Lx.Radius.button)
                 .shadow(color: enabled ? Theme.lxOrange.opacity(0.4) : .clear, radius: 14, x: 0, y: 6)
         }
         .disabled(!enabled)
@@ -273,7 +273,7 @@ struct DriverOnboardingView: View {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
                 feeRow(
                     icon: "percent",
-                    text: "Platform fee: $1 per ride (tiered $1/$2/$3 by fare: ≤$25 $1, ≤$50 $2, >$50 $3) — deducted from each fare"
+                    text: "Platform fee per ride: \(AppConfig.shared.rideshareFeeSummary) — deducted from each fare"
                 )
                 feeRow(
                     icon: "hand.thumbsup.fill",
@@ -400,14 +400,14 @@ struct DriverOnboardingView: View {
                     HStack(spacing: Theme.spacingS) {
                         if complianceVM.isInitiatingCheck {
                             ProgressView()
-                                .tint(.white)
+                                .tint(Lx.Palette.onAccent)
                         } else {
                             Image(systemName: "shield.lefthalf.filled")
                             Text("Start Background Check")
                         }
                     }
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(Lx.Palette.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Theme.lxButtonGradient)
@@ -678,7 +678,7 @@ private struct DocumentUploadTile: View {
 
                     if isUploading {
                         ProgressView()
-                            .tint(.white)
+                            .tint(Lx.Palette.onAccent)
                             .padding(8)
                             .background(.ultraThinMaterial, in: Circle())
                             .padding(10)
