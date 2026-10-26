@@ -316,7 +316,8 @@ fun DriverDocumentCaptureScreen(
                 shape = RoundedCornerShape(Lx.Radius.button),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DollorDriverColors.Blue,
-                    disabledContainerColor = DollorDriverColors.Gray300
+                    disabledContainerColor = DollorDriverColors.Gray300,
+                    disabledContentColor = Lx.TextMuted
                 )
             ) {
                 Text(text = "Continue", fontSize = Lx.FontSize.callout, fontWeight = FontWeight.SemiBold)

@@ -247,7 +247,8 @@ fun InsuranceDisclosureScreen(
                 shape = RoundedCornerShape(Lx.Radius.button),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DollorDriverColors.Blue,
-                    disabledContainerColor = DollorDriverColors.Gray300
+                    disabledContainerColor = DollorDriverColors.Gray300,
+                    disabledContentColor = Lx.TextMuted
                 )
             ) {
                 Text(text = "Continue", fontSize = Lx.FontSize.callout, fontWeight = FontWeight.SemiBold)
@@ -451,7 +452,7 @@ fun BackgroundCheckConsentScreen(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = consentGiven && understandRights && !isInitiating,
                 shape = RoundedCornerShape(Lx.Radius.button),
-                colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue, disabledContainerColor = DollorDriverColors.Gray300)
+                colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue, disabledContainerColor = DollorDriverColors.Gray300, disabledContentColor = Lx.TextMuted)
             ) {
                 if (isInitiating) {
                     CircularProgressIndicator(
@@ -657,7 +658,7 @@ fun VehicleRequirementsScreen(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = meetsRequirements,
                 shape = RoundedCornerShape(Lx.Radius.button),
-                colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue, disabledContainerColor = DollorDriverColors.Gray300)
+                colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue, disabledContainerColor = DollorDriverColors.Gray300, disabledContentColor = Lx.TextMuted)
             ) {
                 Text("Continue", fontSize = Lx.FontSize.callout, fontWeight = FontWeight.SemiBold)
             }
@@ -905,7 +906,7 @@ fun IndependentContractorAgreementScreen(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = allAgreed,
                 shape = RoundedCornerShape(Lx.Radius.button),
-                colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Green, disabledContainerColor = DollorDriverColors.Gray300)
+                colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Green, disabledContainerColor = DollorDriverColors.Gray300, disabledContentColor = Lx.TextMuted)
             ) {
                 Icon(Icons.Default.Check, null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))

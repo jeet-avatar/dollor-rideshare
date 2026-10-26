@@ -263,7 +263,8 @@ fun LegalAcceptanceScreen(
                 enabled = termsAccepted && privacyAccepted,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Lx.Orange,
-                    disabledContainerColor = Lx.TextSecondary.copy(alpha = 0.3f)
+                    disabledContainerColor = Lx.TextSecondary.copy(alpha = 0.3f),
+                    disabledContentColor = Lx.TextMuted
                 ),
                 shape = RoundedCornerShape(Lx.Radius.button)
             ) {

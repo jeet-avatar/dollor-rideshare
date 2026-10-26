@@ -10,7 +10,7 @@ Open Bidding Marketplace:
 
 Transparent Pricing:
 - All fees shown upfront before you book
-- No surge pricing blindsides
+- Every fare shows its breakdown before you confirm
 - Tips are 100% optional and go directly to your driver
 
 CALIFORNIA-LICENSED TNC

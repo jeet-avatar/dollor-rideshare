@@ -40,8 +40,6 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access allows you to take profile photos and scan documents for driver verification.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Contacts access allows you to quickly call riders from your contacts.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Dollor AI Service needs your location to track rides in real-time and provide accurate updates to riders even when the app is in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -55,7 +53,6 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
-		<string>audio</string>
 		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>

@@ -75,7 +75,7 @@ final class OnlineStatusManager: ObservableObject {
                     logger.info("[OnlineStatusManager] Status confirmed by backend: isOnline=\(online)")
                     #endif
                     if online {
-                        VoiceAssistantManager.shared.speak("You are now online and receiving orders")
+                        VoiceAssistantManager.shared.speak("You are now online and receiving ride requests")
                     } else {
                         VoiceAssistantManager.shared.speak("You are now offline")
                     }

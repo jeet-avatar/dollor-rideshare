@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.auth
 
+import com.eatfair.shared.ui.LxButton
 import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -120,24 +121,11 @@ fun LegalAcceptanceScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(bottom = 40.dp)
             ) {
-                Button(
+                LxButton(
+                    text = "Continue",
                     onClick = onAccept,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (canContinue) BrandOrange else Lx.TextSecondary,
-                        disabledContainerColor = Lx.TextSecondary
-                    ),
-                    shape = RoundedCornerShape(Lx.Radius.button),
                     enabled = canContinue
-                ) {
-                    Text(
-                        text = "Continue",
-                        fontSize = Lx.FontSize.callout,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 

@@ -44,18 +44,10 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access allows you to scan payment cards and take profile photos.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Contacts access allows you to quickly share your pickup address from your contacts.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Dollor AI Service needs your location to find nearby drivers, request rides, and track your trip in real-time.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Dollor AI Service needs your location to find nearby drivers and request rides.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access enables voice search and voice commands for hands-free ride booking.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo library access allows you to upload profile photos.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Voice commands allow hands-free ride requests.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

@@ -160,7 +160,8 @@ fun EmailVerificationScreen(
                             .height(52.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = BrandGreen,
-                            disabledContainerColor = BrandGreen.copy(alpha = 0.5f)
+                            disabledContainerColor = BrandGreen.copy(alpha = 0.5f),
+                            disabledContentColor = Lx.TextMuted
                         ),
                         shape = RoundedCornerShape(Lx.Radius.button),
                         enabled = !isSendingCode
@@ -244,7 +245,8 @@ fun EmailVerificationScreen(
                             .height(52.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = BrandGreen,
-                            disabledContainerColor = BrandGreen.copy(alpha = 0.5f)
+                            disabledContainerColor = BrandGreen.copy(alpha = 0.5f),
+                            disabledContentColor = Lx.TextMuted
                         ),
                         shape = RoundedCornerShape(Lx.Radius.button),
                         enabled = !isVerifying && verificationCode.length == 6
