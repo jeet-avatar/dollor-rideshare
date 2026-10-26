@@ -267,7 +267,7 @@ class TestRideshareE2EFlow:
                 "message": "I'm at the blue building",
                 "sender_type": "customer",
             },
-            headers=auth_headers,
+            headers=customer_headers,
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -275,7 +275,7 @@ class TestRideshareE2EFlow:
         assert "message_id" in data
 
         # ── Step 10: Chat – Get Messages ─────────────────────────────────
-        resp = client.get(f"/api/p2p/ride-requests/{ride_id}/chat", headers=auth_headers)
+        resp = client.get(f"/api/p2p/ride-requests/{ride_id}/chat", headers=customer_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "messages" in data

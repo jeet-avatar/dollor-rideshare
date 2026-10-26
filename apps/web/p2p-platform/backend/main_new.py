@@ -10432,9 +10432,19 @@ def _require_ride_chat_participant(db: Session, ride_request_id: int, auth: dict
         raise HTTPException(status_code=404, detail="Ride not found")
     if auth.get("role") == "admin":
         return "admin"
-    if auth.get("customer_id") and auth.get("customer_id") == ride.customer_id:
+    customer_id = auth.get("customer_id")
+    driver_id = auth.get("driver_id")
+    if not customer_id and not driver_id and auth.get("sub"):
+        # Tokens issued without an id claim: resolve the account from the token's email
+        email = str(auth["sub"]).lower()
+        account = db.query(Customer).filter(func.lower(Customer.email) == email).first()
+        customer_id = account.id if account else None
+        if not account:
+            driver_account = db.query(Driver).filter(func.lower(Driver.email) == email).first()
+            driver_id = driver_account.id if driver_account else None
+    if customer_id and customer_id == ride.customer_id:
         return "customer"
-    if auth.get("driver_id") and auth.get("driver_id") == ride.matched_driver_id:
+    if driver_id and driver_id == ride.matched_driver_id:
         return "driver"
     raise HTTPException(status_code=403, detail="You are not a participant in this ride")
 
@@ -10483,12 +10493,14 @@ def send_ride_request_chat(
 
     # The sender comes from the token, not the request body, so nobody can post as the other party
     role = _require_ride_chat_participant(db, ride_request_id, _auth)
+    from models import RideRequest
+    ride_for_chat = db.query(RideRequest).filter(RideRequest.id == ride_request_id).first()
     if role == "admin":
         sender_type, sender_id = chat_request.sender_type, 0
     elif role == "customer":
-        sender_type, sender_id = "customer", _auth.get("customer_id")
+        sender_type, sender_id = "customer", ride_for_chat.customer_id
     else:
-        sender_type, sender_id = "driver", _auth.get("driver_id")
+        sender_type, sender_id = "driver", ride_for_chat.matched_driver_id
 
     chat_msg = RideChatMessage(
         ride_request_id=ride_request_id,
