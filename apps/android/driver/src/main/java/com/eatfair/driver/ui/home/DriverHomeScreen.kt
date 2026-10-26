@@ -308,7 +308,14 @@ fun DriverHomeScreen(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.History,
                     title = "History",
-                    onClick = { navController.navigate("earnings") }
+                    onClick = {
+                        // Same navigation as the bottom tab, so the Home tab is not left showing Earnings
+                        navController.navigate("earnings") {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
                 QuickActionCard(
                     modifier = Modifier.weight(1f),

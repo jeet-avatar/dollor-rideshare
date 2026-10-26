@@ -1,5 +1,7 @@
 package com.eatfair.app.ui.profile
 
+import com.eatfair.shared.ui.LxButtonRole
+import com.eatfair.shared.ui.LxButton
 import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.ui.Lx
 import android.Manifest
@@ -288,25 +290,11 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(25.dp))
 
-            // Log Out Button - Matches iOS (black background)
-            Button(
+            LxButton(
+                text = "Log Out",
                 onClick = onLogoutClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .shadow(elevation = 5.dp, shape = RoundedCornerShape(Lx.Radius.button)),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Lx.Text
-                ),
-                shape = RoundedCornerShape(Lx.Radius.button)
-            ) {
-                Text(
-                    text = "Log Out",
-                    fontSize = Lx.FontSize.callout,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+                role = LxButtonRole.Secondary
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
