@@ -950,12 +950,12 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
         except Exception as e:
             logging.warning(f"Insurance event (bid accept) failed: {e}")
 
-        # Reject all other pending bids
+        # Close every other open bid (pending or countered) so none of them can match this ride again
         other_bids = db.query(RideBid).filter(
             and_(
                 RideBid.ride_request_id == ride_request.id,
                 RideBid.id != bid.id,
-                RideBid.status == BidStatus.PENDING
+                RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED])
             )
         ).all()
 
@@ -1486,9 +1486,19 @@ async def get_driver_active_rides(
             RideRequest.status.in_(active_statuses)
         )
     ).order_by(RideRequest.matched_at.desc()).limit(10).all()
+    # The matched driver may call the rider; the phone is only included here, never in the public serializer
+    phones = {}
+    customer_ids = {r.customer_id for r in rides}
+    if customer_ids:
+        phones = {c.id: c.phone for c in db.query(Customer).filter(Customer.id.in_(customer_ids)).all()}
+    active_rides = []
+    for r in rides:
+        payload = serialize_ride_request(r)
+        payload["customer_phone"] = phones.get(r.customer_id)
+        active_rides.append(payload)
     return {
         "success": True,
-        "active_rides": [serialize_ride_request(r) for r in rides],
+        "active_rides": active_rides,
         "count": len(rides)
     }
 
@@ -1928,6 +1938,10 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
     if not ride_request:
         raise HTTPException(status_code=404, detail="Ride request not found")
 
+    # A counter can only be accepted while the ride is still open; otherwise this would overwrite another driver's match
+    if ride_request.status not in (RideRequestStatus.OPEN, RideRequestStatus.BIDDING):
+        raise HTTPException(status_code=409, detail="This ride is no longer available")
+
     now = datetime.utcnow()
 
     # Save original price before updating (for history tracking)
@@ -1948,12 +1962,12 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
     ride_request.final_price = bid.customer_counter_price
     ride_request.matched_at = now
 
-    # Reject other pending bids
+    # Close every other open bid (pending or countered) so none of them can match this ride again
     other_bids = db.query(RideBid).filter(
         and_(
             RideBid.ride_request_id == ride_request.id,
             RideBid.id != bid.id,
-            RideBid.status == BidStatus.PENDING
+            RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED])
         )
     ).all()
 

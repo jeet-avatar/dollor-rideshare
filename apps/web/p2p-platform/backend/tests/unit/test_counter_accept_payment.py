@@ -84,3 +84,16 @@ def test_declined_card_cancels_the_ride_when_a_counter_is_accepted(client, db_se
     ride = db_session.query(RideRequest).get(countered_bid.ride_id)
     assert ride.status == RideRequestStatus.CANCELLED
     assert ride.payment_status == "pre_auth_failed"
+
+
+def test_a_counter_cannot_be_accepted_once_the_ride_is_no_longer_open(client, db_session, countered_bid):
+    ride = db_session.query(RideRequest).get(countered_bid.ride_id)
+    ride.status = RideRequestStatus.CANCELLED
+    db_session.commit()
+    with patch("bid_routes.send_push_notification"), patch("bid_routes.asyncio.create_task"), patch("bid_routes._bg_email"):
+        response = client.post(f"/api/rides/bid/{countered_bid.bid_id}/accept-counter", headers=countered_bid.driver_h)
+
+    assert response.status_code == 409
+    db_session.refresh(ride)
+    assert ride.status == RideRequestStatus.CANCELLED
+    assert ride.matched_driver_id is None

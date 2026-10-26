@@ -10419,6 +10419,26 @@ class RideChatMessageRequest(BaseModel):
     sender_type: str = Field(..., pattern="^(customer|driver)$")
 
 
+def _require_ride_chat_participant(db: Session, ride_request_id: int, auth: dict) -> str:
+    """Only the ride's rider and its matched driver (or an admin) may read or write its chat.
+
+    Returns the caller's role for the ride ("customer", "driver" or "admin"); the sender is taken from the token,
+    never from the request body.
+    """
+    from models import RideRequest
+
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_request_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    if auth.get("role") == "admin":
+        return "admin"
+    if auth.get("customer_id") and auth.get("customer_id") == ride.customer_id:
+        return "customer"
+    if auth.get("driver_id") and auth.get("driver_id") == ride.matched_driver_id:
+        return "driver"
+    raise HTTPException(status_code=403, detail="You are not a participant in this ride")
+
+
 @app.get("/api/p2p/ride-requests/{ride_request_id}/chat")
 def get_ride_request_chat(
     ride_request_id: int,
@@ -10427,6 +10447,8 @@ def get_ride_request_chat(
 ):
     """Get chat messages for a ride request"""
     from models import RideChatMessage
+
+    _require_ride_chat_participant(db, ride_request_id, _auth)
 
     messages = db.query(RideChatMessage).filter(
         RideChatMessage.ride_request_id == ride_request_id
@@ -10459,15 +10481,18 @@ def send_ride_request_chat(
     """Send a chat message for a ride request"""
     from models import RideChatMessage
 
-    # Determine sender_id based on sender_type using JWT payload
-    if chat_request.sender_type == "customer":
-        sender_id = _auth.get("customer_id") or 0
+    # The sender comes from the token, not the request body, so nobody can post as the other party
+    role = _require_ride_chat_participant(db, ride_request_id, _auth)
+    if role == "admin":
+        sender_type, sender_id = chat_request.sender_type, 0
+    elif role == "customer":
+        sender_type, sender_id = "customer", _auth.get("customer_id")
     else:
-        sender_id = _auth.get("driver_id") or 0
+        sender_type, sender_id = "driver", _auth.get("driver_id")
 
     chat_msg = RideChatMessage(
         ride_request_id=ride_request_id,
-        sender_type=chat_request.sender_type,
+        sender_type=sender_type,
         sender_id=sender_id,
         message=chat_request.message,
     )
@@ -10480,7 +10505,7 @@ def send_ride_request_chat(
         "id": chat_msg.id,
         "message_id": chat_msg.id,
         "ride_request_id": ride_request_id,
-        "sender_type": chat_request.sender_type,
+        "sender_type": sender_type,
         "sender_id": sender_id,
         "message": chat_request.message,
         "created_at": chat_msg.created_at.isoformat() if chat_msg.created_at else datetime.utcnow().isoformat()
