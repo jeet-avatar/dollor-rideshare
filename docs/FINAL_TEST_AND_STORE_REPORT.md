@@ -211,6 +211,30 @@ Production timings in this run: reads 160 to 530 ms; create ride 370 to 490 ms; 
 | Rider: Trips tab lists the ride at $19.30; driver Earnings tab shows 12 rides, $110.37 | Pass |
 | Rider and driver tab sweep | No crash in the system log |
 
+### 9.2b Second Android UI ride: full negotiation, chat, safety dialogs (ride 606)
+
+| Step | Result |
+|---|---|
+| Driver bids $20.32 (bid sheet, slide to confirm) | Pass |
+| Rider taps the bid: sheet offers Accept Offer, Counter Offer, Decline | Pass |
+| Rider counters $17.00 | Pass: rider card shows "Your counter: $17.00 waiting for Marcus Johnson" |
+| Driver sees "Rider countered: $17.00" with Decline, Counter, Accept | Pass |
+| Driver sends a final counter of $18.50 | Pass: rider sees $18.50 with Accept and Counter |
+| Rider accepts $18.50 | Pass: driver Home shows fare $18.50 "Heading to pickup" |
+| Rider sends chat "On my way out" | Pass: stored on the server and shown in the driver's chat |
+| Driver SOS dialog | Pass: "Emergency ... call 911 now" with Close and Call 911 |
+| Driver Cancel ride dialog | Pass: asks why (rider asked, can't reach pickup, vehicle issue, safety concern, other) |
+| Driver arrived, start, complete | Pass: ride 606 completed at $18.50 |
+| Rider Ride Completed, Rate your driver, five stars, Submit | Pass: "Thanks for rating your driver" |
+
+Not completed in this pass: the driver's chat reply (the send tap landed while the keyboard was up; not retried) and the rider tip screen.
+
+Findings from this run:
+- The driver's final-counter dialog enforced a **$5.00 minimum that no backend rule backs**; the iOS driver app uses "more than the platform fee". Android now uses the same rule (committed).
+- The suggested offer moved from $20.27 to $20.24 to $20.32 within minutes of the same route (time-of-day pricing), which contradicts any "no surge" wording.
+- Chat message time stamps looked inconsistent with the receipt time (chat showed 7:15 PM for a message sent around 12:15 on the device clock); time-zone handling needs a check.
+- The Android send button needs a tap on its exact position; blind taps on a keyboard-shifted layout missed it. This was an automation problem, not an app bug.
+
 ### 9.3 Not exercised through a UI in this pass
 
 iOS apps (build and launch only); in-app chat screens, call, SOS and share-trip buttons; rider counter-offer and cancel dialogs; driver cancel and no-show on a device; profile sub-pages (edit, addresses, payment methods, notifications, help, settings); sign out; forgot password; delete account (deliberately not run); real card payments; push notifications; scheduled and recurring rides; the two-driver competition test (driver 129 still pending approval).

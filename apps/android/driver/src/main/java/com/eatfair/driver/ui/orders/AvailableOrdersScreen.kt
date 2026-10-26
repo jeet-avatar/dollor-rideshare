@@ -1,5 +1,6 @@
 package com.eatfair.driver.ui.orders
 
+import com.eatfair.shared.config.AppConfig
 import com.eatfair.driver.ui.home.AccessibilityNeedBadge
 import com.eatfair.shared.ui.Lx
 import com.eatfair.shared.ui.LxButton
@@ -193,13 +194,13 @@ private fun PriceDialog(
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
                 ),
-                supportingText = { Text("Minimum $5.00") }
+                supportingText = { Text("Must be more than the $" + String.format("%.2f", AppConfig.Rideshare.calculatePlatformFee(price ?: 0.0)) + " platform fee") }
             )
         },
         confirmButton = {
             TextButton(
                 onClick = { price?.let(onConfirm) },
-                enabled = price != null && price >= 5.0
+                enabled = price != null && price > AppConfig.Rideshare.calculatePlatformFee(price)
             ) { Text(confirmText) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
