@@ -732,6 +732,148 @@ async def get_bids_for_request(request_id: int, request: Request, customer: Cust
     }
 
 
+def _authorize_ride_payment(db: Session, ride_request: RideRequest, bid: RideBid, amount: float) -> None:
+    """Authorize (not capture) the rider's card for the agreed fare. Capture happens when the ride completes.
+
+    Shared by every path that matches a ride (rider accepts a bid, driver accepts the rider's counter) so no
+    matched ride can complete without a pre-authorization. A card failure cancels the ride and raises 402.
+    """
+    # Create Stripe PaymentIntent for customer charge (authorize now, capture on completion)
+    try:
+        import stripe
+        import os
+        stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+
+        customer_obj = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
+        if customer_obj and stripe.api_key:
+            # Demo accounts (App Store review): skip real Stripe, set demo marker so
+            # /create-intent idempotency path returns the demo secret correctly
+            _demo_emails = ["demo.customer@dollor.ai", "demo.driver@dollor.ai"]
+            if customer_obj.email and customer_obj.email.lower() in _demo_emails:
+                ride_request.stripe_payment_intent_id = "demo_pi_appstore_review"
+                db.commit()
+                logger.info(f"Ride {ride_request.id} demo account — skipping Stripe pre-auth")
+            else:
+                # Ensure customer has Stripe customer ID
+                stripe_customer_id = getattr(customer_obj, 'stripe_customer_id', None)
+                if not stripe_customer_id:
+                    stripe_cust = stripe.Customer.create(
+                        email=customer_obj.email,
+                        name=getattr(customer_obj, 'name', None) or getattr(customer_obj, 'full_name', None) or customer_obj.email,
+                        metadata={"dollor_customer_id": str(customer_obj.id)},
+                        idempotency_key=f"ride-cust-{customer_obj.id}"
+                    )
+                    customer_obj.stripe_customer_id = stripe_cust.id
+                    stripe_customer_id = stripe_cust.id
+                    db.commit()
+
+                # Require a saved payment method before charging. Previously this created
+                # an unconfirmed PaymentIntent with no payment_method attached, which just
+                # sat in requires_payment_method forever — no charge, no error, no signal
+                # to the customer, driver, or anyone watching logs that anything was wrong.
+                stripe_customer = stripe.Customer.retrieve(stripe_customer_id)
+                default_payment_method = stripe_customer.invoice_settings.default_payment_method
+                if not default_payment_method:
+                    # No explicit default — fall back to any attached card.
+                    # This covers Apple Pay cards (added via SetupIntent) and manually
+                    # added cards that the customer never tapped "Set as Default".
+                    pms = stripe.PaymentMethod.list(customer=stripe_customer_id, type="card", limit=1)
+                    if pms.data:
+                        default_payment_method = pms.data[0].id
+                        # Auto-promote so future rides skip this fallback path.
+                        stripe.Customer.modify(
+                            stripe_customer_id,
+                            invoice_settings={"default_payment_method": default_payment_method}
+                        )
+                        logger.info(f"Auto-set default payment method {default_payment_method} for customer {customer_obj.id}")
+                    else:
+                        # CardError is a StripeError subclass, caught below (ride-cancel + notify).
+                        raise stripe.error.CardError(
+                            message="No payment method on file for this ride.",
+                            param="payment_method", code="no_payment_method"
+                        )
+
+                final_price_cents = int(float(amount) * 100)
+                if final_price_cents > 0:
+                    payment_intent = stripe.PaymentIntent.create(
+                        amount=final_price_cents,
+                        currency="usd",
+                        customer=stripe_customer_id,
+                        payment_method=default_payment_method,
+                        off_session=True,
+                        confirm=True,
+                        description=f"Rideshare #{ride_request.request_id}",
+                        metadata={
+                            "ride_request_id": str(ride_request.id),
+                            "request_id": ride_request.request_id,
+                            "driver_id": str(bid.driver_id),
+                            "type": "rideshare"
+                        },
+                        capture_method="manual",
+                        idempotency_key=f"ride-pi-{ride_request.id}"
+                    )
+                    if payment_intent.status not in ("succeeded", "requires_capture"):
+                        raise stripe.error.CardError(
+                            message=f"PaymentIntent confirm landed in unexpected status: {payment_intent.status}",
+                            param=None, code="confirm_incomplete"
+                        )
+                    ride_request.stripe_payment_intent_id = payment_intent.id
+                    db.commit()
+                    logger.info(f"Ride {ride_request.id} PaymentIntent {payment_intent.id} confirmed, status={payment_intent.status} (${amount:.2f})")
+    except stripe.error.StripeError as stripe_err:
+        # Blocking failure: card declined / Stripe error — auto-cancel the ride
+        logger.error(f"Ride {ride_request.id} Stripe pre-auth FAILED ({type(stripe_err).__name__}): {stripe_err} — auto-cancelling")
+        ride_request.status = RideRequestStatus.CANCELLED
+        ride_request.cancelled_at = datetime.utcnow()
+        ride_request.payment_status = "pre_auth_failed"
+        ride_request.matched_bid_id = None
+        ride_request.matched_driver_id = None
+        ride_request.final_price = None
+        db.commit()
+
+        # Notify customer
+        try:
+            send_push_notification(
+                "customer", ride_request.customer_id,
+                "Payment Failed",
+                "Your card could not be pre-authorized. Please update your payment method and try booking again.",
+                data={"type": "payment_failed", "ride_request_id": str(ride_request.id)},
+                db=db
+            )
+            _notify_customer(
+                db, ride_request.customer_id,
+                "Payment Failed",
+                "Your card could not be pre-authorized for this ride. Please update your payment method.",
+                "ride", ride_request.id, "ride"
+            )
+        except Exception as notify_err:
+            logger.warning(f"Ride {ride_request.id} customer payment-failed notification error: {notify_err}")
+
+        # Notify driver
+        try:
+            send_push_notification(
+                "driver", bid.driver_id,
+                "Ride Cancelled",
+                "The customer's payment method failed. The ride has been cancelled.",
+                data={"type": "payment_failed", "ride_request_id": str(ride_request.id)},
+                db=db
+            )
+        except Exception as notify_err:
+            logger.warning(f"Ride {ride_request.id} driver payment-failed notification error: {notify_err}")
+
+        try:
+            db.commit()
+        except Exception:
+            pass
+
+        raise HTTPException(
+            status_code=402,
+            detail={"error": "payment_failed", "message": "Your card was declined. Please update your payment method and try again."}
+        )
+    except Exception as e:
+        logger.error(f"Ride {ride_request.id} Stripe PaymentIntent creation failed (non-blocking): {e}")
+
+
 @router.post("/bid/{bid_id}/respond")
 async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request, customer: Customer = Depends(require_customer), db: Session = Depends(get_db)):
     """
@@ -832,140 +974,7 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
 
         db.commit()
 
-        # Create Stripe PaymentIntent for customer charge (authorize now, capture on completion)
-        try:
-            import stripe
-            import os
-            stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-
-            customer_obj = db.query(Customer).filter(Customer.id == ride_request.customer_id).first()
-            if customer_obj and stripe.api_key:
-                # Demo accounts (App Store review): skip real Stripe, set demo marker so
-                # /create-intent idempotency path returns the demo secret correctly
-                _demo_emails = ["demo.customer@dollor.ai", "demo.driver@dollor.ai"]
-                if customer_obj.email and customer_obj.email.lower() in _demo_emails:
-                    ride_request.stripe_payment_intent_id = "demo_pi_appstore_review"
-                    db.commit()
-                    logger.info(f"Ride {ride_request.id} demo account — skipping Stripe pre-auth")
-                else:
-                    # Ensure customer has Stripe customer ID
-                    stripe_customer_id = getattr(customer_obj, 'stripe_customer_id', None)
-                    if not stripe_customer_id:
-                        stripe_cust = stripe.Customer.create(
-                            email=customer_obj.email,
-                            name=getattr(customer_obj, 'name', None) or getattr(customer_obj, 'full_name', None) or customer_obj.email,
-                            metadata={"dollor_customer_id": str(customer_obj.id)},
-                            idempotency_key=f"ride-cust-{customer_obj.id}"
-                        )
-                        customer_obj.stripe_customer_id = stripe_cust.id
-                        stripe_customer_id = stripe_cust.id
-                        db.commit()
-
-                    # Require a saved payment method before charging. Previously this created
-                    # an unconfirmed PaymentIntent with no payment_method attached, which just
-                    # sat in requires_payment_method forever — no charge, no error, no signal
-                    # to the customer, driver, or anyone watching logs that anything was wrong.
-                    stripe_customer = stripe.Customer.retrieve(stripe_customer_id)
-                    default_payment_method = stripe_customer.invoice_settings.default_payment_method
-                    if not default_payment_method:
-                        # No explicit default — fall back to any attached card.
-                        # This covers Apple Pay cards (added via SetupIntent) and manually
-                        # added cards that the customer never tapped "Set as Default".
-                        pms = stripe.PaymentMethod.list(customer=stripe_customer_id, type="card", limit=1)
-                        if pms.data:
-                            default_payment_method = pms.data[0].id
-                            # Auto-promote so future rides skip this fallback path.
-                            stripe.Customer.modify(
-                                stripe_customer_id,
-                                invoice_settings={"default_payment_method": default_payment_method}
-                            )
-                            logger.info(f"Auto-set default payment method {default_payment_method} for customer {customer_obj.id}")
-                        else:
-                            # CardError is a StripeError subclass, caught below (ride-cancel + notify).
-                            raise stripe.error.CardError(
-                                message="No payment method on file for this ride.",
-                                param="payment_method", code="no_payment_method"
-                            )
-
-                    final_price_cents = int(float(bid.proposed_price) * 100)
-                    if final_price_cents > 0:
-                        payment_intent = stripe.PaymentIntent.create(
-                            amount=final_price_cents,
-                            currency="usd",
-                            customer=stripe_customer_id,
-                            payment_method=default_payment_method,
-                            off_session=True,
-                            confirm=True,
-                            description=f"Rideshare #{ride_request.request_id}",
-                            metadata={
-                                "ride_request_id": str(ride_request.id),
-                                "request_id": ride_request.request_id,
-                                "driver_id": str(bid.driver_id),
-                                "type": "rideshare"
-                            },
-                            capture_method="manual",
-                            idempotency_key=f"ride-pi-{ride_request.id}"
-                        )
-                        if payment_intent.status not in ("succeeded", "requires_capture"):
-                            raise stripe.error.CardError(
-                                message=f"PaymentIntent confirm landed in unexpected status: {payment_intent.status}",
-                                param=None, code="confirm_incomplete"
-                            )
-                        ride_request.stripe_payment_intent_id = payment_intent.id
-                        db.commit()
-                        logger.info(f"Ride {ride_request.id} PaymentIntent {payment_intent.id} confirmed, status={payment_intent.status} (${bid.proposed_price:.2f})")
-        except stripe.error.StripeError as stripe_err:
-            # Blocking failure: card declined / Stripe error — auto-cancel the ride
-            logger.error(f"Ride {ride_request.id} Stripe pre-auth FAILED ({type(stripe_err).__name__}): {stripe_err} — auto-cancelling")
-            ride_request.status = RideRequestStatus.CANCELLED
-            ride_request.cancelled_at = datetime.utcnow()
-            ride_request.payment_status = "pre_auth_failed"
-            ride_request.matched_bid_id = None
-            ride_request.matched_driver_id = None
-            ride_request.final_price = None
-            db.commit()
-
-            # Notify customer
-            try:
-                send_push_notification(
-                    "customer", ride_request.customer_id,
-                    "Payment Failed",
-                    "Your card could not be pre-authorized. Please update your payment method and try booking again.",
-                    data={"type": "payment_failed", "ride_request_id": str(ride_request.id)},
-                    db=db
-                )
-                _notify_customer(
-                    db, ride_request.customer_id,
-                    "Payment Failed",
-                    "Your card could not be pre-authorized for this ride. Please update your payment method.",
-                    "ride", ride_request.id, "ride"
-                )
-            except Exception as notify_err:
-                logger.warning(f"Ride {ride_request.id} customer payment-failed notification error: {notify_err}")
-
-            # Notify driver
-            try:
-                send_push_notification(
-                    "driver", bid.driver_id,
-                    "Ride Cancelled",
-                    "The customer's payment method failed. The ride has been cancelled.",
-                    data={"type": "payment_failed", "ride_request_id": str(ride_request.id)},
-                    db=db
-                )
-            except Exception as notify_err:
-                logger.warning(f"Ride {ride_request.id} driver payment-failed notification error: {notify_err}")
-
-            try:
-                db.commit()
-            except Exception:
-                pass
-
-            raise HTTPException(
-                status_code=402,
-                detail={"error": "payment_failed", "message": "Your card was declined. Please update your payment method and try again."}
-            )
-        except Exception as e:
-            logger.error(f"Ride {ride_request.id} Stripe PaymentIntent creation failed (non-blocking): {e}")
+        _authorize_ride_payment(db, ride_request, bid, bid.proposed_price)
 
         # Send WebSocket update - ride matched
         try:
@@ -1953,6 +1962,17 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
         other_bid.customer_response = "Another bid was accepted"
 
     db.commit()
+
+    # Authorize the rider's card for the countered fare, same as when the rider accepts a bid
+    try:
+        _authorize_ride_payment(db, ride_request, bid, bid.customer_counter_price)
+    except HTTPException as payment_error:
+        if payment_error.status_code == 402:
+            raise HTTPException(
+                status_code=402,
+                detail={"error": "payment_failed", "message": "The rider's card could not be authorized, so the ride was cancelled."},
+            )
+        raise
 
     # Send push notification to customer - COUNTER ACCEPTED
     try:

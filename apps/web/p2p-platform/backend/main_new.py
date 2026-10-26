@@ -9485,7 +9485,7 @@ async def track_ride_ios_alias(ride_id: int, _auth: dict = Depends(require_any_a
     """Alias for iOS Customer app - track ride
     iOS calls: GET /api/erp/rides/{rideId}/track
     """
-    return await track_ride(ride_id, db)
+    return await track_ride(ride_id, db, _auth)
 
 @app.post("/erp/rides/{ride_id}/cancel")
 @app.post("/api/erp/rides/{ride_id}/cancel")
@@ -10477,9 +10477,11 @@ def send_ride_request_chat(
 
     return {
         "success": True,
+        "id": chat_msg.id,
         "message_id": chat_msg.id,
         "ride_request_id": ride_request_id,
         "sender_type": chat_request.sender_type,
+        "sender_id": sender_id,
         "message": chat_request.message,
         "created_at": chat_msg.created_at.isoformat() if chat_msg.created_at else datetime.utcnow().isoformat()
     }
