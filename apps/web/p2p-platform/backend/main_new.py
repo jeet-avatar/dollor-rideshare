@@ -4362,6 +4362,7 @@ def get_driver_profile_by_id(driver_id: int, driver: Driver = Depends(require_dr
     # Count completed rides for this driver (defensive: table/column may not exist)
     total_rides = 0
     try:
+        from models import RideRequest, RideRequestStatus
         total_rides = db.query(RideRequest).filter(
             RideRequest.matched_driver_id == driver.id,
             RideRequest.status == RideRequestStatus.COMPLETED
@@ -9313,7 +9314,7 @@ def submit_manual_review(
             vendor.documents_verified = False
 
         vendor.verification_notes = notes
-        vendor.verification_reviewer_id = current_user.id
+        vendor.verification_reviewer_id = admin.id
         vendor.last_activity = datetime.now()
         db.commit()
 
@@ -9339,7 +9340,7 @@ def submit_manual_review(
             driver.documents_verified = False
 
         driver.verification_notes = notes
-        driver.verification_reviewer_id = current_user.id
+        driver.verification_reviewer_id = admin.id
         driver.updated_at = datetime.now()
         db.commit()
 

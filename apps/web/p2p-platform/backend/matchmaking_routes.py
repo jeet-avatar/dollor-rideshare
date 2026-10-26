@@ -25,6 +25,7 @@ from sqlalchemy import and_, or_
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime, timedelta
+import logging
 import uuid
 import stripe
 import os
