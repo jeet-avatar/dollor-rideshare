@@ -27,14 +27,14 @@ Full rides observed end to end: Android rider+driver (rides 605, 606, 607: reque
 | 3 | Backend | Earnings API filled only the requested period, so the driver Profile showed $0.00 for week and month | Fixed on the backend branch with a failing-then-passing test; not live until deployed |
 | 4 | iOS rider | Settings screen rows had no visible labels (white cards, white text) | Fixed (dark surface token), builds; not re-verified on a simulator |
 | 5 | iOS driver | Completion header showed $17.54 while the body showed $19.55 | Fixed (uses the server's settled price and payout), builds; not re-verified on a simulator |
-| 6 | iOS driver | Compliance screen says "Passed" and "background check is in progress" at once | Open |
-| 7 | iOS rider | Receipt shows raw ISO timestamps | Open |
-| 8 | iOS rider | Trips list shows $21.60 where the receipt shows $21.65 (CPUC $0.05 left out) | Open |
+| 6 | iOS driver | Compliance screen says "Passed" and "background check is in progress" at once | Fixed (message follows the status), builds; not re-verified on a simulator |
+| 7 | iOS rider | Receipt shows raw ISO timestamps (the server sends UTC without a zone suffix, which the parser rejected) | Fixed (parser accepts it), builds; not re-verified on a simulator |
+| 8 | iOS rider | Trips list shows $21.60 where the receipt shows $21.65 (CPUC $0.05 left out) | Cause confirmed: production's history rows carry only fare and platform fee, no per-ride total; the backend branch adds `total`. Fixed by deploying the backend branch |
 | 9 | Production | Chat reply lacks `id` and `sender_id`; an unrelated driver can read and post in any ride's chat | Fixed on the backend branch; live only after deploy |
 | 10 | Production | `GET /api/drivers/{id}/stripe/onboarding-link` returns 500 for the demo driver | Open, cause not investigated |
 | 11 | iOS driver | `PUT /api/erp/orders/{id}/driver-location` has no backend route | Open |
 | 12 | iOS | `GET /api/erp/rides/{id}/negotiation-status` returns 500 (iOS negotiation endpoints) | Open |
-| 13 | Android rider | Chat message time stamp looked hours off | Open, cause not investigated |
+| 13 | Android rider | Chat message time stamp 7 hours off (a UTC time was read as local time) | Fixed in code; a JDK check shows 7:15 PM before and 12:15 PM after for the same stamp in Los Angeles. Not re-verified in the app |
 
 Questions rather than defects: the iOS rider's counter ($18.54) was ignored when the rider then tapped Accept on the driver's $20.60 bid (the driver's price governs; confirm this is intended). The iOS driver's counter-back could not be confirmed on the server in that run.
 

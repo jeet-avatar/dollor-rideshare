@@ -628,6 +628,19 @@ struct RideReceiptView: View {
             displayFormatter.timeStyle = .short
             return displayFormatter.string(from: date)
         }
+        // The server sends UTC without a zone suffix and with microseconds, e.g. 2026-10-26T20:33:23.100623
+        let naive = DateFormatter()
+        naive.locale = Locale(identifier: "en_US_POSIX")
+        naive.timeZone = TimeZone(identifier: "UTC")
+        for format in ["yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "yyyy-MM-dd'T'HH:mm:ss"] {
+            naive.dateFormat = format
+            if let date = naive.date(from: timestamp) {
+                let displayFormatter = DateFormatter()
+                displayFormatter.dateStyle = .medium
+                displayFormatter.timeStyle = .short
+                return displayFormatter.string(from: date)
+            }
+        }
         return timestamp
     }
 

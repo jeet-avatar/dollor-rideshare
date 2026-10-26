@@ -42,6 +42,18 @@ struct ComplianceView: View {
     }
 
     // MARK: - Background Check
+    /// Explains the current status instead of always saying "in progress".
+    private var backgroundCheckMessage: String {
+        switch viewModel.bgCheckStatus.lowercased() {
+        case "passed", "clear", "complete", "completed", "valid":
+            return "Your background check is complete."
+        case "pending", "processing", "in_progress":
+            return "Your background check is in progress. This screen updates automatically when Checkr reports a result."
+        default:
+            return "Your background check needs attention. Contact support if you have questions."
+        }
+    }
+
     @ViewBuilder
     private var backgroundCheckSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -77,7 +89,7 @@ struct ComplianceView: View {
                 .tint(Theme.lxOrange)
                 .disabled(viewModel.isInitiatingCheck)
             } else {
-                Text("Your background check is in progress. This screen updates automatically when Checkr reports a result.")
+                Text(backgroundCheckMessage)
                     .font(.caption)
                     .foregroundColor(Theme.lxTextSecondary)
             }

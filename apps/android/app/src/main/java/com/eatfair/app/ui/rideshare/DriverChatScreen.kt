@@ -296,7 +296,10 @@ fun CustomerChatBubble(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = try {
-                    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                        // The server sends UTC without a zone suffix
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    }
                     val date = inputFormat.parse(message.createdAt)
                     timeFormat.format(date ?: Date())
                 } catch (e: Exception) {
