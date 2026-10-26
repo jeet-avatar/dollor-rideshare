@@ -575,7 +575,7 @@ struct RideReceiptView: View {
                     SafetyReportSheet(driverId: driverId, rideRequestId: rideId)
                 }
 
-                Text("Dollor.ai maintains a zero-tolerance policy for drug and alcohol use by drivers. Report a suspected violation with the button above, by phone +1-800-365-5671, or email support@dollor.ai. You may also contact the CPUC: 1-800-894-9444 | CIU_intake@cpuc.ca.gov")
+                Text("Dollor.ai maintains a zero-tolerance policy for drug and alcohol use by drivers. Report a suspected violation with the button above, by phone \(AppConfig.shared.supportPhone), or email \(AppConfig.shared.supportEmail). You may also contact the CPUC: 1-800-894-9444 | CIU_intake@cpuc.ca.gov")
                     .font(.caption2)
                     .foregroundColor(Theme.lxTextMuted)
                     .padding(.horizontal)

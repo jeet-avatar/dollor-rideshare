@@ -1,5 +1,6 @@
 package com.eatfair.driver.ui.home
 
+import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.ui.Lx
 import android.Manifest
 import android.content.Intent
@@ -315,13 +316,13 @@ fun DriverHomeScreen(
                     title = "Support",
                     onClick = {
                         val intent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("mailto:support@dollor.ai")
+                            data = Uri.parse("mailto:${AppConfig.Rideshare.support.email}")
                             putExtra(Intent.EXTRA_SUBJECT, "Dollor Driver Support")
                         }
                         if (intent.resolveActivity(context.packageManager) != null) {
                             context.startActivity(intent)
                         } else {
-                            Toast.makeText(context, "support@dollor.ai", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, AppConfig.Rideshare.support.email, Toast.LENGTH_LONG).show()
                         }
                     }
                 )

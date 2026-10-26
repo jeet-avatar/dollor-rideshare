@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.profile
 
+import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.ui.Lx
 import android.Manifest
 import android.net.Uri
@@ -245,12 +246,15 @@ fun ProfileScreen(
                     onClick = onNotificationsClick
                 )
                 MenuDivider()
-                ProfileMenuRow(
-                    icon = Icons.Default.CardGiftcard,
-                    title = "Refer & Earn",
-                    onClick = onReferAndEarnClick
-                )
-                MenuDivider()
+                // Shown only once the backend configures a referral reward (REFERRAL_REWARD_TEXT)
+                if (AppConfig.Rideshare.referralRewardText != null) {
+                    ProfileMenuRow(
+                        icon = Icons.Default.CardGiftcard,
+                        title = "Refer & Earn",
+                        onClick = onReferAndEarnClick
+                    )
+                    MenuDivider()
+                }
                 ProfileMenuRow(
                     icon = Icons.AutoMirrored.Filled.Help,
                     title = "Help & Support",

@@ -176,7 +176,7 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "We're building a platform where everyone wins.\n100% of your payment goes directly to drivers.",
+                        text = "We're building a platform where everyone wins.\nDrivers keep the fare minus one flat fee, plus 100% of tips.",
                         fontSize = Lx.FontSize.subheadline,
                         color = Color.White.copy(alpha = 0.95f),
                         textAlign = TextAlign.Center,
@@ -190,8 +190,7 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        MissionHighlight(value = "$1", label = "Platform Fee")
-                        MissionHighlight(value = "0%", label = "Commission")
+                        MissionHighlight(value = AppConfig.Rideshare.feeRangeText, label = "Platform Fee")
                         MissionHighlight(value = "100%", label = "Tips to Drivers")
                     }
                 }
@@ -322,10 +321,10 @@ fun RegisterScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         MissionBenefit(
-                            text = "No hidden fees or surge pricing"
+                            text = "Fees shown before you book"
                         )
                         MissionBenefit(
-                            text = "Drivers receive 100% of fares & tips"
+                            text = "Drivers keep the fare minus a flat fee, plus 100% of tips"
                         )
                         MissionBenefit(
                             text = "You pay only a flat ${AppConfig.Rideshare.feeRangeText} platform fee"

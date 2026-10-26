@@ -30,7 +30,7 @@ import com.eatfair.shared.config.AppConfig
  */
 @Composable
 fun LegalAcceptanceScreen(
-    userType: String = "Customer", // "Customer", "Driver", or "Restaurant"
+    userType: String = "Customer", // "Customer" or "Driver"
     onAccept: () -> Unit
 ) {
     val context = LocalContext.current
@@ -247,30 +247,6 @@ fun LegalAcceptanceScreen(
                             text = "As a driver, you are an independent contractor. You control your schedule, routes, and which rides to accept.",
                             fontSize = Lx.FontSize.footnote,
                             color = Lx.Success,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            if (userType == "Restaurant") {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(Lx.Radius.card),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF3A2208))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Restaurant Partner Agreement",
-                            fontSize = Lx.FontSize.callout,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Lx.OrangeBright
-                        )
-                        Text(
-                            text = "Payments go directly to your Stripe account. Dollor only charges \$1-\$3 per order - you keep the rest!",
-                            fontSize = Lx.FontSize.footnote,
-                            color = Lx.OrangeBright,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }

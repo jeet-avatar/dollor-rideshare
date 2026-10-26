@@ -122,6 +122,11 @@ public class AppConfig: ObservableObject {
     @Published public var bidFairFactor: Double = 1.00
     @Published public var bidPremiumFactor: Double = 1.08
     @Published public var biddingWindowMinutes: Int = 5
+    @Published public var maxCustomerCounters: Int = 3
+    @Published public var maxRoundsPerBid: Int = 2
+    @Published public var noShowWaitSeconds: Int = 300
+    @Published public var noShowFee: Double = 5.00
+    @Published public var noShowDriverShare: Double = 0.80
     @Published public var etaOptionsMinutes: [Int] = [3, 5, 10, 15]
 
     // Legacy properties (kept for backwards compatibility)
@@ -452,7 +457,14 @@ public class AppConfig: ObservableObject {
             if let v = bidding["fairFactor"] as? Double { bidFairFactor = v }
             if let v = bidding["premiumFactor"] as? Double { bidPremiumFactor = v }
             if let v = bidding["windowMinutes"] as? Int { biddingWindowMinutes = v }
+            if let v = bidding["maxCustomerCounters"] as? Int { maxCustomerCounters = v }
+            if let v = bidding["maxRoundsPerBid"] as? Int { maxRoundsPerBid = v }
             if let v = bidding["etaOptionsMinutes"] as? [Int], !v.isEmpty { etaOptionsMinutes = v }
+        }
+        if let noShow = json["noShow"] as? [String: Any] {
+            if let v = noShow["waitSeconds"] as? Int { noShowWaitSeconds = v }
+            if let v = noShow["fee"] as? Double { noShowFee = v }
+            if let v = noShow["driverShare"] as? Double { noShowDriverShare = v }
         }
         if let referral = json["referral"] as? [String: Any] {
             referralRewardText = referral["rewardText"] as? String

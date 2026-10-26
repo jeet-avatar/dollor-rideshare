@@ -486,23 +486,8 @@ fun LoginScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(PrimaryOrange),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$1",
-                        fontSize = Lx.FontSize.caption,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-                Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "flat platform fee. 100% tips go to drivers.",
+                    text = "${AppConfig.Rideshare.feeRangeText} flat platform fee. 100% of tips go to drivers.",
                     fontSize = Lx.FontSize.caption,
                     color = TextSecondary
                 )

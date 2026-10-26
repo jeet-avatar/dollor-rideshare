@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.rideshare
 
+import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -131,7 +132,7 @@ fun RideReceiptScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             receipt.zeroTolerancePolicy?.let { Text(it, fontSize = Lx.FontSize.caption, color = Lx.TextSecondary) }
                             Text(
-                                "Safety concerns: support@dollor.ai",
+                                "Safety concerns: ${AppConfig.Rideshare.support.email}",
                                 fontSize = Lx.FontSize.caption,
                                 color = Lx.TextSecondary
                             )

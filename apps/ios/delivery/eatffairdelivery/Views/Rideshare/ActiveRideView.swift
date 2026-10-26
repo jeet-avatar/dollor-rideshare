@@ -19,7 +19,7 @@ struct ActiveRideView: View {
     @State private var showCancelSheet = false
     @State private var selectedCancelReason: String?
     @State private var showNoShowAlert = false
-    @State private var noShowTimerSeconds = 300 // 5 minutes
+    @State private var noShowTimerSeconds = AppConfig.shared.noShowWaitSeconds
     @State private var noShowTimerActive = false
     @State private var position: MapCameraPosition = .automatic
     @State private var driverRoute: MKRoute?
@@ -204,7 +204,7 @@ struct ActiveRideView: View {
                 }
             }
         } message: {
-            Text("The passenger will be charged a $5.00 cancellation fee. You will receive $4.00 for your wait time.")
+            Text("The passenger will be charged a \(Lx.Money.text(AppConfig.shared.noShowFee)) cancellation fee. You will receive \(Lx.Money.text(AppConfig.shared.noShowFee * AppConfig.shared.noShowDriverShare)) for your wait time.")
         }
         .alert(
             dismissAfterSOSAlert ? "Ride Cancelled — Safety" : "Emergency SOS",
@@ -804,8 +804,8 @@ struct ActiveRideView: View {
 
         // Resume from the actual elapsed wait time using the backend timestamp.
         // If the driver arrived 3 minutes ago they only need to wait 2 more minutes.
-        // Fall back to the full 5-minute window when the timestamp is unavailable.
-        let noShowWindowSeconds = 300
+        // Fall back to the full configured wait window when the timestamp is unavailable.
+        let noShowWindowSeconds = AppConfig.shared.noShowWaitSeconds
         let elapsed = elapsedSecondsSinceArrival()
         noShowTimerSeconds = max(0, noShowWindowSeconds - elapsed)
 

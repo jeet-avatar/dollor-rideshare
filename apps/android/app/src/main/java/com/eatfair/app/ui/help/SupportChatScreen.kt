@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.help
 
+import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -55,7 +56,7 @@ fun SupportChatScreen(onBackClick: () -> Unit) {
         sending = true
         scope.launch {
             val reply = CustomerRideshareApiService.sendSupportChat(trimmed)
-                .getOrElse { "Sorry, I couldn't process that. Please try again, or email support@dollor.ai." }
+                .getOrElse { "Sorry, I couldn't process that. Please try again, or email ${AppConfig.Rideshare.support.email}." }
             messages = messages + SupportMessage(System.nanoTime(), reply, false)
             sending = false
         }

@@ -197,7 +197,7 @@ object AppConfig {
             private set
         @Volatile var PER_MINUTE_RATE = 0.18        // Market-rate per minute
             private set
-        @Volatile var MINIMUM_FARE = 5.00           // Minimum fare for short trips (matches iOS)
+        @Volatile var MINIMUM_FARE = 8.00           // Minimum fare for short trips (matches iOS)
             private set
 
         // Time-of-day multipliers (transparent, not surge pricing)
@@ -222,6 +222,16 @@ object AppConfig {
         @Volatile var biddingWindowMinutes = 5
             private set
         @Volatile var etaOptionsMinutes: List<Int> = listOf(3, 5, 10, 15)
+            private set
+        @Volatile var maxCustomerCounters = 3
+            private set
+        @Volatile var maxRoundsPerBid = 2
+            private set
+        @Volatile var noShowWaitSeconds = 300
+            private set
+        @Volatile var noShowFee = 5.00
+            private set
+        @Volatile var noShowDriverShare = 0.80
             private set
         @Volatile var accessForAllRiderShare = 0.05
             private set
@@ -266,10 +276,17 @@ object AppConfig {
                 BID_FAIR_FACTOR = b.optDouble("fairFactor", BID_FAIR_FACTOR)
                 BID_PREMIUM_FACTOR = b.optDouble("premiumFactor", BID_PREMIUM_FACTOR)
                 biddingWindowMinutes = b.optInt("windowMinutes", biddingWindowMinutes)
+                maxCustomerCounters = b.optInt("maxCustomerCounters", maxCustomerCounters)
+                maxRoundsPerBid = b.optInt("maxRoundsPerBid", maxRoundsPerBid)
                 b.optJSONArray("etaOptionsMinutes")?.let { arr ->
                     val options = (0 until arr.length()).map { arr.getInt(it) }
                     if (options.isNotEmpty()) etaOptionsMinutes = options
                 }
+            }
+            json.optJSONObject("noShow")?.let { n ->
+                noShowWaitSeconds = n.optInt("waitSeconds", noShowWaitSeconds)
+                noShowFee = n.optDouble("fee", noShowFee)
+                noShowDriverShare = n.optDouble("driverShare", noShowDriverShare)
             }
             json.optJSONObject("referral")?.let { r ->
                 referralRewardText = if (r.isNull("rewardText")) null else r.optString("rewardText").ifBlank { null }

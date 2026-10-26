@@ -3294,7 +3294,7 @@ struct DriverBidCard: View {
                             .font(.caption2)
                             .foregroundColor(Theme.lxOrange)
                     } else if let round = bid.negotiation_round, round > 1 {
-                        Text("Round \(round)/2")
+                        Text("Round \(round)/\(AppConfig.shared.maxRoundsPerBid)")
                             .font(.caption2)
                             .foregroundColor(Lx.Palette.orange)
                     } else {

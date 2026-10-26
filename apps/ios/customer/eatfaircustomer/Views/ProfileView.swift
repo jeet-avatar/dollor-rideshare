@@ -141,10 +141,12 @@ struct ProfileView: View {
                                     ProfileOptionRow(icon: "bell.fill", title: "Notifications")
                                 }
                                 Divider().overlay(Theme.lxHairline)
-                                NavigationLink(destination: ReferAndEarnView()) {
-                                    ProfileOptionRow(icon: "gift.fill", title: "Refer & Earn")
+                                if AppConfig.shared.referralRewardText != nil {
+                                    NavigationLink(destination: ReferAndEarnView()) {
+                                        ProfileOptionRow(icon: "gift.fill", title: "Refer & Earn")
+                                    }
+                                    Divider().overlay(Theme.lxHairline)
                                 }
-                                Divider().overlay(Theme.lxHairline)
                                 NavigationLink(destination: HelpSupportView()) {
                                     ProfileOptionRow(icon: "questionmark.circle.fill", title: "Help & Support")
                                 }

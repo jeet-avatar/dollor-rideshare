@@ -5,16 +5,8 @@ import EatFairShared
 /// Matches Android's ReferAndEarnScreen for platform parity
 struct ReferAndEarnView: View {
     @State private var referralCode = ""
-    @State private var referralStats = ReferralStats()
-    @State private var isLoading = true
     @State private var showShareSheet = false
     @State private var copiedToClipboard = false
-
-    struct ReferralStats {
-        var totalReferrals: Int = 0
-        var pendingCredits: Double = 0
-        var earnedCredits: Double = 0
-    }
 
     var body: some View {
         ZStack {
@@ -120,28 +112,6 @@ struct ReferAndEarnView: View {
                     )
                     .padding(.horizontal)
 
-                    // Stats Cards
-                    HStack(spacing: 15) {
-                        StatCard(
-                            icon: "person.2.fill",
-                            value: "\(referralStats.totalReferrals)",
-                            label: "Referrals"
-                        )
-
-                        StatCard(
-                            icon: "clock.fill",
-                            value: String(format: "$%.2f", referralStats.pendingCredits),
-                            label: "Pending"
-                        )
-
-                        StatCard(
-                            icon: "checkmark.circle.fill",
-                            value: String(format: "$%.2f", referralStats.earnedCredits),
-                            label: "Earned"
-                        )
-                    }
-                    .padding(.horizontal)
-
                     // How It Works Section
                     VStack(alignment: .leading, spacing: 15) {
                         Text("HOW IT WORKS")
@@ -214,18 +184,6 @@ struct ReferAndEarnView: View {
         // Generate or fetch referral code
         if let customerId = UserDefaults.standard.string(forKey: "p2p_customer_id") {
             referralCode = "DOLLOR\(customerId.prefix(4).uppercased())"
-        } else {
-            referralCode = "DOLLOR\(String(format: "%04d", Int.random(in: 1000...9999)))"
-        }
-
-        // Simulate loading stats (in production, fetch from API)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            isLoading = false
-            referralStats = ReferralStats(
-                totalReferrals: Int.random(in: 0...5),
-                pendingCredits: Double.random(in: 0...15),
-                earnedCredits: Double.random(in: 0...25)
-            )
         }
     }
 

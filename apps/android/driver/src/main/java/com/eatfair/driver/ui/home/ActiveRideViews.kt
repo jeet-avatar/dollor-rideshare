@@ -1,5 +1,6 @@
 package com.eatfair.driver.ui.home
 
+import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.ui.Lx
 import com.eatfair.driver.R
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -41,8 +42,6 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-
-private const val NO_SHOW_WAIT_SECONDS = 300L
 
 private val CANCEL_REASONS_BEFORE_ARRIVAL = listOf(
     "Rider asked me to cancel",
@@ -194,7 +193,7 @@ fun ActiveRidePanel(
             }
 
             if (ride.hasArrived && !ride.isInProgress) {
-                val remaining = (NO_SHOW_WAIT_SECONDS - waited).coerceAtLeast(0)
+                val remaining = (AppConfig.Rideshare.noShowWaitSeconds - waited).coerceAtLeast(0)
                 OutlinedButton(
                     onClick = onNoShow,
                     enabled = !isBusy && remaining == 0L,

@@ -834,7 +834,7 @@ fun RideBottomSheet(
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = " Connection fee: $${String.format("%.2f", platformFee)} (tiered $1-$3) • Driver sets final price",
+                                text = " Connection fee: $${String.format("%.2f", platformFee)} (tiered ${AppConfig.Rideshare.feeRangeText}) • Driver sets final price",
                                 fontSize = Lx.FontSize.caption,
                                 color = Lx.TextSecondary
                             )
@@ -921,7 +921,7 @@ fun RideBottomSheet(
                         modifier = Modifier.size(12.dp)
                     )
                     Text(
-                        text = " $1-$3 tiered connection fee • Drivers are independent",
+                        text = " ${AppConfig.Rideshare.feeRangeText} tiered connection fee • Drivers are independent",
                         fontSize = Lx.FontSize.caption,
                         color = Lx.TextSecondary
                     )
