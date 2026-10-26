@@ -165,6 +165,11 @@ object AppConfig {
     // Compared to industry-standard 25-30% commission, we only take $1-3 flat!
     // =============================================================================
     object Rideshare {
+        // Driver bid presets as a share of the suggested fare (same on iOS AppConfig)
+        const val BID_QUICK_ACCEPT_FACTOR = 0.92
+        const val BID_FAIR_FACTOR = 1.00
+        const val BID_PREMIUM_FACTOR = 1.08
+
         // Tier thresholds (platform fee tiers)
         const val TIER_1_MAX_FARE = 35.00       // Fares up to $35
         const val TIER_2_MAX_FARE = 70.00       // Fares $35.01 to $70
@@ -240,11 +245,25 @@ object AppConfig {
          */
         fun getTierName(fareAmount: Double): String {
             return when {
-                fareAmount <= TIER_1_MAX_FARE -> "Tier 1 (up to $35)"
-                fareAmount <= TIER_2_MAX_FARE -> "Tier 2 ($35-$70)"
-                else -> "Tier 3 (above $70)"
+                fareAmount <= TIER_1_MAX_FARE -> "Tier 1 (up to ${money(TIER_1_MAX_FARE)})"
+                fareAmount <= TIER_2_MAX_FARE -> "Tier 2 (${money(TIER_1_MAX_FARE)}-${money(TIER_2_MAX_FARE)})"
+                else -> "Tier 3 (above ${money(TIER_2_MAX_FARE)})"
             }
         }
+
+        private fun money(amount: Double): String = "$" + amount.toInt()
+
+        /** Lowest-to-highest platform fee, e.g. "$1-$3". Always in sync with the tier config. */
+        val feeRangeText: String
+            get() = "${money(TIER_1_FEE)}-${money(TIER_3_FEE)}"
+
+        /** One line per tier for legal/help copy, e.g. "$1 platform fee for rides up to $35". */
+        val tierLines: List<String>
+            get() = listOf(
+                "${money(TIER_1_FEE)} platform fee for rides up to ${money(TIER_1_MAX_FARE)}",
+                "${money(TIER_2_FEE)} platform fee for rides over ${money(TIER_1_MAX_FARE)} up to ${money(TIER_2_MAX_FARE)}",
+                "${money(TIER_3_FEE)} platform fee for rides over ${money(TIER_2_MAX_FARE)}"
+            )
 
         /**
          * Get fee description for UI display.
@@ -331,7 +350,7 @@ object AppConfig {
          * Returns three options: Quick Accept (92%), Fair Price (100%), Premium (108%)
          *
          * New competitive pricing with transparent platform fees ($1-3 flat).
-         * Drivers keep 96%+ of every fare compared to industry standard 25-30% commission.
+         * Drivers keep the fare minus the flat platform fee.
          */
         fun generateSuggestedBids(fareEstimate: Double, distanceMiles: Double, durationMinutes: Double = 0.0): List<SuggestedBid> {
             val quickAcceptPrice = fareEstimate * 0.92  // 92% of estimate for fast pickup
@@ -552,6 +571,9 @@ object AppConfig {
 
     // MARK: - Location Configuration
     object Location {
+        /** Map centre shown only until the first GPS fix arrives. */
+        const val FALLBACK_LATITUDE = 37.7879
+        const val FALLBACK_LONGITUDE = -122.4075
         const val DRIVER_LOCATION_UPDATE_INTERVAL_MS = 10_000L  // 10 seconds
         const val MAX_DELIVERY_RADIUS_MILES = 10.0
         const val MAX_RIDESHARE_RADIUS_MILES = 5.0

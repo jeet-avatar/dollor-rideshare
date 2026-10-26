@@ -1,5 +1,6 @@
 package com.eatfair.shared.ui
 
+import com.eatfair.shared.ui.Lx
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -41,7 +42,7 @@ fun LegalAcceptanceScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+            .background(Lx.Surface2)
     ) {
         Column(
             modifier = Modifier
@@ -55,15 +56,15 @@ fun LegalAcceptanceScreen(
             // Header
             Text(
                 text = "Welcome to Dollor",
-                fontSize = 28.sp,
+                fontSize = Lx.FontSize.largeTitle,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C3E50)
+                color = Lx.Text
             )
 
             Text(
                 text = "Before you continue, please review and accept our terms",
-                fontSize = 14.sp,
-                color = Color.Gray,
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -73,23 +74,23 @@ fun LegalAcceptanceScreen(
             // P2P Model Explanation Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                shape = RoundedCornerShape(Lx.Radius.card),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
                         text = "How Dollor Works",
-                        fontSize = 18.sp,
+                        fontSize = Lx.FontSize.body,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2C3E50)
+                        color = Lx.Text
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    BulletPoint("Dollor is a peer-to-peer marketplace connecting customers, restaurants, and drivers directly")
-                    BulletPoint("Payments go directly from customer to restaurant via Stripe")
-                    BulletPoint("Dollor charges a flat \$1-\$3 platform fee (not 25-35% commission)")
-                    BulletPoint("Drivers receive 100% of their earnings plus tips")
+                    BulletPoint("Dollor is a peer-to-peer rideshare marketplace connecting riders and independent drivers directly")
+                    BulletPoint("Payments are processed securely via Stripe")
+                    BulletPoint("Dollor charges a flat ${AppConfig.Rideshare.feeRangeText} platform fee per ride")
+                    BulletPoint("Drivers keep the rest of the fare plus 100% of tips")
                     BulletPoint("All users are independent - not employees of Dollor")
                 }
             }
@@ -99,8 +100,8 @@ fun LegalAcceptanceScreen(
             // Terms of Service Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                shape = RoundedCornerShape(Lx.Radius.card),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(
@@ -110,9 +111,9 @@ fun LegalAcceptanceScreen(
                     ) {
                         Text(
                             text = "Terms of Service",
-                            fontSize = 16.sp,
+                            fontSize = Lx.FontSize.callout,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF2C3E50)
+                            color = Lx.Text
                         )
 
                         TextButton(
@@ -133,9 +134,9 @@ fun LegalAcceptanceScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "By using Dollor, you agree to use the platform for legitimate purchases, respect other users, and comply with all applicable laws.",
-                        fontSize = 13.sp,
-                        color = Color.Gray
+                        text = "By using Dollor, you agree to use the platform for legitimate rides, respect other users, and comply with all applicable laws.",
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.TextSecondary
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -148,13 +149,13 @@ fun LegalAcceptanceScreen(
                             checked = termsAccepted,
                             onCheckedChange = { termsAccepted = it },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = Color(0xFF6C63FF)
+                                checkedColor = Lx.Orange
                             )
                         )
                         Text(
                             text = "I have read and agree to the Terms of Service",
-                            fontSize = 14.sp,
-                            color = Color(0xFF2C3E50)
+                            fontSize = Lx.FontSize.footnote,
+                            color = Lx.Text
                         )
                     }
                 }
@@ -165,8 +166,8 @@ fun LegalAcceptanceScreen(
             // Privacy Policy Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                shape = RoundedCornerShape(Lx.Radius.card),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(
@@ -176,9 +177,9 @@ fun LegalAcceptanceScreen(
                     ) {
                         Text(
                             text = "Privacy Policy",
-                            fontSize = 16.sp,
+                            fontSize = Lx.FontSize.callout,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF2C3E50)
+                            color = Lx.Text
                         )
 
                         TextButton(
@@ -200,8 +201,8 @@ fun LegalAcceptanceScreen(
 
                     Text(
                         text = "We collect only essential data needed to provide our services. Your information is never sold to third parties.",
-                        fontSize = 13.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.TextSecondary
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -214,13 +215,13 @@ fun LegalAcceptanceScreen(
                             checked = privacyAccepted,
                             onCheckedChange = { privacyAccepted = it },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = Color(0xFF6C63FF)
+                                checkedColor = Lx.Orange
                             )
                         )
                         Text(
                             text = "I have read and agree to the Privacy Policy",
-                            fontSize = 14.sp,
-                            color = Color(0xFF2C3E50)
+                            fontSize = Lx.FontSize.footnote,
+                            color = Lx.Text
                         )
                     }
                 }
@@ -232,20 +233,20 @@ fun LegalAcceptanceScreen(
             if (userType == "Driver") {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                    shape = RoundedCornerShape(Lx.Radius.card),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF12301B))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Driver Agreement",
-                            fontSize = 16.sp,
+                            fontSize = Lx.FontSize.callout,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF2E7D32)
+                            color = Lx.Success
                         )
                         Text(
-                            text = "As a driver, you are an independent contractor. You control your schedule, routes, and which deliveries/rides to accept.",
-                            fontSize = 13.sp,
-                            color = Color(0xFF388E3C),
+                            text = "As a driver, you are an independent contractor. You control your schedule, routes, and which rides to accept.",
+                            fontSize = Lx.FontSize.footnote,
+                            color = Lx.Success,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
@@ -256,20 +257,20 @@ fun LegalAcceptanceScreen(
             if (userType == "Restaurant") {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                    shape = RoundedCornerShape(Lx.Radius.card),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF3A2208))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Restaurant Partner Agreement",
-                            fontSize = 16.sp,
+                            fontSize = Lx.FontSize.callout,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFE65100)
+                            color = Lx.OrangeBright
                         )
                         Text(
                             text = "Payments go directly to your Stripe account. Dollor only charges \$1-\$3 per order - you keep the rest!",
-                            fontSize = 13.sp,
-                            color = Color(0xFFF57C00),
+                            fontSize = Lx.FontSize.footnote,
+                            color = Lx.OrangeBright,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
@@ -285,10 +286,10 @@ fun LegalAcceptanceScreen(
                     .height(56.dp),
                 enabled = termsAccepted && privacyAccepted,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6C63FF),
-                    disabledContainerColor = Color.Gray.copy(alpha = 0.3f)
+                    containerColor = Lx.Orange,
+                    disabledContainerColor = Lx.TextSecondary.copy(alpha = 0.3f)
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Lx.Radius.button)
             ) {
                 Icon(
                     Icons.Default.Check,
@@ -298,7 +299,7 @@ fun LegalAcceptanceScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Accept & Continue",
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -318,14 +319,14 @@ private fun BulletPoint(text: String) {
     ) {
         Text(
             text = "•",
-            fontSize = 14.sp,
-            color = Color(0xFF6C63FF),
+            fontSize = Lx.FontSize.footnote,
+            color = Lx.Orange,
             modifier = Modifier.padding(end = 8.dp, top = 2.dp)
         )
         Text(
             text = text,
-            fontSize = 14.sp,
-            color = Color(0xFF5D6D7E)
+            fontSize = Lx.FontSize.footnote,
+            color = Lx.TextSecondary
         )
     }
 }

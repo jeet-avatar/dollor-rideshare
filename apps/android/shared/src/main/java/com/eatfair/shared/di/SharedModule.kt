@@ -12,6 +12,8 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import com.google.gson.GsonBuilder
+import android.content.pm.ApplicationInfo
+import com.eatfair.shared.network.ApiTiming
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -48,14 +50,20 @@ object SharedModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(tokenRefreshInterceptor: TokenRefreshInterceptor): OkHttpClient {
+    fun provideOkHttpClient(
+        tokenRefreshInterceptor: TokenRefreshInterceptor,
+        @ApplicationContext context: Context
+    ): OkHttpClient {
+        // Bodies contain passwords and auth tokens, so they are logged only in debuggable builds.
+        val debuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (debuggable) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
         }
 
         // PRODUCTION - Certificate pinning can be added for api.dollor.ai if needed
 
         return OkHttpClient.Builder()
+            .addInterceptor(ApiTiming)
             .addInterceptor(loggingInterceptor)
             .addInterceptor(tokenRefreshInterceptor) // Handle 401 token expiration
             .connectTimeout(AppConfig.API_TIMEOUT_SECONDS, TimeUnit.SECONDS)

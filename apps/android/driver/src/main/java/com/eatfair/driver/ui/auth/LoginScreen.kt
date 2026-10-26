@@ -1,5 +1,6 @@
 package com.eatfair.driver.ui.auth
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +37,7 @@ fun LoginScreen(
     onGoogleSignInClick: () -> Unit,
     onClearError: () -> Unit,
     onForgotPassword: (email: String, onResult: (Boolean, String) -> Unit) -> Unit,
+    onResetPassword: (email: String, code: String, newPassword: String, onResult: (Boolean, String) -> Unit) -> Unit,
     rememberedCredentials: Pair<String, String>? = null
 ) {
     // Prefills from the last successful login so a driver who lands back on this screen
@@ -53,14 +54,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DollorDriverColors.Blue,
-                        DollorDriverColors.BlueDark
-                    )
-                )
-            )
+            .background(Lx.Bg)
     ) {
         Column(
             modifier = Modifier
@@ -84,7 +78,7 @@ fun LoginScreen(
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 2.sp
                 ),
-                color = DollorDriverColors.White.copy(alpha = 0.9f)
+                color = Lx.Orange
             )
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -92,8 +86,8 @@ fun LoginScreen(
             // Login Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+                shape = RoundedCornerShape(Lx.Radius.sheet),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
                 Column(
                     modifier = Modifier
@@ -133,7 +127,7 @@ fun LoginScreen(
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
@@ -176,7 +170,7 @@ fun LoginScreen(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
@@ -225,7 +219,7 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(Lx.Radius.card),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DollorDriverColors.Blue
                         ),
@@ -271,9 +265,9 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(Lx.Radius.card),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = DollorDriverColors.White
+                            containerColor = Lx.Surface
                         ),
                         border = BorderStroke(1.dp, DollorDriverColors.Gray300),
                         enabled = !isLoading
@@ -284,9 +278,9 @@ fun LoginScreen(
                         ) {
                             Text(
                                 text = "G",
-                                fontSize = 18.sp,
+                                fontSize = Lx.FontSize.body,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFDB4437) // Google Red
+                                color = Lx.GoogleRed // Google Red
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
@@ -325,7 +319,8 @@ fun LoginScreen(
         ForgotPasswordDialog(
             initialEmail = email,
             onDismiss = { showForgotPassword = false },
-            onSubmit = onForgotPassword
+            onSubmit = onForgotPassword,
+            onConfirm = onResetPassword
         )
     }
 }
@@ -335,61 +330,110 @@ fun LoginScreen(
 private fun ForgotPasswordDialog(
     initialEmail: String,
     onDismiss: () -> Unit,
-    onSubmit: (email: String, onResult: (Boolean, String) -> Unit) -> Unit
+    onSubmit: (email: String, onResult: (Boolean, String) -> Unit) -> Unit,
+    onConfirm: (email: String, code: String, newPassword: String, onResult: (Boolean, String) -> Unit) -> Unit
 ) {
     var resetEmail by remember { mutableStateOf(initialEmail) }
+    var code by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var codeSent by remember { mutableStateOf(false) }
+    var done by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
     var resultMessage by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
-        title = { Text("Reset Password") },
+        containerColor = Lx.Surface,
+        title = { Text("Reset Password", color = Lx.Text) },
         text = {
             Column {
                 Text(
-                    text = "Enter your account email and we'll send reset instructions.",
+                    text = when {
+                        done -> "Your password has been updated."
+                        codeSent -> "Enter the code we emailed you and choose a new password."
+                        else -> "Enter your account email and we'll send a reset code."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = DollorDriverColors.Gray600
+                    color = Lx.TextSecondary
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = resetEmail,
-                    onValueChange = { resetEmail = it },
-                    label = { Text("Email") },
-                    singleLine = true,
-                    enabled = !isSubmitting,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (!done) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = resetEmail,
+                        onValueChange = { resetEmail = it },
+                        label = { Text("Email") },
+                        singleLine = true,
+                        enabled = !isSubmitting && !codeSent,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (codeSent && !done) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = code,
+                        onValueChange = { code = it.filter(Char::isDigit).take(8) },
+                        label = { Text("Reset code") },
+                        singleLine = true,
+                        enabled = !isSubmitting,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = newPassword,
+                        onValueChange = { newPassword = it },
+                        label = { Text("New password") },
+                        singleLine = true,
+                        enabled = !isSubmitting,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 resultMessage?.let {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = DollorDriverColors.Blue
-                    )
+                    Text(text = it, style = MaterialTheme.typography.bodySmall, color = Lx.Orange)
                 }
             }
         },
         confirmButton = {
-            TextButton(
-                enabled = !isSubmitting && resetEmail.isNotBlank(),
-                onClick = {
-                    isSubmitting = true
-                    resultMessage = null
-                    onSubmit(resetEmail.trim()) { _, message ->
-                        isSubmitting = false
-                        resultMessage = message
+            if (done) {
+                TextButton(onClick = { onDismiss() }) { Text("Done", color = Lx.Orange) }
+            } else {
+                TextButton(
+                    enabled = !isSubmitting && resetEmail.isNotBlank() && (!codeSent || (code.length >= 4 && newPassword.length >= 8)),
+                    onClick = {
+                        isSubmitting = true
+                        resultMessage = null
+                        if (!codeSent) {
+                            onSubmit(resetEmail.trim()) { ok, message ->
+                                isSubmitting = false
+                                resultMessage = message
+                                if (ok) codeSent = true
+                            }
+                        } else {
+                            onConfirm(resetEmail.trim(), code, newPassword) { ok, message ->
+                                isSubmitting = false
+                                resultMessage = message
+                                if (ok) done = true
+                            }
+                        }
                     }
+                ) {
+                    Text(
+                        when {
+                            isSubmitting -> "Working..."
+                            codeSent -> "Reset password"
+                            else -> "Send code"
+                        },
+                        color = Lx.Orange
+                    )
                 }
-            ) {
-                Text(if (isSubmitting) "Sending..." else "Send")
             }
         },
         dismissButton = {
-            TextButton(onClick = { onDismiss() }, enabled = !isSubmitting) {
-                Text("Close")
-            }
+            if (!done) TextButton(onClick = { onDismiss() }, enabled = !isSubmitting) { Text("Close", color = Lx.TextSecondary) }
         }
     )
 }

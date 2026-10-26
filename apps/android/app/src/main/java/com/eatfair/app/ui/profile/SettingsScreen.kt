@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.profile
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -121,7 +122,7 @@ fun SettingsScreen(
             Text(
                 text = "Manage your preferences and account settings",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666)
+                color = Lx.TextSecondary
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -133,9 +134,9 @@ fun SettingsScreen(
             // Account Security Section
             Text(
                 text = "Account Security",
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = Lx.Text
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -154,9 +155,9 @@ fun SettingsScreen(
             // Legal Section
             Text(
                 text = "Legal",
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = Lx.Text
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -188,9 +189,9 @@ fun SettingsScreen(
             // Support Section
             Text(
                 text = "Support",
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = Lx.Text
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -224,9 +225,9 @@ fun SettingsScreen(
             // Delete Account Section - Required by Google Play Store
             Text(
                 text = "Account",
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = Lx.Text
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -250,9 +251,9 @@ fun SettingsMenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(Lx.Radius.button))
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
@@ -268,14 +269,14 @@ fun SettingsMenuItem(
                         imageVector = icon,
                         contentDescription = title,
                         modifier = Modifier.size(24.dp),
-                        tint = Color(0xFF666666)
+                        tint = Lx.TextSecondary
                     )
                     if (showBadge) {
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
                                 .align(Alignment.TopEnd)
-                                .background(Color(0xFFFF9800), RoundedCornerShape(4.dp))
+                                .background(Lx.Warning, RoundedCornerShape(4.dp))
                         )
                     }
                 }
@@ -283,14 +284,14 @@ fun SettingsMenuItem(
                 Column {
                     Text(
                         text = title,
-                        fontSize = 15.sp,
-                        color = Color.Black
+                        fontSize = Lx.FontSize.subheadline,
+                        color = Lx.Text
                     )
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
-                            fontSize = 13.sp,
-                            color = if (showBadge) Color(0xFFFF9800) else Color(0xFF999999)
+                            fontSize = Lx.FontSize.footnote,
+                            color = if (showBadge) Lx.Warning else Lx.TextMuted
                         )
                     }
                 }
@@ -298,7 +299,7 @@ fun SettingsMenuItem(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Navigate",
-                tint = Color(0xFF999999),
+                tint = Lx.TextMuted,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -314,14 +315,14 @@ fun DeleteAccountButton(onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = Color(0xFFD32F2F)
+            contentColor = Lx.Error
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(Lx.Radius.button)
     ) {
         Icon(
             imageVector = Icons.Default.DeleteForever,
             contentDescription = null,
-            tint = Color(0xFFD32F2F)
+            tint = Lx.Error
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
@@ -348,7 +349,7 @@ fun DeleteAccountDialog(
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = null,
-                tint = Color(0xFFD32F2F)
+                tint = Lx.Error
             )
         },
         title = {
@@ -363,7 +364,7 @@ fun DeleteAccountDialog(
                 Text(
                     text = "This action cannot be undone. Deleting your account will:",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF666666)
+                    color = Lx.TextSecondary
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
@@ -372,7 +373,7 @@ fun DeleteAccountDialog(
                             "- Remove saved addresses and payment methods\n" +
                             "- Cancel any active orders",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF999999)
+                    color = Lx.TextMuted
                 )
 
                 if (error != null) {
@@ -380,7 +381,7 @@ fun DeleteAccountDialog(
                     Text(
                         text = error,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFD32F2F)
+                        color = Lx.Error
                     )
                 }
             }
@@ -390,7 +391,7 @@ fun DeleteAccountDialog(
                 onClick = onConfirm,
                 enabled = !isDeleting,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFD32F2F)
+                    containerColor = Lx.Error
                 )
             ) {
                 if (isDeleting) {
@@ -409,7 +410,7 @@ fun DeleteAccountDialog(
                 onClick = onDismiss,
                 enabled = !isDeleting
             ) {
-                Text("Cancel", color = Color(0xFF666666))
+                Text("Cancel", color = Lx.TextSecondary)
             }
         }
     )

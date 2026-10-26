@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.privacy
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,13 +23,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // Brand Colors
-private val PrimaryGreen = Color(0xFF10A37F)
-private val BackgroundGrey = Color(0xFFF7F7F8)
-private val CardBackground = Color.White
-private val TextPrimary = Color(0xFF202123)
-private val TextSecondary = Color(0xFF6E6E80)
-private val ProtectedGreen = Color(0xFF22C55E)
-private val SafetyBlue = Color(0xFF3B82F6)
+private val PrimaryGreen = Lx.Orange
+private val BackgroundGrey = Lx.Surface2
+private val CardBackground = Lx.Surface
+private val TextPrimary = Lx.Text
+private val TextSecondary = Lx.TextSecondary
+private val ProtectedGreen = Lx.Success
+private val SafetyBlue = Lx.Orange
 
 /**
  * Screen 1: What Drivers See
@@ -84,14 +85,14 @@ fun WhatDriversSeePage(
 
             Text(
                 text = "Your privacy is protected",
-                fontSize = 22.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
 
             Text(
                 text = "Drivers only see limited information needed for your ride",
-                fontSize = 14.sp,
+                fontSize = Lx.FontSize.footnote,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 32.dp, vertical = 8.dp)
@@ -139,7 +140,7 @@ fun WhatDriversSeePage(
             PrivacySection(
                 title = "What drivers cannot see",
                 icon = Icons.Default.Block,
-                iconTint = Color(0xFFEF4444),
+                iconTint = Lx.Error,
                 items = listOf(
                     PrivacyItem(
                         icon = Icons.Default.Badge,
@@ -174,7 +175,7 @@ fun WhatDriversSeePage(
             // Info footer
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = CardDefaults.cardColors(containerColor = PrimaryGreen.copy(alpha = 0.1f))
             ) {
                 Row(
@@ -190,7 +191,7 @@ fun WhatDriversSeePage(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "Your information is automatically hidden after your ride is complete",
-                        fontSize = 13.sp,
+                        fontSize = Lx.FontSize.footnote,
                         color = TextPrimary,
                         lineHeight = 18.sp
                     )
@@ -255,14 +256,14 @@ fun YourPrivacyPage(
 
             Text(
                 text = "How We Protect You",
-                fontSize = 22.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
 
             Text(
                 text = "Industry-leading privacy and security measures",
-                fontSize = 14.sp,
+                fontSize = Lx.FontSize.footnote,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -293,7 +294,7 @@ fun YourPrivacyPage(
                 icon = Icons.Default.Star,
                 title = "Anonymous Ratings",
                 description = "Drivers cannot see who rated them or left feedback. Your ratings and comments remain completely anonymous.",
-                color = Color(0xFFF59E0B)
+                color = Lx.Warning
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -302,7 +303,7 @@ fun YourPrivacyPage(
                 icon = Icons.Default.Security,
                 title = "Encrypted Data",
                 description = "All personal information is encrypted using industry-standard TLS/SSL. Payment data is processed through PCI-compliant Stripe.",
-                color = Color(0xFF8B5CF6)
+                color = Lx.Orange
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -311,7 +312,7 @@ fun YourPrivacyPage(
                 icon = Icons.Default.DeleteForever,
                 title = "Data Deletion Rights",
                 description = "You can request complete deletion of your data at any time through Settings. We comply with CCPA and privacy regulations.",
-                color = Color(0xFFEF4444)
+                color = Lx.Error
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -319,7 +320,7 @@ fun YourPrivacyPage(
             // Commitment banner
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = CardDefaults.cardColors(containerColor = CardBackground)
             ) {
                 Column(
@@ -328,14 +329,14 @@ fun YourPrivacyPage(
                 ) {
                     Text(
                         text = "Our Commitment",
-                        fontSize = 16.sp,
+                        fontSize = Lx.FontSize.callout,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "We never sell your personal information to third parties. Your data is used only to provide and improve our services.",
-                        fontSize = 14.sp,
+                        fontSize = Lx.FontSize.footnote,
                         color = TextSecondary,
                         textAlign = TextAlign.Center,
                         lineHeight = 20.sp
@@ -401,14 +402,14 @@ fun SafetyFeaturesPage(
 
             Text(
                 text = "Your Safety Matters",
-                fontSize = 22.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
 
             Text(
                 text = "Built-in features to keep you safe",
-                fontSize = 14.sp,
+                fontSize = Lx.FontSize.footnote,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -476,8 +477,8 @@ fun SafetyFeaturesPage(
             // Emergency contact
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFEF4444).copy(alpha = 0.1f))
+                shape = RoundedCornerShape(Lx.Radius.button),
+                colors = CardDefaults.cardColors(containerColor = Lx.Error.copy(alpha = 0.1f))
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -486,20 +487,20 @@ fun SafetyFeaturesPage(
                     Icon(
                         imageVector = Icons.Default.Emergency,
                         contentDescription = null,
-                        tint = Color(0xFFEF4444),
+                        tint = Lx.Error,
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
                             text = "Emergency?",
-                            fontSize = 14.sp,
+                            fontSize = Lx.FontSize.footnote,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFEF4444)
+                            color = Lx.Error
                         )
                         Text(
                             text = "Call 911 for immediate emergencies. Use in-app support for non-emergency issues.",
-                            fontSize = 12.sp,
+                            fontSize = Lx.FontSize.caption,
                             color = TextSecondary,
                             lineHeight = 16.sp
                         )
@@ -523,7 +524,7 @@ private fun PrivacySection(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(Lx.Radius.card),
         colors = CardDefaults.cardColors(containerColor = CardBackground)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -537,7 +538,7 @@ private fun PrivacySection(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = title,
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
@@ -553,7 +554,7 @@ private fun PrivacySection(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(Lx.Radius.chip))
                             .background(BackgroundGrey),
                         contentAlignment = Alignment.Center
                     ) {
@@ -568,13 +569,13 @@ private fun PrivacySection(
                     Column {
                         Text(
                             text = item.title,
-                            fontSize = 14.sp,
+                            fontSize = Lx.FontSize.footnote,
                             fontWeight = FontWeight.Medium,
                             color = TextPrimary
                         )
                         Text(
                             text = item.description,
-                            fontSize = 12.sp,
+                            fontSize = Lx.FontSize.caption,
                             color = TextSecondary
                         )
                     }
@@ -593,7 +594,7 @@ private fun ProtectionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(Lx.Radius.button),
         colors = CardDefaults.cardColors(containerColor = CardBackground)
     ) {
         Row(
@@ -603,7 +604,7 @@ private fun ProtectionCard(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(Lx.Radius.chip))
                     .background(color.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -618,14 +619,14 @@ private fun ProtectionCard(
             Column {
                 Text(
                     text = title,
-                    fontSize = 15.sp,
+                    fontSize = Lx.FontSize.subheadline,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = description,
-                    fontSize = 13.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = TextSecondary,
                     lineHeight = 18.sp
                 )
@@ -643,7 +644,7 @@ private fun SafetyFeatureCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(Lx.Radius.button),
         colors = CardDefaults.cardColors(containerColor = CardBackground)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -651,7 +652,7 @@ private fun SafetyFeatureCard(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(Lx.Radius.chip))
                         .background(SafetyBlue.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -666,14 +667,14 @@ private fun SafetyFeatureCard(
                 Column {
                     Text(
                         text = title,
-                        fontSize = 15.sp,
+                        fontSize = Lx.FontSize.subheadline,
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = description,
-                        fontSize = 13.sp,
+                        fontSize = Lx.FontSize.footnote,
                         color = TextSecondary,
                         lineHeight = 18.sp
                     )
@@ -696,7 +697,7 @@ private fun SafetyFeatureCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = feature,
-                        fontSize = 13.sp,
+                        fontSize = Lx.FontSize.footnote,
                         color = TextSecondary
                     )
                 }

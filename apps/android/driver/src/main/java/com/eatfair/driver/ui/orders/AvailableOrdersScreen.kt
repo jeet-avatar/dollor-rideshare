@@ -1,5 +1,8 @@
 package com.eatfair.driver.ui.orders
 
+import com.eatfair.driver.ui.home.AccessibilityNeedBadge
+import com.eatfair.shared.ui.Lx
+import com.eatfair.shared.ui.LxButton
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.eatfair.driver.ui.theme.DollorDriverColors
+import com.eatfair.shared.model.rideshare.DriverOwnBid
 import com.eatfair.shared.model.rideshare.RideRequestForBidding
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +37,13 @@ fun AvailableOrdersScreen(
         uiState.error?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             viewModel.clearError()
+        }
+    }
+    LaunchedEffect(uiState.matchedRideId) {
+        if (uiState.matchedRideId != null) {
+            Toast.makeText(context, "Rider accepted — your ride is on Home", Toast.LENGTH_LONG).show()
+            viewModel.onMatchedRideShown()
+            navController.navigate("home") { launchSingleTop = true }
         }
     }
     LaunchedEffect(uiState.message) {
@@ -59,7 +70,7 @@ fun AvailableOrdersScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DollorDriverColors.White,
+                    containerColor = Lx.Surface,
                     titleContentColor = DollorDriverColors.Gray900
                 )
             )
@@ -79,7 +90,7 @@ fun AvailableOrdersScreen(
                     )
                 }
 
-                uiState.rides.isEmpty() -> {
+                uiState.rides.isEmpty() && uiState.myBids.isEmpty() && uiState.closedBids.isEmpty() -> {
                     EmptyRidesState(modifier = Modifier.align(Alignment.Center))
                 }
 
@@ -89,13 +100,31 @@ fun AvailableOrdersScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(uiState.rides, key = { it.id }) { ride ->
-                            RideRequestCard(
-                                ride = ride,
-                                isAccepting = uiState.acceptingId == ride.id,
-                                onAccept = { viewModel.accept(ride) },
-                                onDecline = { viewModel.decline(ride) }
-                            )
+                        if (uiState.myBids.isNotEmpty()) {
+                            item { SectionTitle("Your offers") }
+                            items(uiState.myBids, key = { "bid-${it.id}" }) { bid ->
+                                MyBidCard(
+                                    bid = bid,
+                                    isBusy = uiState.busyId == bid.id,
+                                    onAcceptCounter = { viewModel.acceptCounter(bid) },
+                                    onRejectCounter = { viewModel.rejectCounter(bid) },
+                                    onFinalCounter = { price -> viewModel.finalCounter(bid, price) }
+                                )
+                            }
+                        }
+                        if (uiState.rides.isNotEmpty()) {
+                            item { SectionTitle("New requests") }
+                            items(uiState.rides, key = { it.id }) { ride ->
+                                RideRequestCard(
+                                    ride = ride,
+                                    isAccepting = uiState.busyId == ride.id,
+                                    onSubmitBid = { price, eta, message -> viewModel.submitBid(ride, price, eta, message) }
+                                )
+                            }
+                        }
+                        if (uiState.closedBids.isNotEmpty()) {
+                            item { SectionTitle("Recent") }
+                            items(uiState.closedBids, key = { "closed-${it.id}" }) { bid -> ClosedBidCard(bid) }
                         }
                         item { Spacer(modifier = Modifier.height(80.dp)) }
                     }
@@ -132,17 +161,139 @@ private fun EmptyRidesState(modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+        color = DollorDriverColors.Gray600
+    )
+}
+
+private fun money(value: Double): String = "$" + String.format("%.2f", value)
+
+@Composable
+private fun PriceDialog(
+    title: String,
+    initial: Double?,
+    confirmText: String,
+    onConfirm: (Double) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var text by remember { mutableStateOf(initial?.let { String.format("%.2f", it) } ?: "") }
+    val price = text.toDoubleOrNull()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { v -> text = v.filter { it.isDigit() || it == '.' } },
+                prefix = { Text("$") },
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                ),
+                supportingText = { Text("Minimum $5.00") }
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { price?.let(onConfirm) },
+                enabled = price != null && price >= 5.0
+            ) { Text(confirmText) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun MyBidCard(
+    bid: DriverOwnBid,
+    isBusy: Boolean,
+    onAcceptCounter: () -> Unit,
+    onRejectCounter: () -> Unit,
+    onFinalCounter: (Double) -> Unit
+) {
+    var showCounter by remember { mutableStateOf(false) }
+    val ride = bid.rideRequest
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Text(
+                text = ride?.let { "${it.pickup.address} → ${it.dropoff.address}" } ?: "Ride #${bid.rideRequestId}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = DollorDriverColors.Gray900
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Your offer: ${money(bid.proposedPrice)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = DollorDriverColors.Gray500
+            )
+            if (bid.isCountered) {
+                Text(
+                    text = "Rider countered: ${money(bid.customerCounterPrice!!)}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = DollorDriverColors.Orange
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onRejectCounter, enabled = !isBusy, modifier = Modifier.weight(1f)) {
+                        Text("Decline")
+                    }
+                    OutlinedButton(onClick = { showCounter = true }, enabled = !isBusy, modifier = Modifier.weight(1f)) {
+                        Text("Counter")
+                    }
+                    Button(
+                        onClick = onAcceptCounter,
+                        enabled = !isBusy,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue)
+                    ) { Text("Accept") }
+                }
+            } else {
+                Text(
+                    text = "Waiting for the rider to respond…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = DollorDriverColors.Blue
+                )
+            }
+        }
+    }
+    if (showCounter) {
+        PriceDialog(
+            title = "Final counter-offer",
+            initial = bid.proposedPrice,
+            confirmText = "Send",
+            onConfirm = { showCounter = false; onFinalCounter(it) },
+            onDismiss = { showCounter = false }
+        )
+    }
+}
+
+@Composable
 fun RideRequestCard(
     ride: RideRequestForBidding,
     isAccepting: Boolean,
-    onAccept: () -> Unit,
-    onDecline: () -> Unit
+    onSubmitBid: (price: Double, etaMinutes: Int, message: String?) -> Unit
 ) {
-    val fare = ride.suggestedPrice
+    var showBidSheet by remember { mutableStateOf(false) }
+    if (showBidSheet) {
+        SubmitBidSheet(
+            ride = ride,
+            isBusy = isAccepting,
+            onSubmit = { price, eta, message -> showBidSheet = false; onSubmitBid(price, eta, message) },
+            onDismiss = { showBidSheet = false }
+        )
+    }
+    val fare = ride.riderOffer
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
     ) {
         Column(
             modifier = Modifier
@@ -172,13 +323,20 @@ fun RideRequestCard(
                         color = DollorDriverColors.Gray900
                     )
                 }
-                Text(
-                    text = if (fare != null) "$" + String.format("%.2f", fare) else "--",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = DollorDriverColors.Green
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Rider offers",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DollorDriverColors.Gray500
+                    )
+                    Text(
+                        text = fare?.let(::money) ?: "--",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = DollorDriverColors.Green
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -270,44 +428,46 @@ fun RideRequestCard(
                 }
             }
 
+            ride.accessibilitySummary?.let { summary ->
+                Spacer(modifier = Modifier.height(10.dp))
+                AccessibilityNeedBadge(summary)
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onDecline,
-                    enabled = !isAccepting,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = DollorDriverColors.Gray600
-                    )
-                ) {
-                    Text("Decline")
-                }
-                Button(
-                    onClick = onAccept,
-                    enabled = !isAccepting && fare != null,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DollorDriverColors.Blue
-                    )
-                ) {
-                    if (isAccepting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = DollorDriverColors.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("Accept")
-                    }
-                }
-            }
+            // Single primary action, like iOS: opens the bid sheet
+            LxButton(
+                text = "Submit Bid",
+                onClick = { showBidSheet = true },
+                enabled = !isAccepting,
+                leading = { Icon(Icons.Default.PanTool, contentDescription = null, modifier = Modifier.size(18.dp)) }
+            )
+        }
+    }
+}
+
+/** A bid that is no longer live, with the reason (e.g. "Accepted by another driver"). */
+@Composable
+private fun ClosedBidCard(bid: DriverOwnBid) {
+    val ride = bid.rideRequest
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(Lx.Spacing.l), verticalArrangement = Arrangement.spacedBy(Lx.Spacing.xs)) {
+            Text(
+                text = ride?.let { "${it.pickup.address} → ${it.dropoff.address}" } ?: "Ride #${bid.rideRequestId}",
+                fontSize = Lx.FontSize.subheadline,
+                color = Lx.TextSecondary
+            )
+            Text(
+                text = bid.closedReason.orEmpty(),
+                fontSize = Lx.FontSize.subheadline,
+                fontWeight = FontWeight.SemiBold,
+                color = Lx.Orange
+            )
+            Text(text = "Your offer: ${money(bid.proposedPrice)}", fontSize = Lx.FontSize.caption, color = Lx.TextMuted)
         }
     }
 }

@@ -34,6 +34,7 @@ class DollorApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        com.eatfair.shared.network.ApiTiming.init(this)
 
         // Initialize AppConfig with BuildConfig values
         // Production build only - no staging

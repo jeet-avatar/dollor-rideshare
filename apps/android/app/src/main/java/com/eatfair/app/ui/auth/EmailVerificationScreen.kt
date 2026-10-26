@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.auth
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -97,7 +98,7 @@ fun EmailVerificationScreen(
             // Title
             Text(
                 text = if (isVerified) "Email Verified!" else "Verify Your Email",
-                fontSize = 24.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 color = BrandBlack
             )
@@ -108,7 +109,7 @@ fun EmailVerificationScreen(
                 // Already verified state
                 Text(
                     text = "Your email $email has been verified successfully.",
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = TextGrey,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
@@ -124,11 +125,11 @@ fun EmailVerificationScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = BrandGreen
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Lx.Radius.button)
                 ) {
                     Text(
                         text = "Continue",
-                        fontSize = 16.sp,
+                        fontSize = Lx.FontSize.callout,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -139,7 +140,7 @@ fun EmailVerificationScreen(
                         "We sent a 6-digit code to $email. Enter it below to verify your email."
                     else
                         "We'll send a verification code to $email",
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = TextGrey,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
@@ -161,7 +162,7 @@ fun EmailVerificationScreen(
                             containerColor = BrandGreen,
                             disabledContainerColor = BrandGreen.copy(alpha = 0.5f)
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         enabled = !isSendingCode
                     ) {
                         if (isSendingCode) {
@@ -173,7 +174,7 @@ fun EmailVerificationScreen(
                         } else {
                             Text(
                                 text = "Send Verification Code",
-                                fontSize = 16.sp,
+                                fontSize = Lx.FontSize.callout,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -191,22 +192,22 @@ fun EmailVerificationScreen(
                             .fillMaxWidth()
                             .shadow(
                                 elevation = 2.dp,
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(Lx.Radius.button),
                                 ambientColor = Color.Black.copy(alpha = 0.05f)
                             ),
                         placeholder = { Text("Enter 6-digit code", color = TextGrey) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Lx.Surface,
+                            unfocusedContainerColor = Lx.Surface,
                             focusedBorderColor = BrandGreen,
                             unfocusedBorderColor = Color.Transparent
                         ),
                         singleLine = true,
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
-                            fontSize = 24.sp,
+                            fontSize = Lx.FontSize.title,
                             letterSpacing = 8.sp
                         )
                     )
@@ -216,7 +217,7 @@ fun EmailVerificationScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = message,
-                            fontSize = 12.sp,
+                            fontSize = Lx.FontSize.caption,
                             color = BrandGreen,
                             textAlign = TextAlign.Center
                         )
@@ -227,8 +228,8 @@ fun EmailVerificationScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = error,
-                            fontSize = 12.sp,
-                            color = Color.Red,
+                            fontSize = Lx.FontSize.caption,
+                            color = Lx.Error,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -245,7 +246,7 @@ fun EmailVerificationScreen(
                             containerColor = BrandGreen,
                             disabledContainerColor = BrandGreen.copy(alpha = 0.5f)
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         enabled = !isVerifying && verificationCode.length == 6
                     ) {
                         if (isVerifying) {
@@ -257,7 +258,7 @@ fun EmailVerificationScreen(
                         } else {
                             Text(
                                 text = "Verify Email",
-                                fontSize = 16.sp,
+                                fontSize = Lx.FontSize.callout,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -285,7 +286,7 @@ fun EmailVerificationScreen(
             if (!isVerified) {
                 Text(
                     text = "Verifying your email helps keep your account secure",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     color = TextGrey,
                     textAlign = TextAlign.Center
                 )

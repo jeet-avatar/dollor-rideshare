@@ -69,6 +69,12 @@ data class PasswordResetRequest(
     val email: String
 )
 
+data class PasswordResetConfirmRequest(
+    val email: String,
+    val code: String,
+    @com.google.gson.annotations.SerializedName("new_password") val newPassword: String
+)
+
 /**
  * Forgot password request - sends reset code to email
  * Matches iOS: POST /auth/customer/forgot-password
@@ -785,27 +791,44 @@ data class CheckrStatusResponse(
 // ==========================================
 
 data class FoundingStatusResponse(
-    val eligible: Boolean = false,
-    @SerializedName("is_member") val isMember: Boolean = false,
-    @SerializedName("slots_total") val slotsTotal: Int? = null,
+    @SerializedName("is_founder") val isFounder: Boolean = false,
+    @SerializedName("founder_state") val founderState: String? = null,
+    @SerializedName("eligible_to_join") val eligibleToJoin: Boolean = false,
+    @SerializedName("rides_taken") val ridesTaken: Int = 0,
+    @SerializedName("claim_window_rides") val claimWindowRides: Int = 3,
+    @SerializedName("deposit_usd") val depositUsd: Double = 100.0,
+    @SerializedName("cap_per_state") val capPerState: Int? = null,
     @SerializedName("slots_remaining") val slotsRemaining: Int? = null,
-    @SerializedName("slots_claimed") val slotsClaimed: Int? = null,
-    @SerializedName("membership_fee") val membershipFee: Double? = null,
-    @SerializedName("fee_lock") val feeLock: String? = null,
-    @SerializedName("member_number") val memberNumber: Int? = null,
+    @SerializedName("state") val state: String? = null,
+    @SerializedName("benefit") val benefit: String? = null,
     @SerializedName("is_demo") val isDemo: Boolean = false,
-    val message: String? = null
+    @SerializedName("publishable_key") val publishableKey: String? = null
 )
 
+/** POST /api/founding(/driver)/join — backend charges the $100 itself with payment_method_id. */
 data class FoundingJoinRequest(
-    @SerializedName("payment_method_id") val paymentMethodId: String? = null,
-    @SerializedName("payment_intent_id") val paymentIntentId: String? = null
+    @SerializedName("state") val state: String,
+    @SerializedName("payment_method_id") val paymentMethodId: String? = null
 )
 
 data class FoundingJoinResponse(
     val success: Boolean = false,
-    @SerializedName("is_member") val isMember: Boolean = false,
-    @SerializedName("member_number") val memberNumber: Int? = null,
-    val message: String? = null,
-    val error: String? = null
+    @SerializedName("is_founder") val isFounder: Boolean = false,
+    val state: String? = null,
+    val benefit: String? = null
+)
+
+
+data class FcmTokenRequest(
+    @SerializedName("fcm_token") val fcmToken: String,
+    @SerializedName("platform") val platform: String = "android"
+)
+
+
+data class UpdateFullNameRequest(@SerializedName("full_name") val fullName: String)
+
+data class UpdateProfileAck(
+    val success: Boolean = false,
+    val name: String? = null,
+    val phone: String? = null
 )

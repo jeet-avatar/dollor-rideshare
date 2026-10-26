@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.address
 
+import com.eatfair.shared.ui.Lx
 // Complete imports
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -59,7 +60,7 @@ fun SavedAddressesScreen(
         topBar = {
             EFTopAppBar("My Addresses", onBackClick= onBackClick)
         },
-        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+        containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -73,7 +74,7 @@ fun SavedAddressesScreen(
                 AddressActionCard(
                     icon = Icons.Default.Add,
                     text = "Add Address",
-                    iconTint = Color(0xFF2E7D32),
+                    iconTint = Lx.Orange,
                     onClick = onAddAddressClick
                 )
             }
@@ -83,9 +84,9 @@ fun SavedAddressesScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "SAVED ADDRESSES",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Gray,
+                    color = Lx.TextSecondary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
@@ -147,8 +148,8 @@ fun AddressActionCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(Lx.Radius.button),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -170,7 +171,7 @@ fun AddressActionCard(
                 )
                 Text(
                     text = text,
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.SemiBold,
                     color = iconTint
                 )
@@ -179,7 +180,7 @@ fun AddressActionCard(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Go",
-                tint = Color.Gray
+                tint = Lx.TextSecondary
             )
         }
     }
@@ -192,8 +193,8 @@ fun ImportBlinkitCard(onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(Lx.Radius.button),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -211,12 +212,12 @@ fun ImportBlinkitCard(onClick: () -> Unit) {
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(Color(0xFFFFC107), RoundedCornerShape(8.dp)),
+                        .background(Lx.Gold, RoundedCornerShape(Lx.Radius.chip)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "B",
-                        fontSize = 20.sp,
+                        fontSize = Lx.FontSize.title,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -224,16 +225,16 @@ fun ImportBlinkitCard(onClick: () -> Unit) {
 
                 Text(
                     text = "Import addresses from Blinkit",
-                    fontSize = 15.sp,
+                    fontSize = Lx.FontSize.subheadline,
                     fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                    color = Lx.Text
                 )
             }
 
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Import",
-                tint = Color.Gray
+                tint = Lx.TextSecondary
             )
         }
     }
@@ -250,8 +251,8 @@ fun SavedAddressCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(Lx.Radius.button),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -267,14 +268,14 @@ fun SavedAddressCard(
                 Icon(
                     imageVector = address.type.icon,
                     contentDescription = address.type.displayName,
-                    tint = Color.Gray,
+                    tint = Lx.TextSecondary,
                     modifier = Modifier.size(32.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 //                Text(
 //                    text = address.distance,
-//                    fontSize = 11.sp,
-//                    color = Color.Gray,
+//                    fontSize = Lx.FontSize.caption,
+//                    color = Lx.TextSecondary,
 //                    fontWeight = FontWeight.Medium
 //                )
             }
@@ -286,17 +287,17 @@ fun SavedAddressCard(
 
                 Text(
                     text = address.type.displayName,
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Lx.Text
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = address.addressLine1(),
-                    fontSize = 13.sp,
-                    color = Color.Gray,
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -306,8 +307,8 @@ fun SavedAddressCard(
                 if (displayAddress.isNotEmpty()) {
                     Text(
                         text = displayAddress,
-                        fontSize = 13.sp,
-                        color = Color.Gray,
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.TextSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -317,8 +318,8 @@ fun SavedAddressCard(
 
                 Text(
                     text = "Phone number: ${address.phoneNumber}",
-                    fontSize = 12.sp,
-                    color = Color.Gray
+                    fontSize = Lx.FontSize.caption,
+                    color = Lx.TextSecondary
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -335,14 +336,14 @@ fun SavedAddressCard(
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             shape = CircleShape,
-                            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                            border = BorderStroke(1.dp, Lx.Hairline),
                             color = Color.White
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.MoreHoriz,
                                     contentDescription = "More Options",
-                                    tint = Color.Gray,
+                                    tint = Lx.TextSecondary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -357,14 +358,14 @@ fun SavedAddressCard(
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             shape = CircleShape,
-                            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                            border = BorderStroke(1.dp, Lx.Hairline),
                             color = Color.White
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.Share,
                                     contentDescription = "Share",
-                                    tint = Color(0xFF2E7D32),
+                                    tint = Lx.Orange,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -387,8 +388,8 @@ fun AddressOptionsBottomSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        containerColor = Lx.Surface,
+        shape = RoundedCornerShape(topStart = Lx.Radius.card, topEnd = Lx.Radius.card)
     ) {
         Column(
             modifier = Modifier
@@ -398,9 +399,9 @@ fun AddressOptionsBottomSheet(
             // Header
             Text(
                 text = address.type.displayName,
-                fontSize = 18.sp,
+                fontSize = Lx.FontSize.body,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = Lx.Text,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
             )
 
@@ -424,8 +425,8 @@ fun AddressOptionsBottomSheet(
             BottomSheetOption(
                 icon = Icons.Default.Delete,
                 text = "Delete Address",
-                iconTint = Color(0xFFD32F2F),
-                textColor = Color(0xFFD32F2F),
+                iconTint = Lx.Error,
+                textColor = Lx.Error,
                 onClick = onDelete
             )
         }
@@ -436,8 +437,8 @@ fun AddressOptionsBottomSheet(
 fun BottomSheetOption(
     icon: ImageVector,
     text: String,
-    iconTint: Color = Color.Gray,
-    textColor: Color = Color.Black,
+    iconTint: Color = Lx.TextSecondary,
+    textColor: Color = Lx.Text,
     onClick: () -> Unit
 ) {
     Row(
@@ -456,7 +457,7 @@ fun BottomSheetOption(
         )
         Text(
             text = text,
-            fontSize = 16.sp,
+            fontSize = Lx.FontSize.callout,
             color = textColor
         )
     }
@@ -474,29 +475,29 @@ fun DeleteAddressDialog(
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = "Warning",
-                tint = Color(0xFFFF9800),
+                tint = Lx.Warning,
                 modifier = Modifier.size(32.dp)
             )
         },
         title = {
             Text(
                 text = "Delete Address?",
-                fontSize = 20.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold
             )
         },
         text = {
             Text(
                 text = "Are you sure you want to delete '${address.type}'? This action cannot be undone.",
-                fontSize = 14.sp,
-                color = Color.Gray
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary
             )
         },
         confirmButton = {
             Button(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFD32F2F)
+                    containerColor = Lx.Error
                 )
             ) {
                 Text("Delete", color = Color.White)
@@ -504,11 +505,11 @@ fun DeleteAddressDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Gray)
+                Text("Cancel", color = Lx.TextSecondary)
             }
         },
-        containerColor = Color.White,
-        shape = RoundedCornerShape(16.dp)
+        containerColor = Lx.Surface,
+        shape = RoundedCornerShape(Lx.Radius.card)
     )
 }
 
@@ -526,7 +527,7 @@ fun DeleteAddressDialog(
 //    Column(
 //        modifier = Modifier
 //            .fillMaxSize()
-//            .background(Color.White)
+//            .background(Lx.Surface)
 //    ) {
 //        // Top Bar
 //        Row(
@@ -539,14 +540,14 @@ fun DeleteAddressDialog(
 //                Icon(
 //                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
 //                    contentDescription = "Back",
-//                    tint = Color.Black
+//                    tint = Lx.Text
 //                )
 //            }
 //            Text(
 //                text = "Edit Address",
-//                fontSize = 20.sp,
+//                fontSize = Lx.FontSize.title,
 //                fontWeight = FontWeight.Bold,
-//                color = Color.Black,
+//                color = Lx.Text,
 //                modifier = Modifier.padding(start = 8.dp)
 //            )
 //        }
@@ -562,7 +563,7 @@ fun DeleteAddressDialog(
 //                onValueChange = { title = it },
 //                label = { Text("Title") },
 //                modifier = Modifier.fillMaxWidth(),
-//                shape = RoundedCornerShape(8.dp)
+//                shape = RoundedCornerShape(Lx.Radius.chip)
 //            )
 //
 //            Spacer(modifier = Modifier.height(16.dp))
@@ -574,7 +575,7 @@ fun DeleteAddressDialog(
 //                label = { Text("Address") },
 //                modifier = Modifier.fillMaxWidth(),
 //                minLines = 3,
-//                shape = RoundedCornerShape(8.dp)
+//                shape = RoundedCornerShape(Lx.Radius.chip)
 //            )
 //
 //            Spacer(modifier = Modifier.height(16.dp))
@@ -585,7 +586,7 @@ fun DeleteAddressDialog(
 //                onValueChange = { phoneNumber = it },
 //                label = { Text("Phone Number") },
 //                modifier = Modifier.fillMaxWidth(),
-//                shape = RoundedCornerShape(8.dp)
+//                shape = RoundedCornerShape(Lx.Radius.chip)
 //            )
 //
 //            Spacer(modifier = Modifier.height(24.dp))
@@ -593,9 +594,9 @@ fun DeleteAddressDialog(
 //            // Type Selection
 //            Text(
 //                text = "Address Type",
-//                fontSize = 14.sp,
+//                fontSize = Lx.FontSize.footnote,
 //                fontWeight = FontWeight.Medium,
-//                color = Color.Gray
+//                color = Lx.TextSecondary
 //            )
 //
 //            Spacer(modifier = Modifier.height(12.dp))
@@ -634,13 +635,13 @@ fun DeleteAddressDialog(
 //                    .fillMaxWidth()
 //                    .height(56.dp),
 //                colors = ButtonDefaults.buttonColors(
-//                    containerColor = Color(0xFF2E7D32)
+//                    containerColor = Lx.Orange
 //                ),
-//                shape = RoundedCornerShape(12.dp)
+//                shape = RoundedCornerShape(Lx.Radius.button)
 //            ) {
 //                Text(
 //                    text = "Save Changes",
-//                    fontSize = 16.sp,
+//                    fontSize = Lx.FontSize.callout,
 //                    fontWeight = FontWeight.Bold,
 //                    color = Color.White
 //                )

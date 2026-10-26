@@ -1,5 +1,9 @@
 package com.eatfair.app.ui.address
 
+import com.google.maps.android.compose.MapProperties
+import com.eatfair.app.R
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.eatfair.shared.ui.Lx
 import android.Manifest
 import android.annotation.SuppressLint
 import android.location.Address
@@ -275,6 +279,9 @@ fun LocationMapScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
+            properties = MapProperties(
+                mapStyleOptions = rememberDarkMapStyle()
+            ),
             onMapLoaded = { fetchInitialLocation() }
         ) {
             // The center pin is a UI overlay, so no Marker is needed here.
@@ -301,7 +308,7 @@ fun LocationMapScreen(
 //                modifier = Modifier
 //                    .size(60.dp)
 //                    .background(
-//                        Color(0xFF2196F3).copy(alpha = 0.3f),
+//                        Lx.Orange.copy(alpha = 0.3f),
 //                        CircleShape
 //                    )
 //            )
@@ -319,7 +326,7 @@ fun LocationMapScreen(
             modifier = Modifier
                 .align(Alignment.Center)
                 .offset(y = 170.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(Lx.Radius.sheet))
                 .clickable {
                     // On click, check permissions and then get location
                     if (locationPermissionsState.allPermissionsGranted) {
@@ -349,9 +356,9 @@ fun LocationMapScreen(
                 )
                 Text(
                     text = "Current location",
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                    color = Lx.Text
                 )
             }
         }
@@ -370,7 +377,7 @@ fun MapViewPlaceholder() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5)),
+            .background(Lx.Surface2),
         contentAlignment = Alignment.Center
     ) {
         // Placeholder for Google Maps
@@ -384,17 +391,17 @@ fun MapViewPlaceholder() {
                 imageVector = Icons.Default.Map,
                 contentDescription = "Map",
                 modifier = Modifier.size(80.dp),
-                tint = Color.Gray.copy(alpha = 0.3f)
+                tint = Lx.TextSecondary.copy(alpha = 0.3f)
             )
             Text(
                 text = "Map View Placeholder",
-                fontSize = 14.sp,
-                color = Color.Gray
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary
             )
             Text(
                 text = "Integrate Google Maps here",
-                fontSize = 12.sp,
-                color = Color.Gray
+                fontSize = Lx.FontSize.caption,
+                color = Lx.TextSecondary
             )
         }
     }
@@ -414,7 +421,7 @@ fun LocationSearchBar(
         // Back Button
         Surface(
             modifier = Modifier.size(48.dp),
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(Lx.Radius.chip),
             color = Color.White,
             shadowElevation = 4.dp,
             onClick = onBackClick
@@ -426,7 +433,7 @@ fun LocationSearchBar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
                     contentDescription = "Back",
-                    tint = Color.Black
+                    tint = Lx.Text
                 )
             }
         }
@@ -437,7 +444,7 @@ fun LocationSearchBar(
                 .weight(1f)
                 .height(48.dp)
                 .clickable(onClick = onSearchClick),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(Lx.Radius.button),
             color = Color.White,
             shadowElevation = 4.dp
         ) {
@@ -450,13 +457,13 @@ fun LocationSearchBar(
             ) {
                 Text(
                     text = "Search an area or address",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary
                 )
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
-                    tint = Color.Gray
+                    tint = Lx.TextSecondary
                 )
             }
         }
@@ -471,7 +478,7 @@ fun LocationBottomSheet(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        shape = RoundedCornerShape(topStart = Lx.Radius.card, topEnd = Lx.Radius.card),
         color = Color.White,
         shadowElevation = 8.dp
     ) {
@@ -480,8 +487,8 @@ fun LocationBottomSheet(
         ) {
             Text(
                 text = "Order will be delivered here",
-                fontSize = 13.sp,
-                color = Color.Gray,
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
@@ -499,15 +506,15 @@ fun LocationBottomSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = location.locationName,
-                        fontSize = 18.sp,
+                        fontSize = Lx.FontSize.body,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = Lx.Text
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = location.address,
-                        fontSize = 14.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.TextSecondary
                     )
                 }
             }
@@ -522,11 +529,11 @@ fun LocationBottomSheet(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Lx.Radius.button)
             ) {
                 Text(
                     text = "Confirm & proceed",
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
@@ -564,9 +571,17 @@ fun GoogleMapView(location: LocationData) {
 
     GoogleMap(
         modifier = Modifier.fillMaxSize(),
-        cameraPositionState = cameraPositionState
+        cameraPositionState = cameraPositionState,
+        properties = MapProperties(
+            mapStyleOptions = rememberDarkMapStyle()
+        )
     ) {
         // Add markers, etc.
     }
 }
 */
+@androidx.compose.runtime.Composable
+private fun rememberDarkMapStyle(): MapStyleOptions {
+    val context = LocalContext.current
+    return androidx.compose.runtime.remember { MapStyleOptions.loadRawResourceStyle(context, R.raw.map_dark) }
+}

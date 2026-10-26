@@ -173,6 +173,9 @@ fun DriverNavGraph(
                 onForgotPassword = { email, onResult ->
                     loginViewModel.forgotPassword(email, onResult)
                 },
+                onResetPassword = { email, code, newPassword, onResult ->
+                    loginViewModel.resetPassword(email, code, newPassword, onResult)
+                },
                 rememberedCredentials = remember { loginViewModel.rememberedCredentials() }
             )
         }

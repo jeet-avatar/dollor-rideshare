@@ -137,6 +137,9 @@ fun NavigationGraph(
                 onNotificationsClick = {
                     navController.navigate(Screen.Notifications.route)
                 },
+                onFoundingMemberClick = {
+                    navController.navigate(Screen.FoundingMember.route)
+                },
                 onReferAndEarnClick = {
                     navController.navigate(Screen.ReferAndEarn.route)
                 },
@@ -577,15 +580,8 @@ fun NavGraphBuilder.profileGraph(
             EditProfileScreen(
                 userName = profileName ?: "",
                 userEmail = profileEmail ?: "",
-                // No phone cached locally; leave blank so a save doesn't overwrite with
-                // a placeholder. Backend skips empty name/phone.
-                userPhone = "",
                 onBackClick = { navController.navigateUp() },
-                onSaveClick = { name, _, phone, _ ->
-                    // Backend only updates name and phone (PUT /api/customer/{id}/profile)
-                    profileViewModel.updateProfile(name, phone)
-                    navController.navigateUp()
-                }
+                onSave = { name, onResult -> profileViewModel.saveName(name, onResult) }
             )
         }
 
@@ -608,13 +604,24 @@ fun NavGraphBuilder.profileGraph(
         }
 
         composable(Screen.ReferAndEarn.route) {
+            val ctx = LocalContext.current
+            val code = "DOLLOR" + (com.eatfair.app.data.CustomerRideshareApiService.currentCustomerId?.toString() ?: "")
             ReferAndEarnScreen(
+                referralCode = code,
                 onBackClick = { navController.navigateUp() },
                 onShareClick = {
-                    // Share via system share sheet
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(
+                            android.content.Intent.EXTRA_TEXT,
+                            "Join me on Dollor.ai! Use my code $code to get \$5 off your first ride. Download now: https://dollor.ai/app"
+                        )
+                    }
+                    ctx.startActivity(android.content.Intent.createChooser(send, "Share your code"))
                 },
                 onCopyCodeClick = {
-                    // Copy to clipboard
+                    val clipboard = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Dollor referral code", code))
                 }
             )
         }
@@ -690,25 +697,31 @@ fun NavGraphBuilder.profileGraph(
 
         // Help & Support Screen
         composable(Screen.HelpSupport.route) {
+            val ctx = LocalContext.current
             HelpSupportScreen(
                 onBackClick = { navController.navigateUp() },
                 onContactSupport = {
-                    // Handle email support
+                    val mail = android.content.Intent(android.content.Intent.ACTION_SENDTO, android.net.Uri.parse("mailto:support@dollor.ai"))
+                        .putExtra(android.content.Intent.EXTRA_SUBJECT, "Dollor.ai Support")
+                    runCatching { ctx.startActivity(mail) }.onFailure {
+                        android.widget.Toast.makeText(ctx, "Email us at support@dollor.ai", android.widget.Toast.LENGTH_LONG).show()
+                    }
                 },
-                onChatWithUs = {
-                    // Handle chat support
-                },
+                onChatWithUs = { navController.navigate("support_chat") },
                 onCallSupport = {
-                    // Handle phone support
+                    ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:+18003655671")))
                 }
             )
+        }
+
+        composable("support_chat") {
+            com.eatfair.app.ui.help.SupportChatScreen(onBackClick = { navController.navigateUp() })
         }
 
         // Payment Methods Screen
         composable(Screen.PaymentMethods.route) {
             com.eatfair.app.ui.payment.PaymentMethodsScreen(
-                onBackClick = { navController.navigateUp() },
-                onAddCardClick = { /* TODO: Navigate to add card screen */ }
+                onBackClick = { navController.navigateUp() }
             )
         }
 

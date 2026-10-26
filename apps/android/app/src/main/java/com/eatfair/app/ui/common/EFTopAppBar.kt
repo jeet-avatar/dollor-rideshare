@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.common
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
@@ -50,7 +51,7 @@ fun EFTopAppBar(
         title = {
             Text(
                 text = title,
-                fontSize = 18.sp,
+                fontSize = Lx.FontSize.body,
                 fontWeight = FontWeight.SemiBold,
             )
         },
@@ -62,14 +63,14 @@ fun EFTopAppBar(
                     modifier = Modifier
                         .padding(start = 12.dp)
                         .background(
-                            color = Color.White,
-                            shape = RoundedCornerShape(8.dp)
+                            color = Lx.Surface,
+                            shape = RoundedCornerShape(Lx.Radius.chip)
                         ).size(38.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
                         contentDescription = "Back",
-                        tint = Color.Black,
+                        tint = Lx.Text,
                         modifier = Modifier.size(20.dp).padding(start = 4.dp)
                     )
                 }

@@ -5,7 +5,7 @@ import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.data.local.SecureStorage
 import com.eatfair.shared.model.rideshare.*
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -34,6 +34,9 @@ import java.util.concurrent.TimeUnit
  * - POST /api/erp/rides/{rideId}/customer-accept-fare - Accept driver fare
  */
 object CustomerRideshareApiService {
+    /** How long bidding stays open; sent to the server and used by the rider countdown. */
+    const val BIDDING_WINDOW_MINUTES = 5
+
 
     private const val TAG = "CustomerRideshareAPI"
 
@@ -64,7 +67,7 @@ object CustomerRideshareApiService {
         get() = _secureStorage?.customerToken
 
     /** Get customer ID from secure storage - matches iOS currentCustomerId */
-    private val currentCustomerId: Int?
+    val currentCustomerId: Int?
         get() = _secureStorage?.customerId?.takeIf { it > 0 }
 
     /** Check if customer is authenticated */
@@ -85,6 +88,7 @@ object CustomerRideshareApiService {
     val TIER_3_FEE get() = AppConfig.Rideshare.TIER_3_FEE
 
     private val client = OkHttpClient.Builder()
+        .addInterceptor(com.eatfair.shared.network.ApiTiming)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
@@ -127,10 +131,10 @@ object CustomerRideshareApiService {
     suspend fun createRideRequest(
         pickup: RideLocation,
         dropoff: RideLocation,
-        customerName: String,
-        customerPhone: String?,
         specialRequests: String?,
-        suggestedPrice: Double?
+        suggestedPrice: Double?,
+        accessibilityRequested: Boolean = false,
+        accessibilityNotes: String? = null
     ): Result<CreateRideResponse> = withContext(Dispatchers.IO) {
         try {
             val customerId = currentCustomerId
@@ -147,7 +151,7 @@ object CustomerRideshareApiService {
                 "dropoff_latitude" to dropoff.latitude,
                 "dropoff_longitude" to dropoff.longitude,
                 "ride_type" to "standard",
-                "bidding_duration_minutes" to 5
+                "bidding_duration_minutes" to BIDDING_WINDOW_MINUTES
             )
 
             // Add optional fields
@@ -156,6 +160,12 @@ object CustomerRideshareApiService {
             }
             if (suggestedPrice != null && suggestedPrice > 0) {
                 requestBody["customer_preferred_price"] = suggestedPrice
+            }
+            if (accessibilityRequested) {
+                requestBody["accessibility_requested"] = true
+                if (!accessibilityNotes.isNullOrBlank()) {
+                    requestBody["accessibility_notes"] = accessibilityNotes
+                }
             }
 
             Log.d(TAG, "Creating ride request for customer $customerId")
@@ -204,9 +214,7 @@ object CustomerRideshareApiService {
             val responseBody = response.body?.string()
 
             if (response.isSuccessful && responseBody != null) {
-                val type = object : TypeToken<List<CustomerRideRequest>>() {}.type
-                val requests: List<CustomerRideRequest> = gson.fromJson(responseBody, type)
-                Result.success(requests)
+                Result.success(gson.fromJson(responseBody, CustomerRequestsResponse::class.java).requests)
             } else {
                 Result.failure(Exception("Failed to fetch ride requests: ${response.code}"))
             }
@@ -231,8 +239,7 @@ object CustomerRideshareApiService {
             val responseBody = response.body?.string()
 
             if (response.isSuccessful && responseBody != null) {
-                val type = object : TypeToken<List<DriverBidForCustomer>>() {}.type
-                val bids: List<DriverBidForCustomer> = gson.fromJson(responseBody, type)
+                val bids = gson.fromJson(responseBody, BidsForRideResponse::class.java).bids
                 Result.success(bids)
             } else {
                 Result.failure(Exception("Failed to fetch bids: ${response.code}"))
@@ -566,6 +573,81 @@ object CustomerRideshareApiService {
         }
     }
 
+    // ---- Payment methods (iOS PaymentMethodsView parity) ----
+
+    private suspend fun cardCall(
+        path: String,
+        method: String,
+        body: String? = null
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val id = currentCustomerId ?: return@withContext Result.failure(Exception("Please log in"))
+            val builder = Request.Builder().url("$BASE_URL/api/customers/$id$path").withCustomerAuth()
+            when (method) {
+                "GET" -> builder.get()
+                "DELETE" -> builder.delete()
+                else -> builder.post((body ?: "{}").toRequestBody(jsonMediaType))
+            }
+            val response = client.newCall(builder.build()).execute()
+            val text = response.body?.string().orEmpty()
+            if (response.isSuccessful) Result.success(text)
+            else Result.failure(Exception(detailOf(text) ?: "Request failed (${response.code})"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun detailOf(body: String): String? =
+        runCatching { gson.fromJson(body, Map::class.java)["detail"] as? String }.getOrNull()
+
+    suspend fun getSavedCards(): Result<List<SavedCard>> =
+        cardCall("/cards", "GET").map { gson.fromJson(it, SavedCardsEnvelope::class.java).cards }
+
+    suspend fun deleteCard(cardId: String): Result<Unit> = cardCall("/cards/$cardId", "DELETE").map { }
+
+    suspend fun setDefaultCard(cardId: String): Result<Unit> = cardCall("/cards/$cardId/default", "POST").map { }
+
+    suspend fun createSetupIntent(): Result<SetupIntentResponse> =
+        cardCall("/stripe/setup-intent", "GET").map { gson.fromJson(it, SetupIntentResponse::class.java) }
+
+    /** POST /api/support/chat {message} → {"response": "..."} (iOS LiveChatView). */
+    suspend fun sendSupportChat(message: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("$BASE_URL/api/support/chat")
+                .post(gson.toJson(mapOf("message" to message)).toRequestBody(jsonMediaType))
+                .withCustomerAuth()
+                .build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string()
+            val reply = body?.let { gson.fromJson(it, Map::class.java)["response"] as? String }
+            if (response.isSuccessful && reply != null) Result.success(reply)
+            else Result.failure(Exception("Support chat unavailable (${response.code})"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** GET /api/customer/rides/history → {"rides":[...], "total", "has_more"} (iOS Trips tab). */
+    suspend fun getRideHistory(limit: Int = 30, offset: Int = 0): Result<RideHistoryResponse> = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("$BASE_URL/api/customer/rides/history?limit=$limit&offset=$offset")
+                .get()
+                .withCustomerAuth()
+                .build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string()
+            if (response.isSuccessful && body != null) {
+                Result.success(gson.fromJson(body, RideHistoryResponse::class.java))
+            } else {
+                Result.failure(Exception("Couldn't load your trips (${response.code})"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     /**
      * Fetch the itemized receipt for a completed ride request.
      * Production: GET /api/rides/request/{request_id}/receipt
@@ -582,7 +664,9 @@ object CustomerRideshareApiService {
             val responseBody = response.body?.string()
 
             if (response.isSuccessful && responseBody != null) {
-                Result.success(gson.fromJson(responseBody, RideReceipt::class.java))
+                gson.fromJson(responseBody, ReceiptEnvelope::class.java).toReceipt()
+                    ?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Receipt unavailable"))
             } else {
                 Log.e(TAG, "Failed to get receipt: ${response.code}")
                 Result.failure(Exception("Failed to get receipt: ${response.code}"))
@@ -633,6 +717,20 @@ object CustomerRideshareApiService {
      * Matches iOS: P2PAPIService.fetchRideChatMessages()
      * Production: GET /api/p2p/ride-requests/{id}/chat
      */
+    /** Accepts both {"messages":[...]} (current server) and a bare [...] array; never throws. */
+    private fun parseChatMessages(body: String): List<RideChatMessage> = try {
+        val root = com.google.gson.JsonParser.parseString(body)
+        val array = when {
+            root.isJsonArray -> root.asJsonArray
+            root.isJsonObject && root.asJsonObject.has("messages") -> root.asJsonObject.getAsJsonArray("messages")
+            else -> null
+        }
+        array?.map { gson.fromJson(it, RideChatMessage::class.java) } ?: emptyList()
+    } catch (e: Exception) {
+        Log.w(TAG, "Unparseable chat payload", e)
+        emptyList()
+    }
+
     suspend fun fetchChatMessages(rideRequestId: Int): Result<List<RideChatMessage>> = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
@@ -646,9 +744,7 @@ object CustomerRideshareApiService {
             val responseBody = response.body?.string()
 
             if (response.isSuccessful && responseBody != null) {
-                val type = object : TypeToken<List<RideChatMessage>>() {}.type
-                val messages: List<RideChatMessage> = gson.fromJson(responseBody, type)
-                Result.success(messages)
+                Result.success(parseChatMessages(responseBody))
             } else {
                 // Chat may not be available for rides - return empty list (matches iOS)
                 Result.success(emptyList())
@@ -706,18 +802,18 @@ object CustomerRideshareApiService {
     )
 
     data class FareEstimate(
-        val distanceMiles: Double,
-        val durationMinutes: Int,
+        @SerializedName("distance_miles") val distanceMiles: Double,
+        @SerializedName("duration_minutes") val durationMinutes: Int,
         val breakdown: FareBreakdown,
         val total: Double,
-        val platformFee: Double,
+        @SerializedName("platform_fee") val platformFee: Double,
         val tier: Int
     )
 
     data class FareBreakdown(
-        val baseFare: Double,
-        val distanceCost: Double,
-        val timeCost: Double
+        @SerializedName("base_fare") val baseFare: Double,
+        @SerializedName("distance_cost") val distanceCost: Double,
+        @SerializedName("time_cost") val timeCost: Double
     )
 
     /**
@@ -866,6 +962,21 @@ object CustomerRideshareApiService {
     }
 }
 
+/** GET /api/rides/request/{request_id}/bids */
+data class BidsForRideResponse(
+    val bids: List<DriverBidForCustomer> = emptyList()
+)
+
+/** GET /api/rides/customer/{customer_id}/requests */
+data class CustomerRequestsResponse(
+    val requests: List<CustomerRideRequest> = emptyList()
+)
+
+/** GET /api/p2p/ride-requests/{id}/chat */
+data class RideChatResponse(
+    val messages: List<RideChatMessage> = emptyList()
+)
+
 /**
  * Negotiation status response - matches iOS FareNegotiationResponse
  */
@@ -890,24 +1001,138 @@ data class FareNegotiationResponse(
     val acceptedFare: Double? = null
 )
 
-/**
- * Itemized receipt for a completed ride.
- * GET /api/rides/request/{request_id}/receipt
- * Fields are nullable so a partial backend payload still parses.
- */
+/** Itemized receipt shown on the receipt screen (mapped from [ReceiptEnvelope]). */
 data class RideReceipt(
-    @com.google.gson.annotations.SerializedName("ride_number") val rideNumber: String? = null,
-    @com.google.gson.annotations.SerializedName("ride_request_id") val rideRequestId: Int? = null,
-    @com.google.gson.annotations.SerializedName("date") val date: String? = null,
-    @com.google.gson.annotations.SerializedName("completed_at") val completedAt: String? = null,
-    @com.google.gson.annotations.SerializedName("pickup_address") val pickupAddress: String? = null,
-    @com.google.gson.annotations.SerializedName("dropoff_address") val dropoffAddress: String? = null,
-    @com.google.gson.annotations.SerializedName("distance_miles") val distanceMiles: Double? = null,
-    @com.google.gson.annotations.SerializedName("duration_minutes") val durationMinutes: Int? = null,
-    @com.google.gson.annotations.SerializedName("driver_name") val driverName: String? = null,
-    @com.google.gson.annotations.SerializedName("fare") val fare: Double? = null,
-    @com.google.gson.annotations.SerializedName("platform_fee") val platformFee: Double? = null,
-    @com.google.gson.annotations.SerializedName("tip") val tip: Double? = null,
-    @com.google.gson.annotations.SerializedName("total") val total: Double? = null,
-    @com.google.gson.annotations.SerializedName("payment_method") val paymentMethod: String? = null
+    val rideNumber: String? = null,
+    val rideRequestId: Int? = null,
+    val date: String? = null,
+    val completedAt: String? = null,
+    val pickupAddress: String? = null,
+    val dropoffAddress: String? = null,
+    val distanceMiles: Double? = null,
+    val durationMinutes: Int? = null,
+    val driverName: String? = null,
+    val vehicle: String? = null,
+    val fare: Double? = null,
+    val platformFee: Double? = null,
+    val accessForAllFee: Double? = null,
+    val tip: Double? = null,
+    val total: Double? = null,
+    val paymentMethod: String? = null,
+    val zeroTolerancePolicy: String? = null,
+    val cpucPhone: String? = null,
+    val cpucEmail: String? = null
+)
+
+/** GET /api/rides/request/{request_id}/receipt → {"receipt": {route, fare_breakdown, driver, ...}} */
+data class ReceiptEnvelope(val receipt: ReceiptBody? = null) {
+    data class ReceiptBody(
+        @SerializedName("ride_id") val rideId: Int? = null,
+        @SerializedName("request_id") val requestId: String? = null,
+        val route: Route? = null,
+        @SerializedName("fare_breakdown") val fare: Fare? = null,
+        val payment: Payment? = null,
+        val driver: Driver? = null,
+        val timestamps: Timestamps? = null,
+        val regulatory: Regulatory? = null
+    )
+    data class Route(
+        @SerializedName("pickup_address") val pickupAddress: String? = null,
+        @SerializedName("dropoff_address") val dropoffAddress: String? = null,
+        @SerializedName("distance_miles") val distanceMiles: Double? = null,
+        @SerializedName("duration_minutes") val durationMinutes: Int? = null
+    )
+    data class Fare(
+        @SerializedName("base_fare") val baseFare: Double? = null,
+        @SerializedName("platform_fee") val platformFee: Double? = null,
+        @SerializedName("access_for_all_customer_share") val accessForAll: Double? = null,
+        val tip: Double? = null,
+        val total: Double? = null
+    )
+    data class Payment(val status: String? = null)
+    data class Driver(val name: String? = null, val vehicle: String? = null)
+    data class Timestamps(
+        @SerializedName("requested_at") val requestedAt: String? = null,
+        @SerializedName("completed_at") val completedAt: String? = null
+    )
+    data class Regulatory(
+        @SerializedName("zero_tolerance_policy") val zeroTolerance: String? = null,
+        @SerializedName("cpuc_consumer_complaint") val cpuc: Cpuc? = null
+    )
+    data class Cpuc(val phone: String? = null, val email: String? = null)
+
+    /** Backend timestamps are naive UTC ISO strings; show them in the rider's local time. */
+    private fun formatUtc(iso: String?): String? = iso?.let {
+        runCatching {
+            java.time.LocalDateTime.parse(it)
+                .atZone(java.time.ZoneOffset.UTC)
+                .withZoneSameInstant(java.time.ZoneId.systemDefault())
+                .format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a"))
+        }.getOrDefault(it)
+    }
+
+    fun toReceipt(): RideReceipt? = receipt?.let { r ->
+        RideReceipt(
+            rideNumber = r.requestId,
+            rideRequestId = r.rideId,
+            date = formatUtc(r.timestamps?.requestedAt),
+            completedAt = formatUtc(r.timestamps?.completedAt),
+            pickupAddress = r.route?.pickupAddress,
+            dropoffAddress = r.route?.dropoffAddress,
+            distanceMiles = r.route?.distanceMiles,
+            durationMinutes = r.route?.durationMinutes,
+            driverName = r.driver?.name,
+            vehicle = r.driver?.vehicle,
+            fare = r.fare?.baseFare,
+            platformFee = r.fare?.platformFee,
+            accessForAllFee = r.fare?.accessForAll,
+            tip = r.fare?.tip,
+            total = r.fare?.total,
+            paymentMethod = when (r.payment?.status) {
+                null -> null
+                "demo" -> "Demo account (no charge)"
+                else -> "Card"
+            },
+            zeroTolerancePolicy = r.regulatory?.zeroTolerance,
+            cpucPhone = r.regulatory?.cpuc?.phone,
+            cpucEmail = r.regulatory?.cpuc?.email
+        )
+    }
+}
+
+data class RideHistoryResponse(
+    val rides: List<RideHistoryItem> = emptyList(),
+    val total: Int = 0,
+    @SerializedName("has_more") val hasMore: Boolean = false
+)
+
+data class RideHistoryItem(
+    val id: Int,
+    @SerializedName("request_id") val requestId: String? = null,
+    val pickup: String? = null,
+    val dropoff: String? = null,
+    val date: String? = null,
+    val fare: Double? = null,
+    @SerializedName("platform_fee") val platformFee: Double? = null,
+    val tip: Double? = null,
+    /** What the rider actually paid (server-computed, equals the receipt total). */
+    val total: Double? = null,
+    @SerializedName("driver_name") val driverName: String? = null,
+    val status: String? = null
+)
+
+data class SavedCardsEnvelope(val cards: List<SavedCard> = emptyList())
+
+data class SavedCard(
+    val id: String,
+    val brand: String? = null,
+    val last4: String? = null,
+    @SerializedName("exp_month") val expMonth: Int? = null,
+    @SerializedName("exp_year") val expYear: Int? = null,
+    @SerializedName("is_default") val isDefault: Boolean = false
+)
+
+data class SetupIntentResponse(
+    @SerializedName("client_secret") val clientSecret: String,
+    @SerializedName("publishable_key") val publishableKey: String? = null
 )

@@ -38,6 +38,7 @@ class RideRequestViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "RideRequestViewModel"
+        private val RESUMABLE_STATUSES = setOf("open", "bidding", "matched", "in_progress")
     }
 
     // ==========================================
@@ -59,10 +60,35 @@ class RideRequestViewModel @Inject constructor(
         if (CustomerRideshareApiService.isAuthenticated) {
             _isAuthenticated.value = true
             Log.d(TAG, "Customer authenticated via SecureStorage")
+            restoreActiveRide()
         } else {
             _isAuthenticated.value = false
             _authError.value = "Please log in to request a ride"
             Log.w(TAG, "Customer not authenticated - please log in")
+        }
+    }
+
+    /** Resume an open or in-flight ride after the app was closed or recreated. */
+    private fun restoreActiveRide() {
+        viewModelScope.launch {
+            CustomerRideshareApiService.getMyRideRequests().onSuccess { requests ->
+                val ride = requests
+                    .filter { it.status.lowercase() in RESUMABLE_STATUSES }
+                    .maxByOrNull { it.id } ?: return@onSuccess
+                if (_activeRideRequest.value != null) return@onSuccess
+                _activeRideRequest.value = ride
+                when (ride.status.lowercase()) {
+                    "open", "bidding" -> {
+                        _currentStep.value = RideStep.WAITING_FOR_BIDS
+                        startPollingForBids()
+                    }
+                    else -> {
+                        _selectedBid.value = ride.acceptedBid
+                        updateStepFromStatus(ride.status)
+                        startTrackingRide()
+                    }
+                }
+            }
         }
     }
 
@@ -107,6 +133,41 @@ class RideRequestViewModel @Inject constructor(
 
     private val _estimatedFare = MutableStateFlow(0.0)
     val estimatedFare: StateFlow<Double> = _estimatedFare.asStateFlow()
+
+    // TNC-12 accessibility request (mirrors iOS RideRequestViewModel)
+    private val _accessibilityRequested = MutableStateFlow(false)
+    val accessibilityRequested: StateFlow<Boolean> = _accessibilityRequested.asStateFlow()
+    private val _accessibilityOptions = MutableStateFlow<Set<String>>(emptySet())
+    val accessibilityOptions: StateFlow<Set<String>> = _accessibilityOptions.asStateFlow()
+    private val _accessibilityNotes = MutableStateFlow("")
+    val accessibilityNotes: StateFlow<String> = _accessibilityNotes.asStateFlow()
+
+    fun setAccessibilityRequested(requested: Boolean) {
+        _accessibilityRequested.value = requested
+        if (!requested) {
+            _accessibilityOptions.value = emptySet()
+            _accessibilityNotes.value = ""
+        }
+    }
+
+    fun toggleAccessibilityOption(key: String) {
+        val current = _accessibilityOptions.value
+        _accessibilityOptions.value = if (key in current) current - key else current + key
+    }
+
+    fun setAccessibilityNotes(notes: String) {
+        _accessibilityNotes.value = notes
+    }
+
+    /** Same JSON shape iOS sends: every option as a boolean plus optional free-text "notes". */
+    private fun structuredAccessibilityNotes(): String? {
+        if (!_accessibilityRequested.value) return null
+        val json = org.json.JSONObject()
+        ACCESSIBILITY_OPTION_KEYS.forEach { json.put(it, it in _accessibilityOptions.value) }
+        val freeText = _accessibilityNotes.value.trim()
+        if (freeText.isNotEmpty()) json.put("notes", freeText)
+        return json.toString()
+    }
 
     private val _suggestedPrice = MutableStateFlow<Double?>(null)
     val suggestedPrice: StateFlow<Double?> = _suggestedPrice.asStateFlow()
@@ -177,6 +238,7 @@ class RideRequestViewModel @Inject constructor(
     // ==========================================
 
     private var pollingJob: Job? = null
+    private val counteredBids = mutableMapOf<Int, DriverBidForCustomer>()
     private var trackingJob: Job? = null
     private var locationClient: FusedLocationProviderClient? = null
 
@@ -575,7 +637,7 @@ class RideRequestViewModel @Inject constructor(
     // CREATE RIDE REQUEST
     // ==========================================
 
-    fun createRideRequest(customerName: String, customerPhone: String?) {
+    fun createRideRequest() {
         if (!requireAuth()) return
 
         val pickup = _pickupLocation.value ?: run {
@@ -593,10 +655,10 @@ class RideRequestViewModel @Inject constructor(
             val result = CustomerRideshareApiService.createRideRequest(
                 pickup = pickup,
                 dropoff = dropoff,
-                customerName = customerName,
-                customerPhone = customerPhone,
                 specialRequests = null,
-                suggestedPrice = _suggestedPrice.value
+                suggestedPrice = _suggestedPrice.value,
+                accessibilityRequested = _accessibilityRequested.value,
+                accessibilityNotes = structuredAccessibilityNotes()
             )
 
             _isLoading.value = false
@@ -612,7 +674,10 @@ class RideRequestViewModel @Inject constructor(
                         estimatedDistanceKm = _estimatedDistance.value,
                         estimatedDurationMinutes = _estimatedDuration.value,
                         status = "open",
-                        bids = emptyList()
+                        bids = emptyList(),
+                        biddingExpiresAt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+                            .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+                            .format(java.util.Date(System.currentTimeMillis() + CustomerRideshareApiService.BIDDING_WINDOW_MINUTES * 60_000L))
                     )
                     _currentStep.value = RideStep.WAITING_FOR_BIDS
                     startPollingForBids()
@@ -648,11 +713,37 @@ class RideRequestViewModel @Inject constructor(
     private suspend fun fetchBids() {
         val rideRequest = _activeRideRequest.value ?: return
 
-        val result = CustomerRideshareApiService.getBidsForRide(rideRequest.id)
-        result.onSuccess { bids ->
-            _incomingBids.value = bids
-            if (bids.isNotEmpty() && _currentStep.value == RideStep.WAITING_FOR_BIDS) {
+        // The bids endpoint only lists pending bids; keep bids the rider countered
+        // visible until the driver answers (a driver re-counter returns it as pending).
+        CustomerRideshareApiService.getBidsForRide(rideRequest.id).onSuccess { bids ->
+            bids.forEach { counteredBids.remove(it.id) }
+            val merged = bids + counteredBids.values
+            _incomingBids.value = merged
+            if (merged.isNotEmpty() && _currentStep.value == RideStep.WAITING_FOR_BIDS) {
                 _currentStep.value = RideStep.VIEW_BIDS
+            }
+        }
+
+        // Detect the driver accepting a counter-offer, or the bidding window expiring.
+        CustomerRideshareApiService.trackRide(rideRequest.id).onSuccess { tracking ->
+            when (tracking.status.lowercase()) {
+                "matched", "accepted", "driver_en_route", "en_route" -> {
+                    _selectedBid.value = counteredBids.values.firstOrNull() ?: _selectedBid.value
+                    counteredBids.clear()
+                    stopPollingForBids()
+                    _rideTracking.value = tracking
+                    updateStepFromStatus(tracking.status)
+                    showSuccessMessage("A driver accepted your ride!")
+                    startTrackingRide()
+                }
+                "expired", "cancelled" -> {
+                    counteredBids.clear()
+                    stopPollingForBids()
+                    _incomingBids.value = emptyList()
+                    _activeRideRequest.value = null
+                    _currentStep.value = RideStep.CONFIRM_RIDE
+                    showErrorMessage("No driver accepted in time. Please request again, or try a higher offer.")
+                }
             }
         }
     }
@@ -712,12 +803,9 @@ class RideRequestViewModel @Inject constructor(
             result.onSuccess { response ->
                 if (response.success) {
                     showSuccessMessage("Counter-offer sent to driver!")
-                    // Update bid status in list
-                    _incomingBids.value = _incomingBids.value.map {
-                        if (it.id == bid.id) {
-                            it.copy(status = "countered")
-                        } else it
-                    }
+                    val countered = bid.copy(status = "countered", customerCounterPrice = counterPrice)
+                    counteredBids[bid.id] = countered
+                    _incomingBids.value = _incomingBids.value.map { if (it.id == bid.id) countered else it }
                 } else {
                     showErrorMessage(response.message)
                 }
@@ -766,6 +854,12 @@ class RideRequestViewModel @Inject constructor(
                 submitTip()
                 stopTrackingRide()
             }
+            "cancelled", "expired" -> {
+                if (_currentStep.value in setOf(RideStep.MATCHED, RideStep.DRIVER_EN_ROUTE, RideStep.RIDE_IN_PROGRESS)) {
+                    showErrorMessage("Your ride was cancelled. You can request a new ride anytime.")
+                    resetRide()
+                }
+            }
         }
     }
 
@@ -801,6 +895,8 @@ class RideRequestViewModel @Inject constructor(
     // ==========================================
 
     fun resetRide() {
+        _ratingSubmitted.value = false
+        setAccessibilityRequested(false)
         stopPollingForBids()
         stopTrackingRide()
         _pickupLocation.value = null
@@ -811,6 +907,7 @@ class RideRequestViewModel @Inject constructor(
         _suggestedPrice.value = null
         _activeRideRequest.value = null
         _incomingBids.value = emptyList()
+        counteredBids.clear()
         _rideTracking.value = null
         _selectedBid.value = null
         _currentStep.value = RideStep.SELECT_PICKUP
@@ -894,3 +991,5 @@ class RideRequestViewModel @Inject constructor(
         stopTrackingRide()
     }
 }
+
+val ACCESSIBILITY_OPTION_KEYS = listOf("wheelchair", "service_animal", "mobility_storage", "audio_visual")

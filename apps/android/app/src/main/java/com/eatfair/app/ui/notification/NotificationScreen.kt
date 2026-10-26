@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.notification
 
+import com.eatfair.shared.ui.Lx
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,8 +66,8 @@ fun NotificationScreen(
                 TextButton(onClick = onClearAllClick) {
                     Text(
                         text = "Clear All",
-                        color = Color(0xFF8B5CF6),
-                        fontSize = 14.sp
+                        color = Lx.Orange,
+                        fontSize = Lx.FontSize.footnote
                     )
                 }
             } else {
@@ -77,9 +78,9 @@ fun NotificationScreen(
 //            title = {
 //                Text(
 //                    text = "Notifications",
-//                    fontSize = 18.sp,
+//                    fontSize = Lx.FontSize.body,
 //                    fontWeight = FontWeight.SemiBold,
-//                    color = Color.Black,
+//                    color = Lx.Text,
 //                    modifier = Modifier.fillMaxWidth(),
 //                    textAlign = TextAlign.Center
 //                )
@@ -89,7 +90,7 @@ fun NotificationScreen(
 //                    Icon(
 //                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
 //                        contentDescription = "Back",
-//                        tint = Color.Black
+//                        tint = Lx.Text
 //                    )
 //                }
 //            },
@@ -97,7 +98,7 @@ fun NotificationScreen(
 //
 //            },
 //            colors = TopAppBarDefaults.topAppBarColors(
-//                containerColor = Color(0xFFFFF5F7)
+//                containerColor = Lx.Surface2
 //            )
 //        )
 
@@ -117,15 +118,15 @@ fun NotificationScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "No Notifications Yet",
-                    fontSize = 20.sp,
+                    fontSize = Lx.FontSize.title,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Lx.Text
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "When you get notifications, they'll show up here",
-                    fontSize = 14.sp,
-                    color = Color.Gray,
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary,
                     textAlign = TextAlign.Center
                 )
             }
@@ -167,9 +168,9 @@ fun NotificationCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = if (notification.isRead) Color.White else Color(0xFFF3E8FF)
+            containerColor = if (notification.isRead) Lx.Surface else Lx.OrangeTint
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(Lx.Radius.button)
     ) {
         Row(
             modifier = Modifier
@@ -180,12 +181,12 @@ fun NotificationCard(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFF8B5CF6), CircleShape),
+                    .background(Lx.Orange, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "🍕",
-                    fontSize = 20.sp
+                    fontSize = Lx.FontSize.title
                 )
             }
 
@@ -196,22 +197,22 @@ fun NotificationCard(
             ) {
                 Text(
                     text = notification.title,
-                    fontSize = 15.sp,
+                    fontSize = Lx.FontSize.subheadline,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = Lx.Text
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = notification.message,
-                    fontSize = 13.sp,
-                    color = Color.Gray,
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary,
                     maxLines = 2
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = notification.time,
-                    fontSize = 12.sp,
-                    color = Color.Gray
+                    fontSize = Lx.FontSize.caption,
+                    color = Lx.TextSecondary
                 )
             }
         }

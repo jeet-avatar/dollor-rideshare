@@ -1,13 +1,16 @@
 package com.eatfair.app.ui.main
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -55,8 +58,16 @@ private val profileNavItem = BottomNavItem(
     route = "profile"
 )
 
+private val tripsNavItem = BottomNavItem(
+    title = "Trips",
+    selectedIcon = Icons.Filled.Receipt,
+    unselectedIcon = Icons.Outlined.Receipt,
+    route = "trips"
+)
+
 private val visibleTabs: List<Pair<Int, BottomNavItem>> = listOf(
     0 to rideNavItem,
+    1 to tripsNavItem,
     4 to profileNavItem
 )
 
@@ -71,6 +82,7 @@ fun MainScreen(
     onSettingsClick: () -> Unit,
     onHelpSupportClick: () -> Unit,
     onPaymentMethodClick: () -> Unit,
+    onFoundingMemberClick: () -> Unit = {},
     onWhatDriversSeeClick: () -> Unit,
     onYourPrivacyClick: () -> Unit,
     onSafetyFeaturesClick: () -> Unit,
@@ -82,7 +94,7 @@ fun MainScreen(
     Scaffold(
         bottomBar = {
             NavigationBar(
-                containerColor = Color.White,
+                containerColor = Lx.Surface,
                 contentColor = BrandGreen
             ) {
                 visibleTabs.forEach { (index, item) ->
@@ -98,15 +110,15 @@ fun MainScreen(
                         label = {
                             Text(
                                 text = item.title,
-                                fontSize = 11.sp,
+                                fontSize = Lx.FontSize.caption,
                                 fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.Normal
                             )
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = BrandGreen,
                             selectedTextColor = BrandGreen,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray,
+                            unselectedIconColor = Lx.TextSecondary,
+                            unselectedTextColor = Lx.TextSecondary,
                             indicatorColor = BrandGreen.copy(alpha = 0.1f)
                         )
                     )
@@ -129,6 +141,7 @@ fun MainScreen(
                         onNavigateToChat = onRideChatClick
                     )
                 }
+                1 -> com.eatfair.app.ui.trips.TripsScreen()
                 4 -> {
                     // Profile Tab
                     ProfileScreen(
@@ -140,6 +153,7 @@ fun MainScreen(
                         onSavedAddressClick = onSavedAddressClick,
                         onSettingsClick = onSettingsClick,
                         onPaymentMethodClick = onPaymentMethodClick,
+                        onFoundingMemberClick = onFoundingMemberClick,
                         onHelpSupportClick = onHelpSupportClick,
                         onWhatDriversSeeClick = onWhatDriversSeeClick,
                         onYourPrivacyClick = onYourPrivacyClick,

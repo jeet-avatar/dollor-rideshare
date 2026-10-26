@@ -60,13 +60,13 @@ import androidx.compose.ui.unit.sp
  * As a P2P matchmaking platform, Dollor is subject to CCPA/CPRA privacy requirements.
  */
 
-private val PrimaryBlue = Color(0xFF3B82F6)
-private val PrimaryGreen = Color(0xFF10B981)
-private val ErrorRed = Color(0xFFEF4444)
-private val BackgroundGray = Color(0xFFF8FAFC)
+private val PrimaryBlue = Lx.Orange
+private val PrimaryGreen = Lx.Orange
+private val ErrorRed = Lx.Error
+private val BackgroundGray = Lx.Surface2
 private val CardWhite = Color.White
-private val TextPrimary = Color(0xFF1F2937)
-private val TextSecondary = Color(0xFF6B7280)
+private val TextPrimary = Lx.Text
+private val TextSecondary = Lx.TextSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,7 +115,7 @@ fun CCPAPrivacyRightsScreen(
 
             Text(
                 text = "Your California Privacy Rights",
-                fontSize = 24.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
                 textAlign = TextAlign.Center,
@@ -124,7 +124,7 @@ fun CCPAPrivacyRightsScreen(
 
             Text(
                 text = "CCPA & CPRA Consumer Rights",
-                fontSize = 14.sp,
+                fontSize = Lx.FontSize.footnote,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -134,7 +134,7 @@ fun CCPAPrivacyRightsScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { onDoNotSellClick() },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = CardDefaults.cardColors(containerColor = ErrorRed.copy(alpha = 0.05f))
             ) {
                 Row(
@@ -142,16 +142,16 @@ fun CCPAPrivacyRightsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
-                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)).background(ErrorRed.copy(alpha = 0.1f)),
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(Lx.Radius.chip)).background(ErrorRed.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Block, null, tint = ErrorRed, modifier = Modifier.size(24.dp))
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Do Not Sell or Share My Personal Information", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                        Text("Do Not Sell or Share My Personal Information", fontSize = Lx.FontSize.subheadline, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text("Opt out of the sale or sharing of your data", fontSize = 13.sp, color = TextSecondary)
+                        Text("Opt out of the sale or sharing of your data", fontSize = Lx.FontSize.footnote, color = TextSecondary)
                     }
                     Icon(Icons.AutoMirrored.Filled.OpenInNew, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
                 }
@@ -161,7 +161,7 @@ fun CCPAPrivacyRightsScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = CardDefaults.cardColors(containerColor = PrimaryGreen.copy(alpha = 0.1f))
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
@@ -172,7 +172,7 @@ fun CCPAPrivacyRightsScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             "We do NOT sell your personal information to third parties. Your data is used only to provide and improve our peer-to-peer matchmaking services.",
-                            fontSize = 13.sp, color = TextSecondary, lineHeight = 18.sp
+                            fontSize = Lx.FontSize.footnote, color = TextSecondary, lineHeight = 18.sp
                         )
                     }
                 }
@@ -180,7 +180,7 @@ fun CCPAPrivacyRightsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Your CCPA/CPRA Rights", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text("Your CCPA/CPRA Rights", fontSize = Lx.FontSize.callout, fontWeight = FontWeight.Bold, color = TextPrimary)
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -197,43 +197,43 @@ fun CCPAPrivacyRightsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = CardWhite)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Lx.Radius.button), colors = CardDefaults.cardColors(containerColor = CardWhite)) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
                     Icon(Icons.Default.Schedule, null, tint = PrimaryBlue, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text("Response Timeframe", fontWeight = FontWeight.Bold, color = TextPrimary)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("We will respond to your request within 45 days. If additional time is needed, we will notify you of the extension (up to 45 additional days).", fontSize = 13.sp, color = TextSecondary, lineHeight = 18.sp)
+                        Text("We will respond to your request within 45 days. If additional time is needed, we will notify you of the extension (up to 45 additional days).", fontSize = Lx.FontSize.footnote, color = TextSecondary, lineHeight = 18.sp)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = CardWhite)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Lx.Radius.button), colors = CardDefaults.cardColors(containerColor = CardWhite)) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
                     Icon(Icons.Default.Balance, null, tint = PrimaryGreen, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text("No Discrimination", fontWeight = FontWeight.Bold, color = TextPrimary)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("You will not be discriminated against for exercising your privacy rights. We will not deny services, charge different prices, or provide different quality based on your privacy choices.", fontSize = 13.sp, color = TextSecondary, lineHeight = 18.sp)
+                        Text("You will not be discriminated against for exercising your privacy rights. We will not deny services, charge different prices, or provide different quality based on your privacy choices.", fontSize = Lx.FontSize.footnote, color = TextSecondary, lineHeight = 18.sp)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.1f))) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Lx.Radius.button), colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.1f))) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Questions About Your Privacy Rights?", fontWeight = FontWeight.Bold, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Contact our Privacy Team:", fontSize = 13.sp, color = TextSecondary)
+                    Text("Contact our Privacy Team:", fontSize = Lx.FontSize.footnote, color = TextSecondary)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "privacy@dollor.ai",
-                        fontSize = 14.sp,
+                        fontSize = Lx.FontSize.footnote,
                         fontWeight = FontWeight.Medium,
                         color = PrimaryBlue,
                         textDecoration = TextDecoration.Underline,
@@ -251,22 +251,22 @@ fun CCPAPrivacyRightsScreen(
 
 @Composable
 private fun PrivacyRightCard(icon: ImageVector, title: String, description: String, actionText: String, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = CardWhite)) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Lx.Radius.button), colors = CardDefaults.cardColors(containerColor = CardWhite)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(PrimaryBlue.copy(alpha = 0.1f)),
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(Lx.Radius.chip)).background(PrimaryBlue.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                Text(title, fontSize = Lx.FontSize.subheadline, fontWeight = FontWeight.SemiBold, color = TextPrimary)
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(description, fontSize = 13.sp, color = TextSecondary, lineHeight = 18.sp)
+            Text(description, fontSize = Lx.FontSize.footnote, color = TextSecondary, lineHeight = 18.sp)
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
+            OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Lx.Radius.chip)) {
                 Text(actionText)
             }
         }

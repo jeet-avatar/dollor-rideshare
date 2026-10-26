@@ -49,13 +49,14 @@ android {
         applicationId = "ai.dollor.driver"
         minSdk = 24
         targetSdk = 36
-        versionCode = 261022
+        versionCode = 261024
         versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // API Keys from local.properties
         buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"${localProperties.getProperty("STRIPE_PUBLISHABLE_KEY", "")}\"")
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = localProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
 
         // App name
         resValue("string", "app_name", "Dollor Driver")

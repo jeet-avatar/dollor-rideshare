@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.tip
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -54,7 +55,7 @@ fun TipDriverScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = Lx.Surface
                 )
             )
         }
@@ -63,7 +64,7 @@ fun TipDriverScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.White)
+                .background(Lx.Surface)
         ) {
             Column(
                 modifier = Modifier
@@ -76,14 +77,14 @@ fun TipDriverScreen(
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF4CAF50).copy(alpha = 0.1f)),
+                        .background(Lx.Success.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = driverName.firstOrNull()?.toString() ?: "D",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4CAF50)
+                        color = Lx.Success
                     )
                 }
 
@@ -91,15 +92,15 @@ fun TipDriverScreen(
 
                 Text(
                     text = "$driverName delivered your order!",
-                    fontSize = 20.sp,
+                    fontSize = Lx.FontSize.title,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
 
                 Text(
                     text = "100% of your tip goes directly to the driver",
-                    fontSize = 14.sp,
-                    color = Color.Gray,
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary,
                     textAlign = TextAlign.Center
                 )
 
@@ -108,8 +109,8 @@ fun TipDriverScreen(
                 // Suggested Tip Amounts
                 Text(
                     text = "Select a tip amount",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -142,13 +143,13 @@ fun TipDriverScreen(
                         selectedTipAmount = null
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (showCustomInput) Color(0xFF4CAF50).copy(alpha = 0.1f) else Color.Transparent
+                        containerColor = if (showCustomInput) Lx.Success.copy(alpha = 0.1f) else Color.Transparent
                     ),
                     border = ButtonDefaults.outlinedButtonBorder.copy(
                         brush = if (showCustomInput)
-                            androidx.compose.ui.graphics.SolidColor(Color(0xFF4CAF50))
+                            androidx.compose.ui.graphics.SolidColor(Lx.Success)
                         else
                             ButtonDefaults.outlinedButtonBorder.brush
                     )
@@ -179,17 +180,17 @@ fun TipDriverScreen(
                             Text(
                                 "$",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp
+                                fontSize = Lx.FontSize.title
                             )
                         },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Decimal
                         ),
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF4CAF50),
-                            focusedLabelColor = Color(0xFF4CAF50)
+                            focusedBorderColor = Lx.Success,
+                            focusedLabelColor = Lx.Success
                         )
                     )
                 }
@@ -199,9 +200,9 @@ fun TipDriverScreen(
                 // Info Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFF5F5F5)
+                        containerColor = Lx.Surface2
                     )
                 ) {
                     Row(
@@ -213,7 +214,7 @@ fun TipDriverScreen(
                         Icon(
                             Icons.Default.Favorite,
                             contentDescription = null,
-                            tint = Color(0xFFE91E63),
+                            tint = Lx.OrangeBright,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
@@ -221,12 +222,12 @@ fun TipDriverScreen(
                             Text(
                                 text = "Tips make a difference",
                                 fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp
+                                fontSize = Lx.FontSize.footnote
                             )
                             Text(
                                 text = "Your generosity helps drivers earn a fair income",
-                                fontSize = 12.sp,
-                                color = Color.Gray
+                                fontSize = Lx.FontSize.caption,
+                                color = Lx.TextSecondary
                             )
                         }
                     }
@@ -241,7 +242,7 @@ fun TipDriverScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White)
+                        .background(Lx.Surface)
                         .padding(16.dp)
                 ) {
                     if (finalTipAmount != null && finalTipAmount > 0) {
@@ -249,12 +250,12 @@ fun TipDriverScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Tip amount", color = Color.Gray)
+                            Text("Tip amount", color = Lx.TextSecondary)
                             Text(
                                 "$${String.format("%.2f", finalTipAmount)}",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = Color(0xFF4CAF50)
+                                fontSize = Lx.FontSize.body,
+                                color = Lx.Success
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
@@ -268,9 +269,9 @@ fun TipDriverScreen(
                             .fillMaxWidth()
                             .height(52.dp),
                         enabled = finalTipAmount != null && finalTipAmount > 0,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4CAF50)
+                            containerColor = Lx.Success
                         )
                     ) {
                         Text(
@@ -286,7 +287,7 @@ fun TipDriverScreen(
                         onClick = onBackClick,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Skip", color = Color.Gray)
+                        Text("Skip", color = Lx.TextSecondary)
                     }
                 }
             }
@@ -309,9 +310,9 @@ fun TipCard(
 ) {
     Card(
         modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(Lx.Radius.button),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFF4CAF50) else Color(0xFFF5F5F5)
+            containerColor = if (isSelected) Lx.Success else Lx.Surface2
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isSelected) 4.dp else 0.dp
@@ -325,14 +326,14 @@ fun TipCard(
         ) {
             Text(
                 text = "$${"%.0f".format(amount)}",
-                fontSize = 20.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White else Color.Black
+                color = if (isSelected) Color.White else Lx.Text
             )
             Text(
                 text = label,
-                fontSize = 11.sp,
-                color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color.Gray
+                fontSize = Lx.FontSize.caption,
+                color = if (isSelected) Color.White.copy(alpha = 0.8f) else Lx.TextSecondary
             )
         }
     }

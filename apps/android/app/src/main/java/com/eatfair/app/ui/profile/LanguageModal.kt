@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.profile
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,16 +47,16 @@ fun LanguageScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFF5F7))
+            .background(Lx.Surface2)
     ) {
         // Top App Bar
         TopAppBar(
             title = {
                 Text(
                     text = "Language",
-                    fontSize = 18.sp,
+                    fontSize = Lx.FontSize.body,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black,
+                    color = Lx.Text,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -65,7 +66,7 @@ fun LanguageScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.Black
+                        tint = Lx.Text
                     )
                 }
             },
@@ -73,7 +74,7 @@ fun LanguageScreen(
                 Spacer(modifier = Modifier.width(48.dp))
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFFFFF5F7)
+                containerColor = Lx.Surface2
             )
         )
 
@@ -87,8 +88,8 @@ fun LanguageScreen(
 
             Text(
                 text = "Select your preferred language",
-                fontSize = 14.sp,
-                color = Color.Gray,
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -115,9 +116,9 @@ fun LanguageItem(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = if (language.isSelected) Color(0xFFF3E8FF) else Color.White
+            containerColor = if (language.isSelected) Lx.OrangeTint else Lx.Surface
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(Lx.Radius.button)
     ) {
         Row(
             modifier = Modifier
@@ -129,15 +130,15 @@ fun LanguageItem(
             Column {
                 Text(
                     text = language.name,
-                    fontSize = 15.sp,
+                    fontSize = Lx.FontSize.subheadline,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = Lx.Text
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = language.nativeName,
-                    fontSize = 13.sp,
-                    color = Color.Gray
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary
                 )
             }
 
@@ -145,7 +146,7 @@ fun LanguageItem(
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = "Selected",
-                    tint = Color(0xFF8B5CF6),
+                    tint = Lx.Orange,
                     modifier = Modifier.size(24.dp)
                 )
             }

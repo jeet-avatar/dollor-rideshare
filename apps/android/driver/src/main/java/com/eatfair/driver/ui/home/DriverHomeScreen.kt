@@ -1,6 +1,13 @@
 package com.eatfair.driver.ui.home
 
+import com.eatfair.shared.ui.Lx
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -23,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.eatfair.driver.ui.theme.DollorDriverColors
-import com.eatfair.shared.model.rideshare.RideRequestForBidding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +56,66 @@ fun DriverHomeScreen(
     }
 
     val isOnline = uiState.isOnline
+
+    fun hasLocation() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+        PackageManager.PERMISSION_GRANTED
+    var showLocationRationale by remember { mutableStateOf(false) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { granted ->
+        if (granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        ) {
+            viewModel.setOnline(true)
+        } else {
+            Toast.makeText(context, "Location is required to receive nearby ride requests", Toast.LENGTH_LONG).show()
+        }
+    }
+    fun requestGoOnline() {
+        if (hasLocation()) viewModel.setOnline(true) else showLocationRationale = true
+    }
+    LaunchedEffect(isOnline) {
+        if (isOnline && hasLocation()) viewModel.onLocationPermissionGranted()
+    }
+
+    if (showLocationRationale) {
+        AlertDialog(
+            onDismissRequest = { showLocationRationale = false },
+            title = { Text("Share your location while online") },
+            text = {
+                Text(
+                    "Dollor Driver uses your location while you're online and the app is open to show " +
+                        "nearby ride requests, your distance to pickup, and your live position to your rider. " +
+                        "Location is not collected when you're offline."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLocationRationale = false
+                    val perms = mutableListOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                    if (Build.VERSION.SDK_INT >= 33) perms += Manifest.permission.POST_NOTIFICATIONS
+                    permissionLauncher.launch(perms.toTypedArray())
+                }) { Text("Continue") }
+            },
+            dismissButton = { TextButton(onClick = { showLocationRationale = false }) { Text("Not now") } }
+        )
+    }
+
+    uiState.completedRide?.let { done ->
+        TripSummaryDialog(ride = done, onRate = { r, c -> viewModel.rateRider(r, c) }, onSkip = { viewModel.dismissSummary() })
+    }
+    val chatRide = uiState.activeRide
+    if (uiState.chatOpen && chatRide != null) {
+        RideChatSheet(
+            riderName = chatRide.customerName,
+            messages = uiState.chatMessages,
+            onSend = { viewModel.sendChat(it) },
+            onDismiss = { viewModel.closeChat() }
+        )
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -101,7 +167,7 @@ fun DriverHomeScreen(
                     )
                     Switch(
                         checked = isOnline,
-                        onCheckedChange = { target -> viewModel.setOnline(target) },
+                        onCheckedChange = { target -> if (target) requestGoOnline() else viewModel.setOnline(false) },
                         enabled = !uiState.isToggling,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = DollorDriverColors.White,
@@ -114,12 +180,26 @@ fun DriverHomeScreen(
             }
         }
 
-        // Status Card
-        item {
+        uiState.activeRide?.let { ride ->
+            item(key = "active-ride") {
+                ActiveRidePanel(
+                    ride = ride,
+                    isBusy = uiState.isRideActionInProgress,
+                    onArrived = { viewModel.markArrived() },
+                    onStart = { viewModel.startRide() },
+                    onComplete = { viewModel.completeRide() },
+                    onCancel = { viewModel.cancelRide(it) },
+                    onNoShow = { viewModel.markNoShow() },
+                    onChat = { viewModel.openChat() }
+                )
+            }
+        }
+
+        if (uiState.activeRide == null) item(key = "status-card") {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+                shape = RoundedCornerShape(Lx.Radius.sheet),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
                 Box(
                     modifier = Modifier
@@ -217,19 +297,7 @@ fun DriverHomeScreen(
                     onClick = {
                         val ride = uiState.activeRide
                         if (ride != null) {
-                            val label = Uri.encode(ride.pickup.address)
-                            val uri = Uri.parse(
-                                "geo:${ride.pickup.latitude},${ride.pickup.longitude}?q=" +
-                                    "${ride.pickup.latitude},${ride.pickup.longitude}($label)"
-                            )
-                            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-                                setPackage("com.google.android.apps.maps")
-                            }
-                            if (intent.resolveActivity(context.packageManager) != null) {
-                                context.startActivity(intent)
-                            } else {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-                            }
+                            launchNavigation(context, if (ride.isInProgress) ride.dropoff else ride.pickup)
                         } else {
                             Toast.makeText(context, "No active ride to navigate", Toast.LENGTH_SHORT).show()
                         }
@@ -260,11 +328,11 @@ fun DriverHomeScreen(
             }
         }
 
-        // Active Ride
-        item {
+        // Recent activity (the active ride, when present, is pinned to the top)
+        if (uiState.activeRide == null) item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = if (uiState.activeRide != null) "Active Ride" else "Recent Activity",
+                text = "Recent Activity",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
@@ -272,21 +340,12 @@ fun DriverHomeScreen(
             )
         }
 
-        item {
-            val ride = uiState.activeRide
-            if (ride != null) {
-                ActiveRideCard(
-                    ride = ride,
-                    isActionInProgress = uiState.isRideActionInProgress,
-                    onArrived = { viewModel.markArrived() },
-                    onStart = { viewModel.startRide() },
-                    onComplete = { viewModel.completeRide() }
-                )
-            } else {
+        if (uiState.activeRide == null) item {
+            run {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+                    shape = RoundedCornerShape(Lx.Radius.card),
+                    colors = CardDefaults.cardColors(containerColor = Lx.Surface)
                 ) {
                     Column(
                         modifier = Modifier
@@ -319,116 +378,6 @@ fun DriverHomeScreen(
 }
 
 @Composable
-private fun ActiveRideCard(
-    ride: RideRequestForBidding,
-    isActionInProgress: Boolean,
-    onArrived: () -> Unit,
-    onStart: () -> Unit,
-    onComplete: () -> Unit
-) {
-    val status = ride.status ?: ""
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.TripOrigin,
-                    contentDescription = null,
-                    tint = DollorDriverColors.Blue,
-                    modifier = Modifier.size(20.dp)
-                )
-                Column {
-                    Text("Pickup", style = MaterialTheme.typography.bodySmall, color = DollorDriverColors.Gray500)
-                    Text(
-                        ride.pickup.address,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DollorDriverColors.Gray900
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = DollorDriverColors.Orange,
-                    modifier = Modifier.size(20.dp)
-                )
-                Column {
-                    Text("Dropoff", style = MaterialTheme.typography.bodySmall, color = DollorDriverColors.Gray500)
-                    Text(
-                        ride.dropoff.address,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DollorDriverColors.Gray900
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Status-driven actions. MATCHED -> arrived then start; IN_PROGRESS -> complete.
-            when (status.lowercase()) {
-                "in_progress" -> {
-                    Button(
-                        onClick = onComplete,
-                        enabled = !isActionInProgress,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Green)
-                    ) { ActionButtonContent(isActionInProgress, "Complete Ride") }
-                }
-                else -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = onArrived,
-                            enabled = !isActionInProgress,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) { Text("Arrived") }
-                        Button(
-                            onClick = onStart,
-                            enabled = !isActionInProgress,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue)
-                        ) { ActionButtonContent(isActionInProgress, "Start Ride") }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActionButtonContent(loading: Boolean, label: String) {
-    if (loading) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(20.dp),
-            color = DollorDriverColors.White,
-            strokeWidth = 2.dp
-        )
-    } else {
-        Text(label, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
 fun StatCard(
     modifier: Modifier = Modifier,
     icon: ImageVector,
@@ -438,8 +387,8 @@ fun StatCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
     ) {
         Column(
             modifier = Modifier
@@ -487,8 +436,8 @@ fun QuickActionCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White),
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
         onClick = onClick
     ) {
         Column(

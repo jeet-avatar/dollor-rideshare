@@ -1,5 +1,7 @@
 package com.eatfair.app.ui.help
 
+import com.eatfair.shared.config.AppConfig
+import com.eatfair.shared.ui.Lx
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -89,7 +91,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "5",
                 "What are platform fees?",
-                "Dollor.ai charges transparent, low platform fees:\n• Tier 1 (up to \$35): \$1 platform fee\n• Tier 2 (\$35.01-\$70): \$2 platform fee\n• Tier 3 (over \$70): \$3 platform fee\n\n100% of tips go directly to drivers.",
+                "Dollor.ai charges transparent, low platform fees:\n" + AppConfig.Rideshare.tierLines.joinToString("\n") { "• $it" } + "\n\n100% of tips go directly to drivers.",
                 "Payments"
             ),
             FAQItem(
@@ -148,8 +150,8 @@ fun HelpSupportScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = Lx.Surface,
+                    titleContentColor = Lx.Text
                 )
             )
         }
@@ -158,7 +160,7 @@ fun HelpSupportScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF8F8F8)),
+                .background(Lx.Surface2),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -170,7 +172,7 @@ fun HelpSupportScreen(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Search help articles...") },
                     leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.Default.Search, contentDescription = null, tint = Lx.TextSecondary)
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
@@ -179,12 +181,12 @@ fun HelpSupportScreen(
                             }
                         }
                     },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFFF6B35),
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        unfocusedContainerColor = Color.White,
-                        focusedContainerColor = Color.White
+                        focusedBorderColor = Lx.Orange,
+                        unfocusedBorderColor = Lx.Hairline,
+                        unfocusedContainerColor = Lx.Surface,
+                        focusedContainerColor = Lx.Surface
                     ),
                     singleLine = true
                 )
@@ -194,17 +196,17 @@ fun HelpSupportScreen(
             item {
                 Text(
                     text = "Contact Us",
-                    fontSize = 18.sp,
+                    fontSize = Lx.FontSize.body,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = Lx.Text
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    shape = RoundedCornerShape(Lx.Radius.button),
+                    colors = CardDefaults.cardColors(containerColor = Lx.Surface)
                 ) {
                     Column {
                         supportOptions.forEachIndexed { index, option ->
@@ -212,7 +214,7 @@ fun HelpSupportScreen(
                             if (index < supportOptions.lastIndex) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(start = 60.dp),
-                                    color = Color(0xFFE0E0E0)
+                                    color = Lx.Hairline
                                 )
                             }
                         }
@@ -224,9 +226,9 @@ fun HelpSupportScreen(
             item {
                 Text(
                     text = "Frequently Asked Questions",
-                    fontSize = 18.sp,
+                    fontSize = Lx.FontSize.body,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = Lx.Text
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -242,9 +244,9 @@ fun HelpSupportScreen(
                         FilterChip(
                             selected = selectedCategory == category,
                             onClick = { selectedCategory = category },
-                            label = { Text(category, fontSize = 12.sp) },
+                            label = { Text(category, fontSize = Lx.FontSize.caption) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFFFF6B35),
+                                selectedContainerColor = Lx.Orange,
                                 selectedLabelColor = Color.White
                             )
                         )
@@ -269,9 +271,9 @@ fun HelpSupportScreen(
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFF6B35).copy(alpha = 0.1f)
+                        containerColor = Lx.Orange.copy(alpha = 0.1f)
                     )
                 ) {
                     Column(
@@ -284,31 +286,31 @@ fun HelpSupportScreen(
                             Icons.Default.SupportAgent,
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
-                            tint = Color(0xFFFF6B35)
+                            tint = Lx.Orange
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
                             text = "Still need help?",
-                            fontSize = 18.sp,
+                            fontSize = Lx.FontSize.body,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
+                            color = Lx.Text
                         )
 
                         Text(
                             text = "Our support team is available 24/7",
-                            fontSize = 14.sp,
-                            color = Color.Gray
+                            fontSize = Lx.FontSize.footnote,
+                            color = Lx.TextSecondary
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Button(
                             onClick = onChatWithUs,
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(Lx.Radius.chip),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFFF6B35)
+                                containerColor = Lx.Orange
                             )
                         ) {
                             Icon(
@@ -342,13 +344,13 @@ fun SupportOptionRow(option: SupportOption) {
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFFF6B35).copy(alpha = 0.1f)),
+                .background(Lx.Orange.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 option.icon,
                 contentDescription = null,
-                tint = Color(0xFFFF6B35),
+                tint = Lx.Orange,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -356,21 +358,21 @@ fun SupportOptionRow(option: SupportOption) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = option.title,
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.Medium,
-                color = Color.Black
+                color = Lx.Text
             )
             Text(
                 text = option.subtitle,
-                fontSize = 12.sp,
-                color = Color.Gray
+                fontSize = Lx.FontSize.caption,
+                color = Lx.TextSecondary
             )
         }
 
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = Color.Gray
+            tint = Lx.TextSecondary
         )
     }
 }
@@ -385,8 +387,8 @@ fun FAQItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggle() },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(Lx.Radius.button),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -396,16 +398,16 @@ fun FAQItemCard(
             ) {
                 Text(
                     text = faq.question,
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     fontWeight = FontWeight.Medium,
-                    color = Color.Black,
+                    color = Lx.Text,
                     modifier = Modifier.weight(1f)
                 )
 
                 Icon(
                     if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = if (isExpanded) "Collapse" else "Expand",
-                    tint = Color(0xFFFF6B35)
+                    tint = Lx.Orange
                 )
             }
 
@@ -416,12 +418,12 @@ fun FAQItemCard(
             ) {
                 Column {
                     Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = Color(0xFFE0E0E0))
+                    HorizontalDivider(color = Lx.Hairline)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = faq.answer,
-                        fontSize = 14.sp,
-                        color = Color.Gray,
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.TextSecondary,
                         lineHeight = 20.sp
                     )
 
@@ -430,13 +432,13 @@ fun FAQItemCard(
                     // Category badge
                     Surface(
                         shape = RoundedCornerShape(4.dp),
-                        color = Color(0xFFFF6B35).copy(alpha = 0.1f)
+                        color = Lx.Orange.copy(alpha = 0.1f)
                     ) {
                         Text(
                             text = faq.category,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            fontSize = 10.sp,
-                            color = Color(0xFFFF6B35),
+                            fontSize = Lx.FontSize.caption,
+                            color = Lx.Orange,
                             fontWeight = FontWeight.Medium
                         )
                     }

@@ -1,5 +1,6 @@
 package com.eatfair.driver.ui.earnings
 
+import com.eatfair.shared.ui.Lx
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -108,8 +109,8 @@ fun EarningsScreen(
 private fun ErrorCard(message: String, onRetry: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(20.dp),
@@ -137,8 +138,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.earningsContent(
         } else null
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+            shape = RoundedCornerShape(Lx.Radius.sheet),
+            colors = CardDefaults.cardColors(containerColor = Lx.Surface)
         ) {
             Box(
                 modifier = Modifier
@@ -229,8 +230,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.earningsContent(
     item {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+            shape = RoundedCornerShape(Lx.Radius.card),
+            colors = CardDefaults.cardColors(containerColor = Lx.Surface)
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 EarningsBreakdownRow("Base Pay", money(data.basePay))
@@ -260,7 +261,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.earningsContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(Lx.Radius.card),
             colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue)
         ) {
             if (isRequestingPayout) {
@@ -296,8 +297,8 @@ fun EarningsStatCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
     ) {
         Column(
             modifier = Modifier

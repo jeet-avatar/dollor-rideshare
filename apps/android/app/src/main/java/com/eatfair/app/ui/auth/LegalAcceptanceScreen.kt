@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.auth
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -73,7 +74,7 @@ fun LegalAcceptanceScreen(
 
                 Text(
                     text = "Almost There!",
-                    fontSize = 28.sp,
+                    fontSize = Lx.FontSize.largeTitle,
                     fontWeight = FontWeight.Bold,
                     color = BrandBlack
                 )
@@ -82,7 +83,7 @@ fun LegalAcceptanceScreen(
 
                 Text(
                     text = "Please review and accept our terms to continue",
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = TextGrey,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 40.dp)
@@ -125,15 +126,15 @@ fun LegalAcceptanceScreen(
                         .fillMaxWidth()
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (canContinue) BrandOrange else Color.Gray,
-                        disabledContainerColor = Color.Gray
+                        containerColor = if (canContinue) BrandOrange else Lx.TextSecondary,
+                        disabledContainerColor = Lx.TextSecondary
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     enabled = canContinue
                 ) {
                     Text(
                         text = "Continue",
-                        fontSize = 16.sp,
+                        fontSize = Lx.FontSize.callout,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -142,7 +143,7 @@ fun LegalAcceptanceScreen(
 
                 Text(
                     text = "By continuing, you agree to our terms and privacy policy",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     color = TextGrey,
                     textAlign = TextAlign.Center
                 )
@@ -190,11 +191,11 @@ private fun AcceptanceCard(
             .fillMaxWidth()
             .shadow(
                 elevation = 2.dp,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 ambientColor = Color.Black.copy(alpha = 0.05f)
             ),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(Lx.Radius.button),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
     ) {
         Row(
             modifier = Modifier
@@ -221,13 +222,13 @@ private fun AcceptanceCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.SemiBold,
                     color = BrandBlack
                 )
                 Text(
                     text = description,
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     color = TextGrey
                 )
             }
@@ -235,12 +236,12 @@ private fun AcceptanceCard(
             // Read More Button
             Surface(
                 modifier = Modifier.clickable { onReadMore() },
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(Lx.Radius.chip),
                 color = BrandOrange.copy(alpha = 0.1f)
             ) {
                 Text(
                     text = "Read",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     fontWeight = FontWeight.SemiBold,
                     color = BrandOrange,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -261,7 +262,7 @@ private fun LegalDocumentSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Color.White
+        containerColor = Lx.Surface
     ) {
         Column(
             modifier = Modifier
@@ -285,7 +286,7 @@ private fun LegalDocumentSheet(
 
                 Text(
                     text = title,
-                    fontSize = 18.sp,
+                    fontSize = Lx.FontSize.body,
                     fontWeight = FontWeight.Bold,
                     color = BrandBlack
                 )
@@ -309,7 +310,7 @@ private fun LegalDocumentSheet(
             ) {
                 Text(
                     text = content,
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = BrandBlack,
                     lineHeight = 22.sp
                 )

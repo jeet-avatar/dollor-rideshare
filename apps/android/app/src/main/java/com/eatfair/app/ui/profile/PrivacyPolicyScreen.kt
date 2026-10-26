@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.profile
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -43,14 +44,14 @@ fun PrivacyPolicyScreen(
             Text(
                 text = "Effective Date: January 1, 2025",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF999999)
+                color = Lx.TextMuted
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = "This Privacy Policy explains how Dollor.AI collects, uses, and protects your personal information when you use our rideshare services. We are committed to protecting your privacy and ensuring the security of your data.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF333333),
+                color = Lx.Text,
                 lineHeight = 22.sp
             )
 
@@ -71,7 +72,7 @@ fun PrivacyPolicyScreen(
                         "- App usage and analytics data\n" +
                         "- Location data (when app is in use)",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -89,7 +90,7 @@ fun PrivacyPolicyScreen(
                         "- Prevent fraud and ensure security\n" +
                         "- Comply with legal obligations",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -106,7 +107,7 @@ fun PrivacyPolicyScreen(
                         "- Regular security audits and vulnerability assessments\n\n" +
                         "We comply with CCPA (California Consumer Privacy Act) and other applicable US data protection regulations.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -125,7 +126,7 @@ fun PrivacyPolicyScreen(
                         "- Withdraw consent at any time\n\n" +
                         "To exercise these rights, visit Settings > Delete Account or contact support@dollor.ai",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -142,7 +143,7 @@ fun PrivacyPolicyScreen(
                         "- Law enforcement (when required by law)\n\n" +
                         "We do NOT sell your personal information to third parties.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -157,7 +158,7 @@ fun PrivacyPolicyScreen(
                         "Website: https://dollor.ai\n" +
                         "Address: San Francisco, CA, United States",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -172,6 +173,6 @@ private fun SectionTitle(title: String) {
         text = title,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = Color(0xFF333333)
+        color = Lx.Text
     )
 }

@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.address
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -119,14 +120,14 @@ fun AddAddressDetailsScreen(
 //            Box(
 //                modifier = Modifier
 //                    .fillMaxSize()
-//                    .background(Color(0xFFF5F5F5)),
+//                    .background(Lx.Surface2),
 //                contentAlignment = Alignment.Center
 //            ) {
 //                Icon(
 //                    imageVector = Icons.Default.Map,
 //                    contentDescription = "Map Preview",
 //                    modifier = Modifier.size(60.dp),
-//                    tint = Color.Gray.copy(alpha = 0.3f)
+//                    tint = Lx.TextSecondary.copy(alpha = 0.3f)
 //                )
 //            }
 //
@@ -137,13 +138,13 @@ fun AddAddressDetailsScreen(
 //                    .padding(start = 12.dp)
 //                    .background(
 //                        color = Color.White,
-//                        shape = RoundedCornerShape(8.dp)
+//                        shape = RoundedCornerShape(Lx.Radius.chip)
 //                    ).size(38.dp)
 //            ) {
 //                Icon(
 //                    imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
 //                    contentDescription = "Back",
-//                    tint = Color.Black,
+//                    tint = Lx.Text,
 //                    modifier = Modifier.size(20.dp).padding(start = 4.dp)
 //                )
 //            }
@@ -173,15 +174,15 @@ fun AddAddressDetailsScreen(
                 Column {
                     Text(
                         text = locationName,
-                        fontSize = 20.sp,
+                        fontSize = Lx.FontSize.title,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = Lx.Text
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = fullAddress,
-                        fontSize = 14.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.TextSecondary
                     )
                 }
             }
@@ -191,12 +192,12 @@ fun AddAddressDetailsScreen(
             // Help Message
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                color = Color(0xFFFFF3E0)
+                shape = RoundedCornerShape(Lx.Radius.chip),
+                color = Lx.OrangeTint
             ) {
                 Text(
                     text = "A detailed address will help your driver reach your pickup location easily",
-                    fontSize = 13.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(8.dp)
                 )
@@ -236,9 +237,9 @@ fun AddAddressDetailsScreen(
             // Delivery Instructions (UNIFIED: was Directions)
             Text(
                 text = "DELIVERY INSTRUCTIONS (OPTIONAL)",
-                fontSize = 12.sp,
+                fontSize = Lx.FontSize.caption,
                 fontWeight = FontWeight.Medium,
-                color = Color.Gray,
+                color = Lx.TextSecondary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
@@ -256,24 +257,24 @@ fun AddAddressDetailsScreen(
                 placeholder = {
                     Text(
                         text = "e.g. Ring the bell on the red gate",
-                        color = Color.Gray,
-                        fontSize = 14.sp
+                        color = Lx.TextSecondary,
+                        fontSize = Lx.FontSize.footnote
                     )
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = Color(0xFFE0E0E0),
-                    unfocusedBorderColor = Color(0xFFE0E0E0)
+                    focusedContainerColor = Lx.Surface,
+                    unfocusedContainerColor = Lx.Surface,
+                    focusedBorderColor = Lx.Hairline,
+                    unfocusedBorderColor = Lx.Hairline
                 ),
-                shape = RoundedCornerShape(8.dp),
-                textStyle = TextStyle(fontSize = 14.sp)
+                shape = RoundedCornerShape(Lx.Radius.chip),
+                textStyle = TextStyle(fontSize = Lx.FontSize.footnote)
             )
 
             Text(
                 text = "${instructions.length}/200",
-                fontSize = 12.sp,
-                color = Color.Gray,
+                fontSize = Lx.FontSize.caption,
+                color = Lx.TextSecondary,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
@@ -282,8 +283,8 @@ fun AddAddressDetailsScreen(
             // Save As Label
             Text(
                 text = "SAVE AS",
-                fontSize = 12.sp,
-                color = Color.Gray,
+                fontSize = Lx.FontSize.caption,
+                color = Lx.TextSecondary,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
@@ -335,12 +336,12 @@ fun AddAddressDetailsScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 enabled = unit.isNotEmpty() || street.isNotEmpty()
             ) {
                 Text(
                     text = if (unit.isNotEmpty() || street.isNotEmpty()) "SAVE ADDRESS" else "ENTER APT / SUITE / UNIT NO.",
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
@@ -363,9 +364,9 @@ fun AddressTextField(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
-            fontSize = 12.sp,
+            fontSize = Lx.FontSize.caption,
             fontWeight = FontWeight.Medium,
-            color = Color.Gray,
+            color = Lx.TextSecondary,
             modifier = Modifier.padding(bottom = 4.dp)
         )
 
@@ -377,19 +378,19 @@ fun AddressTextField(
             placeholder = {
                 Text(
                     text = placeholder,
-                    color = Color.Gray,
-                    fontSize = 14.sp
+                    color = Lx.TextSecondary,
+                    fontSize = Lx.FontSize.footnote
                 )
             },
 
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
+                focusedContainerColor = Lx.Surface,
+                unfocusedContainerColor = Lx.Surface,
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = Color(0xFFE0E0E0)
+                unfocusedBorderColor = Lx.Hairline
             ),
-            shape = RoundedCornerShape(8.dp),
-            textStyle = TextStyle(fontSize = 14.sp)
+            shape = RoundedCornerShape(Lx.Radius.chip),
+            textStyle = TextStyle(fontSize = Lx.FontSize.footnote)
         )
     }
 }
@@ -407,8 +408,8 @@ fun AddressTypeChip(
             .wrapContentWidth()
             .height(32.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color(0xFFF5F5F5),
+        shape = RoundedCornerShape(Lx.Radius.sheet),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Lx.Surface2,
         border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
     ) {
         Row(
@@ -422,15 +423,15 @@ fun AddressTypeChip(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else Lx.TextSecondary,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
-                fontSize = 13.sp,
+                fontSize = Lx.FontSize.footnote,
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                color = if (isSelected) MaterialTheme.colorScheme.primary else Lx.TextSecondary
             )
         }
     }

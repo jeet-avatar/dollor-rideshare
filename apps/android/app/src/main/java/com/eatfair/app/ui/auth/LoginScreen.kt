@@ -1,5 +1,7 @@
 package com.eatfair.app.ui.auth
 
+import com.eatfair.shared.config.AppConfig
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,11 +35,11 @@ import com.eatfair.app.ui.components.DollorBrandColors
 // Brand Colors - Enterprise Orange Theme
 private val PrimaryOrange = DollorBrandColors.PrimaryOrange  // Vibrant orange
 private val DarkOrange = DollorBrandColors.DarkOrange
-private val TextPrimary = Color(0xFF202123)
-private val TextSecondary = Color(0xFF6E6E80)
-private val BorderColor = Color(0xFFC5C5D2)
-private val BackgroundWhite = Color(0xFFFFFFFF)
-private val BackgroundGrey = Color(0xFFF7F7F8)
+private val TextPrimary = Lx.Text
+private val TextSecondary = Lx.TextSecondary
+private val BorderColor = Lx.Hairline
+private val BackgroundWhite = Lx.Surface
+private val BackgroundGrey = Lx.Surface2
 
 @Preview(showBackground = true)
 @Composable
@@ -109,7 +111,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundWhite)
+            .background(Lx.Bg)
             .systemBarsPadding()
     ) {
         Column(
@@ -132,7 +134,7 @@ fun LoginScreen(
 
             Text(
                 text = "Dollor.ai",
-                fontSize = 22.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary,
                 letterSpacing = (-0.5).sp
@@ -143,7 +145,7 @@ fun LoginScreen(
             // Header
             Text(
                 text = if (isSignUp) "Create your account" else "Welcome back",
-                fontSize = 24.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary,
                 letterSpacing = (-0.5).sp
@@ -152,8 +154,8 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = if (isSignUp) "Start riding with just \$1 platform fee" else "Log in to continue to Dollor.ai",
-                fontSize = 14.sp,
+                text = if (isSignUp) "Start riding with a flat ${AppConfig.Rideshare.feeRangeText} platform fee" else "Log in to continue to Dollor.ai",
+                fontSize = Lx.FontSize.footnote,
                 color = TextSecondary,
                 textAlign = TextAlign.Center
             )
@@ -169,9 +171,9 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(48.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black
+                        containerColor = Lx.Text
                     ),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(Lx.Radius.chip),
                     enabled = !isAppleLoading && !isLoading
                 ) {
                     if (isAppleLoading) {
@@ -188,14 +190,14 @@ fun LoginScreen(
                             // Apple Logo (simplified)
                             Text(
                                 text = "\uF8FF", // Apple logo unicode
-                                fontSize = 18.sp,
+                                fontSize = Lx.FontSize.body,
                                 color = Color.White,
                                 fontWeight = FontWeight.Normal
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = "Continue with Apple",
-                                fontSize = 16.sp,
+                                fontSize = Lx.FontSize.callout,
                                 fontWeight = FontWeight.Medium,
                                 color = Color.White
                             )
@@ -212,7 +214,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(Lx.Radius.chip),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = BackgroundWhite
                 ),
@@ -233,14 +235,14 @@ fun LoginScreen(
                         // Google Logo Colors
                         Text(
                             text = "G",
-                            fontSize = 18.sp,
+                            fontSize = Lx.FontSize.body,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFDB4437) // Google Red
+                            color = Lx.GoogleRed // Google Red
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = "Continue with Google",
-                            fontSize = 16.sp,
+                            fontSize = Lx.FontSize.callout,
                             fontWeight = FontWeight.Medium,
                             color = TextPrimary
                         )
@@ -263,7 +265,7 @@ fun LoginScreen(
                 Text(
                     text = "or",
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    fontSize = 13.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = TextSecondary
                 )
                 Divider(
@@ -289,7 +291,7 @@ fun LoginScreen(
                         leadingIcon = {
                             Icon(Icons.Default.Person, contentDescription = null, tint = TextSecondary)
                         },
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(Lx.Radius.chip),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
@@ -312,7 +314,7 @@ fun LoginScreen(
                             Icon(Icons.Default.Phone, contentDescription = null, tint = TextSecondary)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(Lx.Radius.chip),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
@@ -336,7 +338,7 @@ fun LoginScreen(
                         Icon(Icons.Default.Email, contentDescription = null, tint = TextSecondary)
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(Lx.Radius.chip),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary,
@@ -360,7 +362,7 @@ fun LoginScreen(
                     },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(Lx.Radius.chip),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary,
@@ -383,7 +385,7 @@ fun LoginScreen(
                     TextButton(onClick = onForgotPasswordClick) {
                         Text(
                             text = "Forgot password?",
-                            fontSize = 14.sp,
+                            fontSize = Lx.FontSize.footnote,
                             fontWeight = FontWeight.Medium,
                             color = PrimaryOrange
                         )
@@ -419,7 +421,7 @@ fun LoginScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PrimaryOrange
                 ),
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(Lx.Radius.chip),
                 enabled = !isLoading
             ) {
                 if (isLoading) {
@@ -431,7 +433,7 @@ fun LoginScreen(
                 } else {
                     Text(
                         text = if (isSignUp) "Create account" else "Continue",
-                        fontSize = 16.sp,
+                        fontSize = Lx.FontSize.callout,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -443,8 +445,8 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = error,
-                    fontSize = 14.sp,
-                    color = Color(0xFFEF4444),
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.Error,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -458,7 +460,7 @@ fun LoginScreen(
             ) {
                 Text(
                     text = if (isSignUp) "Already have an account?" else "Don't have an account?",
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = TextSecondary
                 )
                 TextButton(
@@ -466,7 +468,7 @@ fun LoginScreen(
                 ) {
                     Text(
                         text = if (isSignUp) "Log in" else "Sign up",
-                        fontSize = 14.sp,
+                        fontSize = Lx.FontSize.footnote,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryOrange
                     )
@@ -478,7 +480,7 @@ fun LoginScreen(
             // Fee Info Badge
             Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(Lx.Radius.chip))
                     .background(BackgroundGrey)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -493,7 +495,7 @@ fun LoginScreen(
                 ) {
                     Text(
                         text = "$1",
-                        fontSize = 11.sp,
+                        fontSize = Lx.FontSize.caption,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -501,7 +503,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = "flat platform fee. 100% tips go to drivers.",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     color = TextSecondary
                 )
             }
@@ -516,19 +518,19 @@ fun LoginScreen(
             ) {
                 Text(
                     text = "Terms of Use",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     color = PrimaryOrange,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable { onTermsClick() }
                 )
                 Text(
                     text = " · ",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     color = BorderColor
                 )
                 Text(
                     text = "Privacy Policy",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     color = PrimaryOrange,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable { onPrivacyClick() }

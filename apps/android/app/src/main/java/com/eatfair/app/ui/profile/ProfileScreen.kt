@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.profile
 
+import com.eatfair.shared.ui.Lx
 import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Security
@@ -202,6 +204,12 @@ fun ProfileScreen(
             SectionHeader("ACCOUNT")
             ProfileMenuCard {
                 ProfileMenuRow(
+                    icon = Icons.Default.Person,
+                    title = "Edit Profile",
+                    onClick = onEditProfileClick
+                )
+                MenuDivider()
+                ProfileMenuRow(
                     icon = Icons.Default.LocationOn,
                     title = "Manage Addresses",
                     onClick = onSavedAddressClick
@@ -282,15 +290,15 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
-                    .shadow(elevation = 5.dp, shape = RoundedCornerShape(12.dp)),
+                    .shadow(elevation = 5.dp, shape = RoundedCornerShape(Lx.Radius.button)),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black
+                    containerColor = Lx.Text
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Lx.Radius.button)
             ) {
                 Text(
                     text = "Log Out",
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
@@ -305,23 +313,23 @@ fun ProfileScreen(
                     .fillMaxWidth()
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red.copy(alpha = 0.1f)
+                    containerColor = Lx.Error.copy(alpha = 0.1f)
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 enabled = !isDeletingAccount
             ) {
                 if (isDeletingAccount) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = Color.Red,
+                        color = Lx.Error,
                         strokeWidth = 2.dp
                     )
                 } else {
                     Text(
                         text = "Delete Account",
-                        fontSize = 16.sp,
+                        fontSize = Lx.FontSize.callout,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Red
+                        color = Lx.Error
                     )
                 }
             }
@@ -336,7 +344,7 @@ fun ProfileScreen(
                         Text(
                             text = "Delete Account?",
                             fontWeight = FontWeight.Bold,
-                            color = Color.Red
+                            color = Lx.Error
                         )
                     },
                     text = {
@@ -347,7 +355,7 @@ fun ProfileScreen(
                             showDeleteAccountDialog = false
                             showDeleteConfirmation = true
                         }) {
-                            Text("Continue", color = Color.Red)
+                            Text("Continue", color = Lx.Error)
                         }
                     },
                     dismissButton = {
@@ -365,7 +373,7 @@ fun ProfileScreen(
                         Text(
                             text = "Final Confirmation",
                             fontWeight = FontWeight.Bold,
-                            color = Color.Red
+                            color = Lx.Error
                         )
                     },
                     text = {
@@ -378,7 +386,7 @@ fun ProfileScreen(
                                 isDeletingAccount = true
                                 onDeleteAccountClick()
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                            colors = ButtonDefaults.buttonColors(containerColor = Lx.Error)
                         ) {
                             Text("Delete Forever", color = Color.White)
                         }
@@ -446,7 +454,7 @@ fun ProfileHeader(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color.White)
+                    .background(Lx.Surface)
                     .clickable(onClick = onEditClick),
                 contentAlignment = Alignment.Center
             ) {
@@ -464,9 +472,9 @@ fun ProfileHeader(
         // User Name - title2, bold like iOS
         Text(
             text = userName,
-            fontSize = 22.sp,
+            fontSize = Lx.FontSize.title,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = Lx.Text
         )
 
         Spacer(modifier = Modifier.height(5.dp))
@@ -474,8 +482,8 @@ fun ProfileHeader(
         // User Email - subheadline, gray like iOS
         Text(
             text = userEmail,
-            fontSize = 15.sp,
-            color = Color.Gray
+            fontSize = Lx.FontSize.subheadline,
+            color = Lx.TextSecondary
         )
     }
 }
@@ -487,9 +495,9 @@ fun ProfileHeader(
 fun SectionHeader(title: String) {
     Text(
         text = title,
-        fontSize = 12.sp,
+        fontSize = Lx.FontSize.caption,
         fontWeight = FontWeight.Bold,
-        color = Color.Gray,
+        color = Lx.TextSecondary,
         modifier = Modifier.padding(start = 4.dp, bottom = 10.dp)
     )
 }
@@ -504,11 +512,11 @@ fun ProfileMenuCard(content: @Composable () -> Unit) {
             .fillMaxWidth()
             .shadow(
                 elevation = 2.dp,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 ambientColor = Color.Black.copy(alpha = 0.05f)
             ),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(Lx.Radius.button),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
     ) {
         Column {
             content()
@@ -544,15 +552,15 @@ fun ProfileMenuRow(
 
         Text(
             text = title,
-            fontSize = 16.sp,
-            color = Color.Black,
+            fontSize = Lx.FontSize.callout,
+            color = Lx.Text,
             modifier = Modifier.weight(1f)
         )
 
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = "Navigate",
-            tint = Color.Gray,
+            tint = Lx.TextSecondary,
             modifier = Modifier.size(16.dp)
         )
     }
@@ -565,6 +573,6 @@ fun ProfileMenuRow(
 fun MenuDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = 50.dp),
-        color = Color.LightGray.copy(alpha = 0.5f)
+        color = Lx.Hairline.copy(alpha = 0.5f)
     )
 }

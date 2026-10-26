@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.founding
 
+import com.eatfair.shared.ui.Lx
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,12 +24,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.stripe.android.PaymentConfiguration
-import com.stripe.android.paymentsheet.PaymentSheet
-import com.stripe.android.paymentsheet.PaymentSheetResult
 
-private val Brand = Color(0xFF6C63FF)
-private val Gold = Color(0xFFFFC107)
+private val Brand = Lx.Orange
+private val Gold = Lx.Gold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,40 +36,6 @@ fun FoundingMemberScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
-
-    // Holds the client secret currently being paid so we can derive the intent id.
-    var clientSecret by remember { mutableStateOf<String?>(null) }
-
-    fun onPaymentSheetResult(result: PaymentSheetResult) {
-        when (result) {
-            is PaymentSheetResult.Canceled -> viewModel.onPaymentCancelled()
-            is PaymentSheetResult.Failed -> viewModel.onPaymentFailed(result.error.localizedMessage)
-            is PaymentSheetResult.Completed -> viewModel.onPaymentCompleted(clientSecret)
-        }
-    }
-
-    val paymentSheet = remember { PaymentSheet.Builder(::onPaymentSheetResult) }.build()
-
-    // Present the Stripe sheet whenever the ViewModel emits payment keys.
-    LaunchedEffect(Unit) {
-        viewModel.paymentSheetEvent.collect { keys ->
-            PaymentConfiguration.init(context, keys.publishableKey)
-            clientSecret = keys.paymentIntent
-            val customerConfig = PaymentSheet.CustomerConfiguration(
-                id = keys.customer,
-                ephemeralKeySecret = keys.ephemeralKey
-            )
-            keys.paymentIntent?.let { secret ->
-                paymentSheet.presentWithPaymentIntent(
-                    secret,
-                    PaymentSheet.Configuration.Builder(merchantDisplayName = "Dollor.ai")
-                        .customer(customerConfig)
-                        .allowsDelayedPaymentMethods(true)
-                        .build()
-                )
-            }
-        }
-    }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -132,24 +96,24 @@ fun FoundingMemberScreen(
             Spacer(Modifier.height(16.dp))
             Text(
                 text = "Dollor Founding Member",
-                fontSize = 24.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(6.dp))
             Text(
                 text = "Lock in your rates for life. Join the first members who power Dollor.",
-                fontSize = 14.sp,
-                color = Color.Gray,
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary,
                 textAlign = TextAlign.Center
             )
 
             Spacer(Modifier.height(24.dp))
 
-            if (state.isMember) {
+            if (state.isFounder) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Lx.Radius.card),
                     colors = CardDefaults.cardColors(containerColor = Brand.copy(alpha = 0.08f))
                 ) {
                     Row(
@@ -161,9 +125,9 @@ fun FoundingMemberScreen(
                         Column {
                             Text("You're a Founding Member", fontWeight = FontWeight.Bold)
                             Text(
-                                "Your lifetime fee-lock is active.",
-                                fontSize = 13.sp,
-                                color = Color.Gray
+                                "Your lifetime fee-lock is active" + (state.founderState?.let { " in $it." } ?: "."),
+                                fontSize = Lx.FontSize.footnote,
+                                color = Lx.TextSecondary
                             )
                         }
                     }
@@ -172,48 +136,48 @@ fun FoundingMemberScreen(
                 BenefitsCard(state)
 
                 Spacer(Modifier.height(16.dp))
-
-                val slotsText = when {
-                    state.slotsRemaining != null && state.slotsTotal != null ->
-                        "${state.slotsRemaining} of ${state.slotsTotal} founding spots left"
-                    state.slotsRemaining != null -> "${state.slotsRemaining} founding spots left"
-                    else -> null
+                com.eatfair.shared.ui.UsStatePicker(
+                    selected = state.selectedState,
+                    onSelected = viewModel::selectState,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                state.slotsRemaining?.let {
+                    Text(
+                        "$it founding spots left in ${state.selectedState}",
+                        fontSize = Lx.FontSize.footnote,
+                        color = Brand,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
-                if (slotsText != null) {
-                    Text(slotsText, fontSize = 13.sp, color = Brand, fontWeight = FontWeight.Medium)
-                    Spacer(Modifier.height(16.dp))
-                }
+                Spacer(Modifier.height(16.dp))
 
-                val slotsRemaining = state.slotsRemaining
-                val canJoin = state.eligible && (slotsRemaining == null || slotsRemaining > 0)
+                val canJoin = state.eligible && (state.slotsRemaining ?: 1) > 0
                 Button(
                     onClick = { viewModel.onJoinClicked() },
                     enabled = canJoin && !state.isJoining,
                     modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     colors = ButtonDefaults.buttonColors(containerColor = Brand)
                 ) {
                     if (state.isJoining) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                         Spacer(Modifier.width(8.dp))
                     }
-                    Text(
-                        "Join for $${"%.0f".format(state.membershipFee)}",
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Text("Join for $${"%.0f".format(state.deposit)}", fontWeight = FontWeight.SemiBold)
                 }
 
                 if (!canJoin) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = if (state.slotsRemaining == 0) "All founding spots have been claimed."
-                        else "Founding membership isn't available for your account yet.",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
+                        text = when {
+                            state.slotsRemaining == 0 -> "All founding spots in ${state.selectedState} have been claimed."
+                            state.ridesTaken >= state.claimWindowRides ->
+                                "The founding offer is only available within your first ${state.claimWindowRides} rides."
+                            else -> "Founding membership isn't available for your account right now."
+                        },
+                        fontSize = Lx.FontSize.caption,
+                        color = Lx.TextSecondary,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -222,12 +186,27 @@ fun FoundingMemberScreen(
                     Spacer(Modifier.height(8.dp))
                     Text(
                         "Demo account - payment is bypassed.",
-                        fontSize = 12.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.caption,
+                        color = Lx.TextSecondary
                     )
                 }
             }
         }
+    }
+
+    state.confirmCard?.let { card ->
+        AlertDialog(
+            onDismissRequest = viewModel::cancelCharge,
+            title = { Text("Confirm founding payment") },
+            text = {
+                Text(
+                    "Your ${card.brand?.replaceFirstChar { it.uppercase() } ?: "card"} ending in ${card.last4} will be charged " +
+                        "$${"%.0f".format(state.deposit)} once. This payment is non-refundable."
+                )
+            },
+            confirmButton = { TextButton(onClick = viewModel::confirmCharge) { Text("Pay $${"%.0f".format(state.deposit)}") } },
+            dismissButton = { TextButton(onClick = viewModel::cancelCharge) { Text("Cancel") } }
+        )
     }
 }
 
@@ -235,16 +214,15 @@ fun FoundingMemberScreen(
 private fun BenefitsCard(state: FoundingViewModel.UiState) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Member Benefits", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("Member Benefits", fontWeight = FontWeight.Bold, fontSize = Lx.FontSize.callout)
             Spacer(Modifier.height(12.dp))
-            Benefit(state.feeLock ?: "Lifetime fee-lock - your platform fees never go up")
-            Benefit("One-time $${"%.0f".format(state.membershipFee)} - no recurring charges")
-            Benefit("Priority support and early access to new features")
+            Benefit(state.benefit ?: "Lock today's platform fee for life. Government fees still apply.")
+            Benefit("One-time $${"%.0f".format(state.deposit)}, non-refundable - no recurring charges")
         }
     }
 }
@@ -255,8 +233,8 @@ private fun Benefit(text: String) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+        Icon(Icons.Default.CheckCircle, null, tint = Lx.Success, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
-        Text(text, fontSize = 13.sp, color = Color.DarkGray)
+        Text(text, fontSize = Lx.FontSize.footnote, color = Lx.TextSecondary)
     }
 }

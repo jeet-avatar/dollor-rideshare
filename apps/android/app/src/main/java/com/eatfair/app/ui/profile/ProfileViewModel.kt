@@ -39,6 +39,17 @@ class ProfileViewModel @Inject constructor(
      * Persist profile changes to the backend (name / phone) via
      * PUT /api/customer/{customerId}/profile, then refresh the locally cached name.
      */
+    fun saveName(name: String, onResult: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            dollorRepository.updateCustomerFullName(name)
+                .onSuccess {
+                    sessionManager.updateUserName(name.trim())
+                    onResult(Result.success(Unit))
+                }
+                .onFailure { onResult(Result.failure(it)) }
+        }
+    }
+
     fun updateProfile(name: String, phone: String) {
         viewModelScope.launch {
             dollorRepository.updateCustomerProfile(name, phone)

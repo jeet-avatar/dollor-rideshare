@@ -1,5 +1,7 @@
 package com.eatfair.app.ui.profile
 
+import com.eatfair.shared.config.AppConfig
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -43,14 +45,14 @@ fun TermsConditionsScreen(
             Text(
                 text = "Effective Date: January 1, 2025",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF999999)
+                color = Lx.TextMuted
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = "Welcome to Dollor.AI. By using our rideshare services, you agree to these Terms & Conditions. Please read them carefully before booking a ride.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF333333),
+                color = Lx.Text,
                 lineHeight = 22.sp
             )
 
@@ -61,12 +63,10 @@ fun TermsConditionsScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Dollor.AI provides a rideshare platform connecting passengers with independent drivers using a flat-fee pricing model:\n\n" +
-                        "- \$1 platform fee for rides up to \$35\n" +
-                        "- \$2 platform fee for rides \$35.01 to \$70\n" +
-                        "- \$3 platform fee for rides over \$70\n\n" +
+                        AppConfig.Rideshare.tierLines.joinToString("\n") { "- $it" } + "\n\n" +
                         "Unlike traditional rideshare platforms that take 25-35% commission, our flat-fee model keeps more money with drivers.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -84,7 +84,7 @@ fun TermsConditionsScreen(
                         "- Provide accurate pickup and destination addresses\n\n" +
                         "You are responsible for all activity on your account.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -102,7 +102,7 @@ fun TermsConditionsScreen(
                         "- 100% of tips go directly to drivers\n\n" +
                         "We reserve the right to cancel rides due to payment issues or other operational reasons.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -120,7 +120,7 @@ fun TermsConditionsScreen(
                         "- Drivers are independent contractors\n\n" +
                         "We are not responsible for delays caused by traffic or weather conditions.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -138,7 +138,7 @@ fun TermsConditionsScreen(
                         "- Processing time: 3-5 business days\n\n" +
                         "Contact support@dollor.ai for refund requests.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -157,7 +157,7 @@ fun TermsConditionsScreen(
                         "- Use automated systems to access the platform\n\n" +
                         "Violations may result in account suspension.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -174,7 +174,7 @@ fun TermsConditionsScreen(
                         "- Inappropriate behavior toward partners\n\n" +
                         "Upon deletion, your data will be removed per our Privacy Policy.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -190,7 +190,7 @@ fun TermsConditionsScreen(
                         "- Indirect or consequential damages\n\n" +
                         "Our liability is limited to the amount you paid for the affected ride.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -202,7 +202,7 @@ fun TermsConditionsScreen(
             Text(
                 text = "We may update these Terms & Conditions periodically. Significant changes will be communicated via email or app notification. Continued use of the service after changes constitutes acceptance.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -217,7 +217,7 @@ fun TermsConditionsScreen(
                         "Website: https://dollor.ai\n" +
                         "Address: San Francisco, CA, United States",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = Lx.TextSecondary,
                 lineHeight = 22.sp
             )
 
@@ -232,6 +232,6 @@ private fun SectionTitle(title: String) {
         text = title,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = Color(0xFF333333)
+        color = Lx.Text
     )
 }

@@ -2,43 +2,42 @@ package com.eatfair.app.ui.founding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.eatfair.app.data.repo.PaymentRepo
+import com.eatfair.app.data.CustomerRideshareApiService
+import com.eatfair.app.data.SavedCard
 import com.eatfair.shared.data.repository.DollorRepository
-import com.eatfair.shared.model.payment.PaymentSheetKeys
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Drives the customer Founding Member ($100 lifetime fee-lock) screen.
- *
- * - Loads eligibility / slots / membership state from GET /api/founding/status.
- * - "Join for $100" reuses the app's existing Stripe PaymentSheet flow (via
- *   [PaymentRepo]); demo accounts bypass payment. On a successful charge the
- *   PaymentIntent id is passed to POST /api/founding/join.
+ * Customer Founding Member ($100, non-refundable lifetime fee-lock).
+ * Status: GET /api/founding/status?state=XX. Join: POST /api/founding/join {state, payment_method_id};
+ * the backend charges the saved card itself (demo accounts are not charged) — iOS parity.
  */
 @HiltViewModel
 class FoundingViewModel @Inject constructor(
-    private val repository: DollorRepository,
-    private val paymentRepo: PaymentRepo
+    private val repository: DollorRepository
 ) : ViewModel() {
 
     data class UiState(
         val isLoading: Boolean = true,
-        val isMember: Boolean = false,
+        val selectedState: String = "CA",
+        val isFounder: Boolean = false,
+        val founderState: String? = null,
         val eligible: Boolean = false,
+        val ridesTaken: Int = 0,
+        val claimWindowRides: Int = 3,
         val slotsRemaining: Int? = null,
-        val slotsTotal: Int? = null,
-        val membershipFee: Double = 100.0,
-        val feeLock: String? = null,
+        val capPerState: Int? = null,
+        val deposit: Double = 100.0,
+        val benefit: String? = null,
         val isDemo: Boolean = false,
         val isJoining: Boolean = false,
+        val confirmCard: SavedCard? = null,
         val error: String? = null,
         val message: String? = null
     )
@@ -46,27 +45,32 @@ class FoundingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    private val _paymentSheetEvent = MutableSharedFlow<PaymentSheetKeys>()
-    val paymentSheetEvent = _paymentSheetEvent.asSharedFlow()
-
     init {
+        loadStatus()
+    }
+
+    fun selectState(code: String) {
+        _uiState.update { it.copy(selectedState = code) }
         loadStatus()
     }
 
     fun loadStatus() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            repository.getFoundingStatus()
+            repository.getFoundingStatus(_uiState.value.selectedState)
                 .onSuccess { s ->
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            isMember = s.isMember,
-                            eligible = s.eligible,
+                            isFounder = s.isFounder,
+                            founderState = s.founderState,
+                            eligible = s.eligibleToJoin,
+                            ridesTaken = s.ridesTaken,
+                            claimWindowRides = s.claimWindowRides,
                             slotsRemaining = s.slotsRemaining,
-                            slotsTotal = s.slotsTotal,
-                            membershipFee = s.membershipFee ?: 100.0,
-                            feeLock = s.feeLock,
+                            capPerState = s.capPerState,
+                            deposit = s.depositUsd,
+                            benefit = s.benefit,
                             isDemo = s.isDemo
                         )
                     }
@@ -75,53 +79,46 @@ class FoundingViewModel @Inject constructor(
         }
     }
 
-    /** Join tapped: demo accounts bypass payment, others get the Stripe sheet. */
     fun onJoinClicked() {
-        val state = _uiState.value
-        if (state.isDemo) {
-            join(paymentIntentId = null, paymentMethodId = null)
+        val s = _uiState.value
+        if (s.isDemo) {
+            join(null)
             return
         }
         viewModelScope.launch {
             _uiState.update { it.copy(isJoining = true, error = null) }
-            paymentRepo.getPaymentSheetKeys(state.membershipFee)
-                .onSuccess { keys -> _paymentSheetEvent.emit(keys) }
+            CustomerRideshareApiService.getSavedCards()
+                .onSuccess { cards ->
+                    val card = cards.firstOrNull { it.isDefault } ?: cards.firstOrNull()
+                    _uiState.update {
+                        if (card == null) it.copy(isJoining = false, error = "Add a card in Payment Methods first.")
+                        else it.copy(isJoining = false, confirmCard = card)
+                    }
+                }
                 .onFailure { e -> _uiState.update { it.copy(isJoining = false, error = e.message) } }
         }
     }
 
-    /** Stripe PaymentSheet completed successfully. */
-    fun onPaymentCompleted(paymentIntentClientSecret: String?) {
-        val intentId = paymentIntentClientSecret?.substringBefore("_secret")
-        join(paymentIntentId = intentId, paymentMethodId = null)
+    fun confirmCharge() {
+        val card = _uiState.value.confirmCard ?: return
+        _uiState.update { it.copy(confirmCard = null) }
+        join(card.id)
     }
 
-    fun onPaymentCancelled() {
-        _uiState.update { it.copy(isJoining = false) }
-    }
+    fun cancelCharge() = _uiState.update { it.copy(confirmCard = null) }
 
-    fun onPaymentFailed(message: String?) {
-        _uiState.update { it.copy(isJoining = false, error = message ?: "Payment failed") }
-    }
-
-    private fun join(paymentIntentId: String?, paymentMethodId: String?) {
+    private fun join(paymentMethodId: String?) {
         viewModelScope.launch {
             _uiState.update { it.copy(isJoining = true, error = null) }
-            repository.joinFounding(paymentMethodId, paymentIntentId)
-                .onSuccess { r ->
-                    _uiState.update {
-                        it.copy(
-                            isJoining = false,
-                            isMember = r.isMember || r.success,
-                            message = r.message ?: "Welcome, Founding Member!"
-                        )
-                    }
+            repository.joinFounding(_uiState.value.selectedState, paymentMethodId)
+                .onSuccess {
+                    _uiState.update { it.copy(isJoining = false, message = "Welcome, Founding Member!") }
                     loadStatus()
                 }
                 .onFailure { e -> _uiState.update { it.copy(isJoining = false, error = e.message) } }
         }
     }
 
-    fun clearError() { _uiState.update { it.copy(error = null) } }
-    fun clearMessage() { _uiState.update { it.copy(message = null) } }
+    fun clearError() = _uiState.update { it.copy(error = null) }
+    fun clearMessage() = _uiState.update { it.copy(message = null) }
 }

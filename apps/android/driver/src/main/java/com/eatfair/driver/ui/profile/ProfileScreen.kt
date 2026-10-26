@@ -1,5 +1,6 @@
 package com.eatfair.driver.ui.profile
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -49,7 +50,8 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onDeleteAccount: (onSuccess: () -> Unit, onError: (String) -> Unit) -> Unit,
     navController: NavHostController,
-    earningsViewModel: EarningsViewModel = hiltViewModel()
+    earningsViewModel: EarningsViewModel = hiltViewModel(),
+    accessibilityViewModel: AccessibilityViewModel = hiltViewModel()
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
@@ -87,8 +89,8 @@ fun ProfileScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+                shape = RoundedCornerShape(Lx.Radius.sheet),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
                 Column(
                     modifier = Modifier
@@ -218,8 +220,8 @@ fun ProfileScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+                shape = RoundedCornerShape(Lx.Radius.card),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
                 Column {
                     // Earnings History -> Earnings tab (exists). Vehicle Information
@@ -255,10 +257,14 @@ fun ProfileScreen(
         }
 
         item {
+            AccessibilityCapabilityCard(accessibilityViewModel)
+        }
+
+        item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+                shape = RoundedCornerShape(Lx.Radius.card),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
                 Column {
                     // Settings and Notifications screens don't exist yet in the
@@ -281,9 +287,9 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(Lx.Radius.card),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DollorDriverColors.Gray900
+                    containerColor = Lx.Surface2
                 )
             ) {
                 Icon(
@@ -308,7 +314,7 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(Lx.Radius.card),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = DollorDriverColors.Error
                 ),
@@ -342,7 +348,7 @@ fun ProfileScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Dollor Driver App v1.0.12",
+                    text = "Dollor Driver App v${com.eatfair.driver.BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.bodySmall,
                     color = DollorDriverColors.Gray400
                 )
@@ -512,8 +518,8 @@ private fun EarningsSummaryCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
     ) {
         Column(
             modifier = Modifier
@@ -554,7 +560,7 @@ private fun ProfileMenuItem(
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(Lx.Radius.chip))
                 .background(DollorDriverColors.Blue.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
@@ -584,6 +590,52 @@ private fun ProfileMenuItem(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
             tint = DollorDriverColors.Gray300
+        )
+    }
+}
+
+@Composable
+private fun AccessibilityCapabilityCard(viewModel: AccessibilityViewModel) {
+    val state by viewModel.state.collectAsState()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.Accessible, contentDescription = null, tint = Lx.Orange)
+                Text(
+                    "Accessibility Capability",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Lx.Text
+                )
+            }
+            AccessibilitySwitchRow("My vehicle is wheelchair accessible", state.capable, viewModel::setCapable)
+            if (state.capable) {
+                AccessibilitySwitchRow("Wheelchair ramp/lift", state.wheelchair, viewModel::setWheelchair)
+                AccessibilitySwitchRow("Service animal friendly", state.serviceAnimal, viewModel::setServiceAnimal)
+                AccessibilitySwitchRow("Extra trunk space for mobility aids", state.mobilityStorage, viewModel::setMobilityStorage)
+            }
+            if (state.isSaving) {
+                Text("Saving...", style = MaterialTheme.typography.bodySmall, color = Lx.TextSecondary)
+            }
+            state.error?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = Lx.Error)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccessibilitySwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = Lx.Text, modifier = Modifier.weight(1f))
+        Switch(
+            checked = checked,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(checkedThumbColor = Lx.Text, checkedTrackColor = Lx.Orange)
         )
     }
 }

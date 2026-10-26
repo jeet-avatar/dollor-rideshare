@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.auth
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,7 +78,7 @@ fun ForgotPasswordScreen(
             // Title - Matches iOS
             Text(
                 text = "Reset Password",
-                fontSize = 24.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 color = BrandBlack
             )
@@ -87,7 +88,7 @@ fun ForgotPasswordScreen(
             // Description - Matches iOS
             Text(
                 text = "Enter your email address and we'll send you a code to reset your password.",
-                fontSize = 14.sp,
+                fontSize = Lx.FontSize.footnote,
                 color = TextGrey,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
@@ -103,7 +104,7 @@ fun ForgotPasswordScreen(
                     .fillMaxWidth()
                     .shadow(
                         elevation = 2.dp,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         ambientColor = Color.Black.copy(alpha = 0.05f)
                     ),
                 placeholder = { Text("Email", color = TextGrey) },
@@ -115,10 +116,10 @@ fun ForgotPasswordScreen(
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Lx.Surface,
+                    unfocusedContainerColor = Lx.Surface,
                     focusedBorderColor = BrandGreen,
                     unfocusedBorderColor = Color.Transparent
                 ),
@@ -130,8 +131,8 @@ fun ForgotPasswordScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = error,
-                    fontSize = 12.sp,
-                    color = Color.Red,
+                    fontSize = Lx.FontSize.caption,
+                    color = Lx.Error,
                     textAlign = TextAlign.Center
                 )
             }
@@ -148,7 +149,7 @@ fun ForgotPasswordScreen(
                     containerColor = BrandGreen,
                     disabledContainerColor = BrandGreen.copy(alpha = 0.5f)
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 enabled = !isLoading && email.isNotEmpty()
             ) {
                 if (isLoading) {
@@ -160,7 +161,7 @@ fun ForgotPasswordScreen(
                 } else {
                     Text(
                         text = "Send Reset Code",
-                        fontSize = 16.sp,
+                        fontSize = Lx.FontSize.callout,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -225,7 +226,7 @@ fun ResetCodeEntryScreen(
             // Title - Matches iOS
             Text(
                 text = "Enter Reset Code",
-                fontSize = 24.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 color = BrandBlack
             )
@@ -235,7 +236,7 @@ fun ResetCodeEntryScreen(
             // Description - Matches iOS
             Text(
                 text = "We sent a code to $email. Enter it below along with your new password.",
-                fontSize = 14.sp,
+                fontSize = Lx.FontSize.footnote,
                 color = TextGrey,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
@@ -251,15 +252,15 @@ fun ResetCodeEntryScreen(
                     .fillMaxWidth()
                     .shadow(
                         elevation = 2.dp,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         ambientColor = Color.Black.copy(alpha = 0.05f)
                     ),
                 placeholder = { Text("Reset Code", color = TextGrey) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Lx.Surface,
+                    unfocusedContainerColor = Lx.Surface,
                     focusedBorderColor = BrandGreen,
                     unfocusedBorderColor = Color.Transparent
                 ),
@@ -276,7 +277,7 @@ fun ResetCodeEntryScreen(
                     .fillMaxWidth()
                     .shadow(
                         elevation = 2.dp,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         ambientColor = Color.Black.copy(alpha = 0.05f)
                     ),
                 placeholder = { Text("New Password", color = TextGrey) },
@@ -289,10 +290,10 @@ fun ResetCodeEntryScreen(
                 },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Lx.Surface,
+                    unfocusedContainerColor = Lx.Surface,
                     focusedBorderColor = BrandGreen,
                     unfocusedBorderColor = Color.Transparent
                 ),
@@ -304,8 +305,8 @@ fun ResetCodeEntryScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = error,
-                    fontSize = 12.sp,
-                    color = Color.Red,
+                    fontSize = Lx.FontSize.caption,
+                    color = Lx.Error,
                     textAlign = TextAlign.Center
                 )
             }
@@ -322,7 +323,7 @@ fun ResetCodeEntryScreen(
                     containerColor = BrandGreen,
                     disabledContainerColor = BrandGreen.copy(alpha = 0.5f)
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 enabled = !isLoading && resetCode.isNotEmpty() && newPassword.isNotEmpty()
             ) {
                 if (isLoading) {
@@ -334,7 +335,7 @@ fun ResetCodeEntryScreen(
                 } else {
                     Text(
                         text = "Reset Password",
-                        fontSize = 16.sp,
+                        fontSize = Lx.FontSize.callout,
                         fontWeight = FontWeight.SemiBold
                     )
                 }

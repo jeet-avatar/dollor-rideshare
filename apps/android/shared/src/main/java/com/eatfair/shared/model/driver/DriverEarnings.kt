@@ -257,6 +257,31 @@ data class DailyEarning(
     val hours: Double = 0.0
 )
 
+data class DriverEarningsSummaryDto(
+    @SerializedName("total_earnings") val totalEarnings: Double = 0.0,
+    @SerializedName("base_earnings") val baseEarnings: Double = 0.0,
+    @SerializedName("rideshare_earnings") val rideshareEarnings: Double = 0.0,
+    val tips: Double = 0.0,
+    val bonuses: Double = 0.0,
+    @SerializedName("rideshare_rides") val rideshareRides: Int = 0,
+    val today: Double = 0.0,
+    val week: Double = 0.0,
+    val month: Double = 0.0,
+    val pending: Double = 0.0
+) {
+    fun toResponse(): DriverEarningsResponse = DriverEarningsResponse(
+        total = totalEarnings,
+        basePay = baseEarnings + rideshareEarnings,
+        tips = tips,
+        bonuses = bonuses,
+        deliveries = rideshareRides,
+        today = DriverEarningsPeriod(grossEarnings = today),
+        thisWeek = DriverEarningsPeriod(grossEarnings = week),
+        thisMonth = DriverEarningsPeriod(grossEarnings = month),
+        pendingBalance = pending
+    )
+}
+
 /**
  * Unified Driver Earnings Response - Aligned across iOS, Android, and Web
  * Matches backend /api/drivers/{driver_id}/earnings response

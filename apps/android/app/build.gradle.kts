@@ -52,7 +52,7 @@ android {
         applicationId = "ai.dollor.customer"
         minSdk = 24
         targetSdk = 35
-        versionCode = 261024
+        versionCode = 261026
         versionName = "1.1.0"
         targetSdk = 36
 

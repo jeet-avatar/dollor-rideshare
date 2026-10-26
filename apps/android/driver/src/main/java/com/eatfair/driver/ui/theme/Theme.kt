@@ -44,35 +44,40 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = DollorDriverColors.BlueLight,
-    onPrimary = DollorDriverColors.BlueDark,
-    primaryContainer = DollorDriverColors.BlueDark,
-    onPrimaryContainer = DollorDriverColors.BlueLight,
-    secondary = DollorDriverColors.GreenLight,
-    onSecondary = DollorDriverColors.GreenDark,
-    secondaryContainer = DollorDriverColors.GreenDark,
-    onSecondaryContainer = DollorDriverColors.GreenLight,
-    tertiary = DollorDriverColors.Orange,
-    onTertiary = DollorDriverColors.White,
-    tertiaryContainer = DollorDriverColors.OrangeDark,
-    onTertiaryContainer = DollorDriverColors.Orange,
-    error = DollorDriverColors.Error,
-    onError = DollorDriverColors.White,
-    errorContainer = DollorDriverColors.Error.copy(alpha = 0.2f),
-    onErrorContainer = DollorDriverColors.Error,
-    background = DollorDriverColors.Gray900,
-    onBackground = DollorDriverColors.White,
-    surface = DollorDriverColors.Gray800,
-    onSurface = DollorDriverColors.White,
-    surfaceVariant = DollorDriverColors.Gray700,
-    onSurfaceVariant = DollorDriverColors.Gray300,
-    outline = DollorDriverColors.Gray600,
-    outlineVariant = DollorDriverColors.Gray700
+    primary = Color(0xFFFF7A1A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF3A2208),
+    onPrimaryContainer = Color(0xFFFF9A3D),
+    secondary = Color(0xFFFF9A3D),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFF202024),
+    onSecondaryContainer = Color.White,
+    tertiary = Color(0xFF30D158),
+    onTertiary = Color.Black,
+    error = Color(0xFFFF453A),
+    onError = Color.White,
+    errorContainer = Color(0xFF3A1614),
+    onErrorContainer = Color(0xFFFF453A),
+    background = Color(0xFF0B0B0D),
+    onBackground = Color.White,
+    surface = Color(0xFF17171A),
+    onSurface = Color.White,
+    surfaceVariant = Color(0xFF202024),
+    onSurfaceVariant = Color(0xFFA1A1AA),
+    outline = Color(0xFF2A2A2E),
+    outlineVariant = Color(0xFF2A2A2E),
+    surfaceDim = Color(0xFF0B0B0D),
+    surfaceBright = Color(0xFF202024),
+    surfaceContainerLowest = Color(0xFF0B0B0D),
+    surfaceContainerLow = Color(0xFF131316),
+    surfaceContainer = Color(0xFF17171A),
+    surfaceContainerHigh = Color(0xFF202024),
+    surfaceContainerHighest = Color(0xFF2A2A2E),
 )
 
 @Composable
 fun DollorDriverTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -81,15 +86,13 @@ fun DollorDriverTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> DarkColorScheme
     }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }

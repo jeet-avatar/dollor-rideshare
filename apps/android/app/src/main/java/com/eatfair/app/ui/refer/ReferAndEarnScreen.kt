@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.refer
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -82,9 +83,9 @@ fun ReferAndEarnScreen(
 
             Text(
                 text = "Invite Friends & Earn Rewards",
-                fontSize = 22.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = Lx.Text,
                 textAlign = TextAlign.Center
             )
 
@@ -92,8 +93,8 @@ fun ReferAndEarnScreen(
 
             Text(
                 text = "Share your referral code and both you and your friend will get $5 off your next ride!",
-                fontSize = 14.sp,
-                color = Color.Gray,
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
@@ -104,9 +105,9 @@ fun ReferAndEarnScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = Lx.Surface
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(Lx.Radius.card)
             ) {
                 Column(
                     modifier = Modifier
@@ -116,17 +117,17 @@ fun ReferAndEarnScreen(
                 ) {
                     Text(
                         text = "Your Referral Code",
-                        fontSize = 14.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.TextSecondary
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
                         text = referralCode,
-                        fontSize = 28.sp,
+                        fontSize = Lx.FontSize.largeTitle,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF8B5CF6),
+                        color = Lx.Orange,
                         letterSpacing = 2.sp
                     )
 
@@ -139,10 +140,10 @@ fun ReferAndEarnScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFF3E8FF),
-                            contentColor = Color(0xFF8B5CF6)
+                            containerColor = Lx.OrangeTint,
+                            contentColor = Lx.Orange
                         ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(Lx.Radius.button)
                     ) {
                         Icon(
                             imageVector = if (isCodeCopied) Icons.Filled.Check else Icons.Filled.ContentCopy,
@@ -152,7 +153,7 @@ fun ReferAndEarnScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (isCodeCopied) "Copied!" else "Copy Code",
-                            fontSize = 15.sp,
+                            fontSize = Lx.FontSize.subheadline,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -168,9 +169,9 @@ fun ReferAndEarnScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF8B5CF6)
+                    containerColor = Lx.Orange
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Lx.Radius.button)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Share,
@@ -180,7 +181,7 @@ fun ReferAndEarnScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Share with Friends",
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White
                 )
@@ -191,9 +192,9 @@ fun ReferAndEarnScreen(
             // How it works
             Text(
                 text = "How it works",
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = Lx.Text,
                 modifier = Modifier.align(Alignment.Start)
             )
 
@@ -239,12 +240,12 @@ fun InviteStep(
         Box(
             modifier = Modifier
                 .size(36.dp)
-                .background(Color(0xFF8B5CF6), CircleShape),
+                .background(Lx.Orange, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = number,
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
@@ -257,15 +258,15 @@ fun InviteStep(
         ) {
             Text(
                 text = title,
-                fontSize = 15.sp,
+                fontSize = Lx.FontSize.subheadline,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = Lx.Text
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = description,
-                fontSize = 13.sp,
-                color = Color.Gray
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary
             )
         }
     }

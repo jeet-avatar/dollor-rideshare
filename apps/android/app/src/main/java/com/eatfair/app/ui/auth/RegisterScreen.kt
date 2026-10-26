@@ -1,5 +1,7 @@
 package com.eatfair.app.ui.auth
 
+import com.eatfair.shared.config.AppConfig
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -36,12 +38,12 @@ import com.eatfair.app.ui.components.DollorBrandColors
 // Enterprise Brand Colors
 private val PrimaryOrange = DollorBrandColors.PrimaryOrange
 private val DarkOrange = DollorBrandColors.DarkOrange
-private val TextPrimary = Color(0xFF1A1A2E)
-private val TextSecondary = Color(0xFF6B7280)
-private val BorderColor = Color(0xFFE5E7EB)
-private val BackgroundWhite = Color(0xFFFFFFFF)
-private val BackgroundLight = Color(0xFFFFF7ED)
-private val SuccessGreen = Color(0xFF10B981)
+private val TextPrimary = Lx.Text
+private val TextSecondary = Lx.TextSecondary
+private val BorderColor = Lx.Hairline
+private val BackgroundWhite = Lx.Surface
+private val BackgroundLight = Lx.Surface2
+private val SuccessGreen = Lx.Success
 
 @Preview(showBackground = true)
 @Composable
@@ -131,7 +133,7 @@ fun RegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundWhite)
+            .background(Lx.Bg)
             .systemBarsPadding()
     ) {
         Column(
@@ -157,7 +159,7 @@ fun RegisterScreen(
                     // Logo
                     DollorLogo(
                         size = 56.dp,
-                        backgroundColor = Color.White,
+                        backgroundColor = Lx.Surface,
                         contentColor = PrimaryOrange
                     )
 
@@ -165,7 +167,7 @@ fun RegisterScreen(
 
                     Text(
                         text = "Join the Fair Economy",
-                        fontSize = 26.sp,
+                        fontSize = Lx.FontSize.title,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         textAlign = TextAlign.Center
@@ -175,7 +177,7 @@ fun RegisterScreen(
 
                     Text(
                         text = "We're building a platform where everyone wins.\n100% of your payment goes directly to drivers.",
-                        fontSize = 15.sp,
+                        fontSize = Lx.FontSize.subheadline,
                         color = Color.White.copy(alpha = 0.95f),
                         textAlign = TextAlign.Center,
                         lineHeight = 22.sp
@@ -203,7 +205,7 @@ fun RegisterScreen(
             ) {
                 Text(
                     text = "Create Your Account",
-                    fontSize = 22.sp,
+                    fontSize = Lx.FontSize.title,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
@@ -212,7 +214,7 @@ fun RegisterScreen(
 
                 Text(
                     text = "Book your first ride in minutes",
-                    fontSize = 14.sp,
+                    fontSize = Lx.FontSize.footnote,
                     color = TextSecondary
                 )
 
@@ -283,8 +285,8 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = error,
-                        fontSize = 14.sp,
-                        color = Color(0xFFEF4444),
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.Error,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -296,7 +298,7 @@ fun RegisterScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = BackgroundLight),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Lx.Radius.card),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
@@ -304,7 +306,7 @@ fun RegisterScreen(
                     ) {
                         Text(
                             text = "Our Mission",
-                            fontSize = 18.sp,
+                            fontSize = Lx.FontSize.body,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
@@ -313,7 +315,7 @@ fun RegisterScreen(
 
                         Text(
                             text = "Fair pricing for everyone in the rideshare ecosystem",
-                            fontSize = 13.sp,
+                            fontSize = Lx.FontSize.footnote,
                             color = TextSecondary
                         )
 
@@ -326,7 +328,7 @@ fun RegisterScreen(
                             text = "Drivers receive 100% of fares & tips"
                         )
                         MissionBenefit(
-                            text = "You pay only a flat \$1 platform fee"
+                            text = "You pay only a flat ${AppConfig.Rideshare.feeRangeText} platform fee"
                         )
                     }
                 }
@@ -340,7 +342,7 @@ fun RegisterScreen(
                         .fillMaxWidth()
                         .height(54.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryOrange),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     enabled = !isLoading
                 ) {
                     if (isLoading) {
@@ -352,7 +354,7 @@ fun RegisterScreen(
                     } else {
                         Text(
                             text = "Create Account",
-                            fontSize = 17.sp,
+                            fontSize = Lx.FontSize.body,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
                         )
@@ -364,7 +366,7 @@ fun RegisterScreen(
                 // Terms
                 Text(
                     text = "By creating an account, you agree to our Terms of Service and Privacy Policy. We'll send you a confirmation email.",
-                    fontSize = 12.sp,
+                    fontSize = Lx.FontSize.caption,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
                     lineHeight = 18.sp,
@@ -381,7 +383,7 @@ fun RegisterScreen(
                 ) {
                     Text(
                         text = "Already have an account?",
-                        fontSize = 15.sp,
+                        fontSize = Lx.FontSize.subheadline,
                         color = TextSecondary
                     )
                     TextButton(
@@ -390,7 +392,7 @@ fun RegisterScreen(
                     ) {
                         Text(
                             text = "Sign In",
-                            fontSize = 15.sp,
+                            fontSize = Lx.FontSize.subheadline,
                             color = PrimaryOrange,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -412,13 +414,13 @@ private fun MissionHighlight(value: String, label: String) {
             modifier = Modifier
                 .size(52.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.2f))
+                .background(Lx.Surface.copy(alpha = 0.2f))
                 .border(2.dp, Color.White.copy(alpha = 0.4f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = value,
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
@@ -426,7 +428,7 @@ private fun MissionHighlight(value: String, label: String) {
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = label,
-            fontSize = 12.sp,
+            fontSize = Lx.FontSize.caption,
             color = Color.White.copy(alpha = 0.9f),
             fontWeight = FontWeight.Medium
         )
@@ -447,7 +449,7 @@ private fun RegisterTextField(
     Column {
         Text(
             text = label,
-            fontSize = 14.sp,
+            fontSize = Lx.FontSize.footnote,
             fontWeight = FontWeight.Medium,
             color = TextPrimary
         )
@@ -466,12 +468,12 @@ private fun RegisterTextField(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (error != null) Color(0xFFEF4444) else TextSecondary
+                    tint = if (error != null) Lx.Error else TextSecondary
                 )
             },
             visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            shape = RoundedCornerShape(10.dp),
+            shape = RoundedCornerShape(Lx.Radius.chip),
             isError = error != null,
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
@@ -480,18 +482,18 @@ private fun RegisterTextField(
                 cursorColor = PrimaryOrange,
                 focusedContainerColor = BackgroundWhite,
                 unfocusedContainerColor = BackgroundWhite,
-                errorContainerColor = Color(0xFFFEF2F2),
+                errorContainerColor = Lx.ErrorTint,
                 focusedBorderColor = PrimaryOrange,
                 unfocusedBorderColor = BorderColor,
-                errorBorderColor = Color(0xFFEF4444)
+                errorBorderColor = Lx.Error
             )
         )
         if (error != null) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = error,
-                fontSize = 12.sp,
-                color = Color(0xFFEF4444)
+                fontSize = Lx.FontSize.caption,
+                color = Lx.Error
             )
         }
     }
@@ -514,7 +516,7 @@ private fun MissionBenefit(text: String) {
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
-            fontSize = 14.sp,
+            fontSize = Lx.FontSize.footnote,
             color = TextPrimary,
             fontWeight = FontWeight.Medium
         )

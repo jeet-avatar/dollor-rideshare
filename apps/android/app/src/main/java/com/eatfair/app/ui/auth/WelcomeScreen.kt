@@ -1,5 +1,7 @@
 package com.eatfair.app.ui.auth
 
+import com.eatfair.shared.config.AppConfig
+import com.eatfair.shared.ui.Lx
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -64,7 +66,7 @@ fun WelcomeScreen(
                     colors = listOf(
                         DollorBrandColors.PrimaryOrange,
                         DollorBrandColors.DarkOrange,
-                        Color(0xFFE04500)
+                        Lx.OrangeDeep
                     )
                 )
             )
@@ -85,7 +87,7 @@ fun WelcomeScreen(
                 // Use the new DollorLogo (smiley with $$ eyes)
                 DollorLogo(
                     size = 100.dp,
-                    backgroundColor = Color.White,
+                    backgroundColor = Lx.Surface,
                     contentColor = DollorBrandColors.PrimaryOrange
                 )
 
@@ -103,7 +105,7 @@ fun WelcomeScreen(
 
                 Text(
                     text = "Your Local Rideshare Marketplace",
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     color = Color.White.copy(alpha = 0.9f),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 40.dp)
@@ -132,7 +134,7 @@ fun WelcomeScreen(
                 FeatureRow(
                     icon = Icons.Default.AttachMoney,
                     title = "Fair Prices",
-                    subtitle = "Transparent \$1-\$3 platform fees"
+                    subtitle = "Transparent ${AppConfig.Rideshare.feeRangeText} platform fees"
                 )
             }
 
@@ -151,16 +153,16 @@ fun WelcomeScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
+                        containerColor = Lx.Surface
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 8.dp
                     )
                 ) {
                     Text(
                         text = "Get Started",
-                        fontSize = 18.sp,
+                        fontSize = Lx.FontSize.body,
                         fontWeight = FontWeight.Bold,
                         color = DollorBrandColors.PrimaryOrange
                     )
@@ -171,7 +173,7 @@ fun WelcomeScreen(
                 TextButton(onClick = onLoginClick) {
                     Text(
                         text = "I already have an account",
-                        fontSize = 14.sp,
+                        fontSize = Lx.FontSize.footnote,
                         color = Color.White
                     )
                 }
@@ -196,8 +198,8 @@ private fun FeatureRow(
             modifier = Modifier
                 .size(40.dp)
                 .background(
-                    Color.White.copy(alpha = 0.2f),
-                    RoundedCornerShape(10.dp)
+                    Lx.Surface.copy(alpha = 0.2f),
+                    RoundedCornerShape(Lx.Radius.chip)
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -214,13 +216,13 @@ private fun FeatureRow(
         Column {
             Text(
                 text = title,
-                fontSize = 16.sp,
+                fontSize = Lx.FontSize.callout,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White
             )
             Text(
                 text = subtitle,
-                fontSize = 12.sp,
+                fontSize = Lx.FontSize.caption,
                 color = Color.White.copy(alpha = 0.8f)
             )
         }

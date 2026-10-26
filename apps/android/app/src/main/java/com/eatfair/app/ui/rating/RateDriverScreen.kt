@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.rating
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -70,8 +71,8 @@ fun RateDriverScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = Lx.Surface,
+                    titleContentColor = Lx.Text
                 )
             )
         }
@@ -80,7 +81,7 @@ fun RateDriverScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.White)
+                .background(Lx.Surface)
         ) {
             Column(
                 modifier = Modifier
@@ -93,14 +94,14 @@ fun RateDriverScreen(
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF6C63FF).copy(alpha = 0.1f)),
+                        .background(Lx.Orange.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = driverName.firstOrNull()?.toString() ?: "D",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6C63FF)
+                        color = Lx.Orange
                     )
                 }
 
@@ -108,15 +109,15 @@ fun RateDriverScreen(
 
                 Text(
                     text = "How was your ride with $driverName?",
-                    fontSize = 20.sp,
+                    fontSize = Lx.FontSize.title,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
 
                 Text(
                     text = "Ride #${orderId.takeLast(6)}",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -131,7 +132,7 @@ fun RateDriverScreen(
                             Icon(
                                 if (star <= rating) Icons.Default.Star else Icons.Default.StarBorder,
                                 contentDescription = "Rate $star stars",
-                                tint = Color(0xFFFFC107),
+                                tint = Lx.Gold,
                                 modifier = Modifier.size(40.dp)
                             )
                         }
@@ -148,9 +149,9 @@ fun RateDriverScreen(
                         5 -> "Excellent!"
                         else -> "Tap to rate"
                     },
-                    fontSize = 16.sp,
+                    fontSize = Lx.FontSize.callout,
                     fontWeight = FontWeight.Medium,
-                    color = if (rating > 0) Color(0xFF6C63FF) else Color.Gray
+                    color = if (rating > 0) Lx.Orange else Lx.TextSecondary
                 )
 
                 // Tags Section
@@ -159,8 +160,8 @@ fun RateDriverScreen(
 
                     Text(
                         text = if (rating >= 4) "What did you like?" else "What went wrong?",
-                        fontSize = 14.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.footnote,
+                        color = Lx.TextSecondary
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -178,16 +179,16 @@ fun RateDriverScreen(
                                         selectedTags + tag.id
                                     }
                                 },
-                                label = { Text(tag.label, fontSize = 12.sp) },
+                                label = { Text(tag.label, fontSize = Lx.FontSize.caption) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = if (tag.isPositive)
-                                        Color(0xFF4CAF50).copy(alpha = 0.1f)
+                                        Lx.Success.copy(alpha = 0.1f)
                                     else
-                                        Color(0xFFF44336).copy(alpha = 0.1f),
+                                        Lx.Error.copy(alpha = 0.1f),
                                     selectedLabelColor = if (tag.isPositive)
-                                        Color(0xFF4CAF50)
+                                        Lx.Success
                                     else
-                                        Color(0xFFF44336)
+                                        Lx.Error
                                 )
                             )
                         }
@@ -205,10 +206,10 @@ fun RateDriverScreen(
                         placeholder = { Text("Add a comment (optional)") },
                         minLines = 3,
                         maxLines = 5,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6C63FF),
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
+                            focusedBorderColor = Lx.Orange,
+                            unfocusedBorderColor = Lx.Hairline
                         )
                     )
                 }
@@ -221,10 +222,10 @@ fun RateDriverScreen(
                         Icon(
                             Icons.Default.AttachMoney,
                             contentDescription = null,
-                            tint = Color(0xFF6C63FF)
+                            tint = Lx.Orange
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add a tip for $driverName", color = Color(0xFF6C63FF))
+                        Text("Add a tip for $driverName", color = Lx.Orange)
                     }
                 }
 
@@ -233,9 +234,9 @@ fun RateDriverScreen(
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF6C63FF).copy(alpha = 0.05f)
+                            containerColor = Lx.Orange.copy(alpha = 0.05f)
                         )
                     ) {
                         Column(
@@ -245,7 +246,7 @@ fun RateDriverScreen(
                             Text(
                                 text = "Add a Tip",
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF6C63FF)
+                                color = Lx.Orange
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
@@ -261,8 +262,8 @@ fun RateDriverScreen(
                                             .clickable {
                                                 tipAmount = if (tip == 0.0) null else tip
                                             },
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = if (isSelected) Color(0xFF6C63FF) else Color.White,
+                                        shape = RoundedCornerShape(Lx.Radius.chip),
+                                        color = if (isSelected) Lx.Orange else Lx.Surface2,
                                         border = ButtonDefaults.outlinedButtonBorder
                                     ) {
                                         Text(
@@ -270,7 +271,7 @@ fun RateDriverScreen(
                                             modifier = Modifier.padding(vertical = 12.dp),
                                             textAlign = TextAlign.Center,
                                             fontWeight = FontWeight.Medium,
-                                            color = if (isSelected) Color.White else Color.Black
+                                            color = if (isSelected) Color.White else Lx.Text
                                         )
                                     }
                                 }
@@ -280,8 +281,8 @@ fun RateDriverScreen(
 
                             Text(
                                 text = "100% goes to your driver",
-                                fontSize = 12.sp,
-                                color = Color.Gray
+                                fontSize = Lx.FontSize.caption,
+                                color = Lx.TextSecondary
                             )
                         }
                     }
@@ -296,7 +297,7 @@ fun RateDriverScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White)
+                        .background(Lx.Surface)
                         .padding(16.dp)
                 ) {
                     Button(
@@ -312,9 +313,9 @@ fun RateDriverScreen(
                             .fillMaxWidth()
                             .height(52.dp),
                         enabled = rating > 0,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Lx.Radius.button),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF6C63FF)
+                            containerColor = Lx.Orange
                         )
                     ) {
                         val currentTip = tipAmount
@@ -332,7 +333,7 @@ fun RateDriverScreen(
                         onClick = onBackClick,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Skip for now", color = Color.Gray)
+                        Text("Skip for now", color = Lx.TextSecondary)
                     }
                 }
             }

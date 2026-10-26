@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Dollor" parent="android:Theme.Material.Light.NoActionBar" >
+    <style name="Theme.Dollor" parent="android:Theme.Material.NoActionBar" >
+        <item name="android:windowBackground">#FF0B0B0D</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
 
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -9,7 +10,7 @@
     </style>
 
     <style name="SplashTheme" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/primary_light</item>
+        <item name="windowSplashScreenBackground">#FF0B0B0D</item>
         <item name="postSplashScreenTheme">@style/Theme.Dollor</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/animated_logo</item>
     </style>

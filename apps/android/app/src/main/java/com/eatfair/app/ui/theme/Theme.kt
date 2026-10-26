@@ -1,162 +1,61 @@
 package com.eatfair.app.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
 /**
- * Dollor.ai Customer App Theme - MUST MATCH iOS Theme.swift
- *
- * Brand Colors (Source of Truth: iOS eatfair-ios-shared/Theme.swift):
- * - Primary: BrandOrange #F2994A
- * - Secondary: BrandGreen #06C167
- * - Background: BrandGrey #F5F5F5
- * - Text: BrandBlack #101010
+ * Rider app theme: always dark (black + orange), matching the iOS "luxury" theme.
+ * Design tokens live in `com.eatfair.shared.ui.Lx` (single source of truth; mirrors iOS `Lx`).
+ * Do not add new colors here; add them to `Lx`.
  */
 
-private val LightColorScheme = lightColorScheme(
-    primary = primaryLight,
-    onPrimary = onPrimaryLight,
-    primaryContainer = primaryContainerLight,
-    onPrimaryContainer = onPrimaryContainerLight,
-    secondary = secondaryLight,
-    onSecondary = onSecondaryLight,
-    secondaryContainer = secondaryContainerLight,
-    onSecondaryContainer = onSecondaryContainerLight,
-    tertiary = tertiaryLight,
-    onTertiary = onTertiaryLight,
-    tertiaryContainer = tertiaryContainerLight,
-    onTertiaryContainer = onTertiaryContainerLight,
-    error = errorLight,
-    onError = onErrorLight,
-    errorContainer = errorContainerLight,
-    onErrorContainer = onErrorContainerLight,
-    background = backgroundLight,
-    onBackground = onBackgroundLight,
-    surface = surfaceLight,
-    onSurface = onSurfaceLight,
-    surfaceVariant = surfaceVariantLight,
-    onSurfaceVariant = onSurfaceVariantLight,
-    outline = outlineLight,
-    outlineVariant = outlineVariantLight,
-    scrim = scrimLight,
-    inverseSurface = inverseSurfaceLight,
-    inverseOnSurface = inverseOnSurfaceLight,
-    inversePrimary = inversePrimaryLight,
-    surfaceDim = surfaceDimLight,
-    surfaceBright = surfaceBrightLight,
-    surfaceContainerLowest = surfaceContainerLowestLight,
-    surfaceContainerLow = surfaceContainerLowLight,
-    surfaceContainer = surfaceContainerLight,
-    surfaceContainerHigh = surfaceContainerHighLight,
-    surfaceContainerHighest = surfaceContainerHighestLight,
+private val LxDarkScheme = darkColorScheme(
+    primary = Color(0xFFFF7A1A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF3A2208),
+    onPrimaryContainer = Color(0xFFFF9A3D),
+    secondary = Color(0xFFFF9A3D),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFF202024),
+    onSecondaryContainer = Color.White,
+    tertiary = Color(0xFF30D158),
+    onTertiary = Color.Black,
+    error = Color(0xFFFF453A),
+    onError = Color.White,
+    errorContainer = Color(0xFF3A1614),
+    onErrorContainer = Color(0xFFFF453A),
+    background = Color(0xFF0B0B0D),
+    onBackground = Color.White,
+    surface = Color(0xFF17171A),
+    onSurface = Color.White,
+    surfaceVariant = Color(0xFF202024),
+    onSurfaceVariant = Color(0xFFA1A1AA),
+    outline = Color(0xFF2A2A2E),
+    outlineVariant = Color(0xFF2A2A2E),
+    surfaceDim = Color(0xFF0B0B0D),
+    surfaceBright = Color(0xFF202024),
+    surfaceContainerLowest = Color(0xFF0B0B0D),
+    surfaceContainerLow = Color(0xFF131316),
+    surfaceContainer = Color(0xFF17171A),
+    surfaceContainerHigh = Color(0xFF202024),
+    surfaceContainerHighest = Color(0xFF2A2A2E),
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = primaryDark,
-    onPrimary = onPrimaryDark,
-    primaryContainer = primaryContainerDark,
-    onPrimaryContainer = onPrimaryContainerDark,
-    secondary = secondaryDark,
-    onSecondary = onSecondaryDark,
-    secondaryContainer = secondaryContainerDark,
-    onSecondaryContainer = onSecondaryContainerDark,
-    tertiary = tertiaryDark,
-    onTertiary = onTertiaryDark,
-    tertiaryContainer = tertiaryContainerDark,
-    onTertiaryContainer = onTertiaryContainerDark,
-    error = errorDark,
-    onError = onErrorDark,
-    errorContainer = errorContainerDark,
-    onErrorContainer = onErrorContainerDark,
-    background = backgroundDark,
-    onBackground = onBackgroundDark,
-    surface = surfaceDark,
-    onSurface = onSurfaceDark,
-    surfaceVariant = surfaceVariantDark,
-    onSurfaceVariant = onSurfaceVariantDark,
-    outline = outlineDark,
-    outlineVariant = outlineVariantDark,
-    scrim = scrimDark,
-    inverseSurface = inverseSurfaceDark,
-    inverseOnSurface = inverseOnSurfaceDark,
-    inversePrimary = inversePrimaryDark,
-    surfaceDim = surfaceDimDark,
-    surfaceBright = surfaceBrightDark,
-    surfaceContainerLowest = surfaceContainerLowestDark,
-    surfaceContainerLow = surfaceContainerLowDark,
-    surfaceContainer = surfaceContainerDark,
-    surfaceContainerHigh = surfaceContainerHighDark,
-    surfaceContainerHighest = surfaceContainerHighestDark,
-)
-
-@Immutable
-data class ColorFamily(
-    val color: Color,
-    val onColor: Color,
-    val colorContainer: Color,
-    val onColorContainer: Color
-)
-
-val unspecified_scheme = ColorFamily(
-    Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
-)
-
+/** Always dark, matching the iOS "luxury" theme. */
 @Composable
 fun DollorTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color disabled to ensure consistent brand colors
+    darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = LxDarkScheme,
         typography = Typography,
         content = content
     )
-}
-
-/**
- * Brand gradient - Orange to light orange
- * Matches iOS gradient used in buttons and headers
- */
-@Composable
-fun brandGradient(): Brush {
-    val gradientColors = listOf(
-        BrandOrange,
-        BrandOrangeLight
-    )
-    return Brush.horizontalGradient(colors = gradientColors)
-}
-
-/**
- * Vertical brand gradient
- */
-@Composable
-fun brandVerticalGradient(): Brush {
-    val gradientColors = listOf(
-        BrandOrange,
-        BrandOrangeLight
-    )
-    return Brush.verticalGradient(colors = gradientColors)
 }
 
 /**
@@ -164,27 +63,11 @@ fun brandVerticalGradient(): Brush {
  */
 @Composable
 fun primaryVerticalGradient(): Brush {
-    val gradientColors = listOf(
-        MaterialTheme.colorScheme.inversePrimary,
-        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
-    )
-    return Brush.verticalGradient(colors = gradientColors)
+    return Brush.verticalGradient(listOf(Color(0xFF0B0B0D), Color(0xFF0B0B0D)))
 }
 
 @Composable
 fun pinkVerticalGradient(): Brush {
-    val gradientColors = listOf(
-        Color(0xFFFDBFC7),
-        Color(0xFFFFF5F7)
-    )
-    return Brush.verticalGradient(colors = gradientColors)
+    return Brush.verticalGradient(listOf(Color(0xFF0B0B0D), Color(0xFF0B0B0D)))
 }
 
-@Composable
-fun pinkVerticalGradientReverse(): Brush {
-    val gradientColors = listOf(
-        Color(0xFFFFF5F7),
-        Color(0xFFFDBFC7)
-    )
-    return Brush.verticalGradient(colors = gradientColors)
-}

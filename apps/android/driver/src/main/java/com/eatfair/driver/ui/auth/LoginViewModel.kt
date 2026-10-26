@@ -121,18 +121,28 @@ class LoginViewModel @Inject constructor(
     }
 
     /**
-     * Request a driver password-reset email/code.
-     * Backend: POST /api/auth/driver/forgot-password
+     * Request a driver password-reset code by email.
+     * Backend: POST /api/driver/password-reset/request (same endpoint as the iOS driver app)
      */
     fun forgotPassword(email: String, onResult: (success: Boolean, message: String) -> Unit) {
         viewModelScope.launch {
             repository.driverForgotPassword(email).fold(
                 onSuccess = {
-                    onResult(true, "If an account exists for $email, reset instructions have been sent.")
+                    onResult(true, "If an account exists for $email, a reset code has been sent.")
                 },
                 onFailure = { e ->
-                    onResult(false, e.message ?: "Could not send reset email. Please try again.")
+                    onResult(false, e.message ?: "Could not send reset code. Please try again.")
                 }
+            )
+        }
+    }
+
+    /** Finish the reset with the emailed code. Backend: POST /api/driver/password-reset/confirm */
+    fun resetPassword(email: String, code: String, newPassword: String, onResult: (success: Boolean, message: String) -> Unit) {
+        viewModelScope.launch {
+            repository.driverResetPassword(email, code, newPassword).fold(
+                onSuccess = { onResult(true, "Password updated. You can sign in now.") },
+                onFailure = { e -> onResult(false, e.message ?: "Could not reset password. Check the code and try again.") }
             )
         }
     }

@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.common
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -20,12 +21,12 @@ import kotlin.random.Random
 @Composable
 fun ConfettiAnimation() {
     val confettiColors = listOf(
-        Color(0xFFFF5722),
-        Color(0xFF4CAF50),
-        Color(0xFF2196F3),
-        Color(0xFFFFC107),
-        Color(0xFFE91E63),
-        Color(0xFF9C27B0)
+        Lx.OrangeDeep,
+        Lx.Success,
+        Lx.Orange,
+        Lx.Gold,
+        Lx.OrangeBright,
+        Lx.Gold
     )
 
     var particles by remember {

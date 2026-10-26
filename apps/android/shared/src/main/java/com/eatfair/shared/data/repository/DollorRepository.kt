@@ -239,6 +239,13 @@ class DollorRepository @Inject constructor(
      * Update customer profile (name / phone).
      * Backend route: PUT /api/customer/{customerId}/profile (name & phone as query params).
      */
+    suspend fun updateCustomerFullName(name: String): Result<UpdateProfileAck> =
+        withContext(Dispatchers.IO) {
+            val token = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
+                ?: return@withContext Result.failure(Exception("Not authenticated"))
+            safeApiCallWithDetail { apiService.updateCustomerFullName(UpdateFullNameRequest(name.trim()), token) }
+        }
+
     suspend fun updateCustomerProfile(name: String?, phone: String?): Result<CustomerProfileResponse> =
         withContext(Dispatchers.IO) {
             val token = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
@@ -647,6 +654,36 @@ class DollorRepository @Inject constructor(
         }
     }
 
+    suspend fun getDriverOwnBids(): Result<List<com.eatfair.shared.model.rideshare.DriverOwnBid>> =
+        withContext(Dispatchers.IO) {
+            val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
+                ?: return@withContext Result.failure(Exception("Not authenticated"))
+            safeApiCall { apiService.getDriverOwnBids(secureStorage.driverId, token).bids }
+        }
+
+    suspend fun acceptRiderCounter(bidId: Int): Result<com.eatfair.shared.model.rideshare.BidActionResponse> =
+        withContext(Dispatchers.IO) {
+            val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
+                ?: return@withContext Result.failure(Exception("Not authenticated"))
+            safeApiCallWithDetail { apiService.acceptRiderCounter(bidId, token) }
+        }
+
+    suspend fun rejectRiderCounter(bidId: Int): Result<com.eatfair.shared.model.rideshare.BidActionResponse> =
+        withContext(Dispatchers.IO) {
+            val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
+                ?: return@withContext Result.failure(Exception("Not authenticated"))
+            safeApiCallWithDetail { apiService.rejectRiderCounter(bidId, token) }
+        }
+
+    suspend fun driverFinalCounter(bidId: Int, price: Double): Result<com.eatfair.shared.model.rideshare.BidActionResponse> =
+        withContext(Dispatchers.IO) {
+            val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
+                ?: return@withContext Result.failure(Exception("Not authenticated"))
+            safeApiCallWithDetail {
+                apiService.driverFinalCounter(bidId, com.eatfair.shared.model.rideshare.DriverCounterRequest(price), token)
+            }
+        }
+
     /** Mark arrived at pickup for an active (matched) ride. */
     suspend fun markRideRequestArrived(requestId: Int):
         Result<com.eatfair.shared.model.rideshare.RideStatusResponse> = withContext(Dispatchers.IO) {
@@ -671,6 +708,44 @@ class DollorRepository @Inject constructor(
         safeApiCallWithDetail { apiService.completeRideRequest(requestId, token) }
     }
 
+    private fun driverToken(): String? = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
+
+    suspend fun driverCancelRide(requestId: Int, reason: String) = withContext(Dispatchers.IO) {
+        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+        safeApiCallWithDetail {
+            apiService.driverCancelRideRequest(requestId, com.eatfair.shared.model.rideshare.DriverCancelRideRequest(reason), token)
+        }
+    }
+
+    suspend fun markPassengerNoShow(requestId: Int) = withContext(Dispatchers.IO) {
+        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+        safeApiCallWithDetail { apiService.markPassengerNoShow(requestId, token) }
+    }
+
+    suspend fun ratePassenger(requestId: Int, rating: Int, comment: String?) = withContext(Dispatchers.IO) {
+        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+        safeApiCallWithDetail {
+            apiService.ratePassenger(requestId, com.eatfair.shared.model.rideshare.PassengerRatingRequest(rating, comment), token)
+        }
+    }
+
+    suspend fun getDriverRideChat(requestId: Int) = withContext(Dispatchers.IO) {
+        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+        safeApiCall { apiService.getRideChat(requestId, token).messages }
+    }
+
+    suspend fun sendDriverRideChat(requestId: Int, text: String) = withContext(Dispatchers.IO) {
+        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+        safeApiCallWithDetail {
+            apiService.sendRideChat(requestId, com.eatfair.shared.model.rideshare.SendRideChatRequest(text, "driver"), token)
+        }
+    }
+
+    suspend fun getDriverMe() = withContext(Dispatchers.IO) {
+        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+        safeApiCall { apiService.getDriverMe(token) }
+    }
+
     /**
      * Unified driver earnings with multi-period breakdown.
      * @param period one of "today", "week", "month", "year"
@@ -679,8 +754,20 @@ class DollorRepository @Inject constructor(
         Result<com.eatfair.shared.model.driver.DriverEarningsResponse> = withContext(Dispatchers.IO) {
         val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
             ?: return@withContext Result.failure(Exception("Not authenticated"))
-        val driverId = secureStorage.driverId
-        safeApiCall { apiService.getDriverEarningsDetailed(driverId, period, token) }
+        safeApiCall { apiService.getDriverEarningsSummary(period, token).toResponse() }
+    }
+
+    suspend fun getDriverAccessibility(): Result<com.eatfair.shared.model.rideshare.DriverAccessibilitySettings> =
+        withContext(Dispatchers.IO) {
+            val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+            safeApiCall { apiService.getDriverAccessibility(token) }
+        }
+
+    suspend fun updateDriverAccessibility(
+        settings: com.eatfair.shared.model.rideshare.DriverAccessibilitySettings
+    ): Result<com.eatfair.shared.model.rideshare.DriverAccessibilitySettings> = withContext(Dispatchers.IO) {
+        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+        safeApiCall { apiService.updateDriverAccessibility(settings, token) }
     }
 
     /** Request a payout for the given amount (standard = free, 2-3 days). */
@@ -704,6 +791,12 @@ class DollorRepository @Inject constructor(
     suspend fun driverForgotPassword(email: String): Result<GenericResponse> = withContext(Dispatchers.IO) {
         safeApiCall { apiService.driverForgotPassword(PasswordResetRequest(email)) }
     }
+
+    /** Complete a driver password reset with the emailed code. */
+    suspend fun driverResetPassword(email: String, code: String, newPassword: String): Result<GenericResponse> =
+        withContext(Dispatchers.IO) {
+            safeApiCallWithDetail { apiService.driverResetPassword(PasswordResetConfirmRequest(email, code, newPassword)) }
+        }
 
     suspend fun markRideArrived(rideId: Int): Result<RideActionResponse> =
         withContext(Dispatchers.IO) {
@@ -892,39 +985,39 @@ class DollorRepository @Inject constructor(
     // FOUNDING MEMBERSHIP ($100 lifetime fee-lock)
     // ==========================================
 
-    suspend fun getFoundingStatus(): Result<FoundingStatusResponse> =
+    suspend fun getFoundingStatus(state: String): Result<FoundingStatusResponse> =
         withContext(Dispatchers.IO) {
             val token = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
                 ?: return@withContext Result.failure(Exception("Not authenticated"))
-            safeApiCall { apiService.getFoundingStatus(token) }
+            safeApiCall { apiService.getFoundingStatus(state, token) }
         }
 
     suspend fun joinFounding(
-        paymentMethodId: String? = null,
-        paymentIntentId: String? = null
+        state: String,
+        paymentMethodId: String? = null
     ): Result<FoundingJoinResponse> = withContext(Dispatchers.IO) {
         val token = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
             ?: return@withContext Result.failure(Exception("Not authenticated"))
         safeApiCallWithDetail {
-            apiService.joinFounding(FoundingJoinRequest(paymentMethodId, paymentIntentId), token)
+            apiService.joinFounding(FoundingJoinRequest(state, paymentMethodId), token)
         }
     }
 
-    suspend fun getDriverFoundingStatus(): Result<FoundingStatusResponse> =
+    suspend fun getDriverFoundingStatus(state: String): Result<FoundingStatusResponse> =
         withContext(Dispatchers.IO) {
             val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
                 ?: return@withContext Result.failure(Exception("Not authenticated"))
-            safeApiCall { apiService.getDriverFoundingStatus(token) }
+            safeApiCall { apiService.getDriverFoundingStatus(state, token) }
         }
 
     suspend fun joinDriverFounding(
-        paymentMethodId: String? = null,
-        paymentIntentId: String? = null
+        state: String,
+        paymentMethodId: String? = null
     ): Result<FoundingJoinResponse> = withContext(Dispatchers.IO) {
         val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
             ?: return@withContext Result.failure(Exception("Not authenticated"))
         safeApiCallWithDetail {
-            apiService.joinDriverFounding(FoundingJoinRequest(paymentMethodId, paymentIntentId), token)
+            apiService.joinDriverFounding(FoundingJoinRequest(state, paymentMethodId), token)
         }
     }
 
@@ -936,33 +1029,25 @@ class DollorRepository @Inject constructor(
      * Register FCM push token with backend
      * Works for all user types (customer, driver, vendor)
      */
+    /**
+     * Register this device's FCM token for the signed-in user — the same JSON endpoints
+     * iOS uses (POST /api/erp/{customers|drivers}/{id}/fcm-token). Call after login and
+     * whenever Firebase rotates the token.
+     */
     suspend fun registerPushToken(
         token: String,
         platform: String = "android",
-        pushService: String = "fcm"
+        @Suppress("UNUSED_PARAMETER") pushService: String = "fcm"
     ): Result<GenericResponse> = withContext(Dispatchers.IO) {
-        // Try to get auth token for any logged in user
-        val authToken = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
-            ?: secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
-            ?: secureStorage.getAuthHeader(SecureStorage.UserType.VENDOR)
-            ?: return@withContext Result.failure(Exception("Not authenticated"))
-
-        // Determine user type
-        val userType = when {
-            secureStorage.isCustomerLoggedIn -> "customer"
-            secureStorage.isDriverLoggedIn -> "driver"
-            secureStorage.isVendorLoggedIn -> "vendor"
-            else -> null
-        }
-
-        safeApiCall {
-            val request = RegisterPushTokenRequest(
-                token = token,
-                platform = platform,
-                pushService = pushService,
-                userType = userType
-            )
-            apiService.registerPushToken(request, authToken)
+        val request = com.eatfair.shared.model.FcmTokenRequest(token, platform)
+        val customerAuth = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
+        val driverAuth = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
+        when {
+            secureStorage.isCustomerLoggedIn && customerAuth != null ->
+                safeApiCallWithDetail { apiService.registerCustomerFcmToken(secureStorage.customerId, request, customerAuth) }
+            secureStorage.isDriverLoggedIn && driverAuth != null ->
+                safeApiCallWithDetail { apiService.registerDriverFcmToken(secureStorage.driverId, request, driverAuth) }
+            else -> Result.failure(Exception("Not authenticated"))
         }
     }
 }

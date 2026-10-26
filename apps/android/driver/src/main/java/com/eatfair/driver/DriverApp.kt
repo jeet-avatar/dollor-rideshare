@@ -9,6 +9,7 @@ import dagger.hilt.android.HiltAndroidApp
 class DriverApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        com.eatfair.shared.network.ApiTiming.init(this)
 
         // Initialize AppConfig with production settings
         AppConfig.initialize(

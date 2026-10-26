@@ -1,5 +1,6 @@
 package com.eatfair.driver.ui.founding
 
+import com.eatfair.shared.ui.Lx
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,7 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.*
@@ -22,13 +23,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.eatfair.driver.ui.theme.DollorDriverColors
-import com.stripe.android.PaymentConfiguration
-import com.stripe.android.paymentsheet.PaymentSheet
-import com.stripe.android.paymentsheet.PaymentSheetResult
+import com.eatfair.shared.ui.UsStatePicker
+import com.stripe.android.ApiResultCallback
+import com.stripe.android.Stripe
+import com.stripe.android.model.PaymentMethod
+import com.stripe.android.view.CardInputWidget
 
-private val Gold = Color(0xFFFFC107)
+private val Gold = Lx.Gold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,70 +42,47 @@ fun FoundingMemberScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
-
-    var clientSecret by remember { mutableStateOf<String?>(null) }
-
-    fun onPaymentSheetResult(result: PaymentSheetResult) {
-        when (result) {
-            is PaymentSheetResult.Canceled -> viewModel.onPaymentCancelled()
-            is PaymentSheetResult.Failed -> viewModel.onPaymentFailed(result.error.localizedMessage)
-            is PaymentSheetResult.Completed -> viewModel.onPaymentCompleted(clientSecret)
-        }
-    }
-
-    val paymentSheet = remember { PaymentSheet.Builder(::onPaymentSheetResult) }.build()
-
-    LaunchedEffect(Unit) {
-        viewModel.paymentSheetEvent.collect { keys ->
-            PaymentConfiguration.init(context, keys.publishableKey)
-            clientSecret = keys.paymentIntent
-            val customerConfig = PaymentSheet.CustomerConfiguration(
-                id = keys.customer,
-                ephemeralKeySecret = keys.ephemeralKey
-            )
-            keys.paymentIntent?.let { secret ->
-                paymentSheet.presentWithPaymentIntent(
-                    secret,
-                    PaymentSheet.Configuration.Builder(merchantDisplayName = "Dollor.ai")
-                        .customer(customerConfig)
-                        .allowsDelayedPaymentMethods(true)
-                        .build()
-                )
-            }
-        }
-    }
+    var cardWidget by remember { mutableStateOf<CardInputWidget?>(null) }
+    var confirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.message) {
-        state.message?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearMessage()
-        }
+        state.message?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show(); viewModel.clearMessage() }
     }
     LaunchedEffect(state.error) {
-        state.error?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearError()
+        state.error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show(); viewModel.clearError() }
+    }
+
+    fun payAndJoin() {
+        val params = cardWidget?.paymentMethodCreateParams
+        val key = state.publishableKey
+        if (params == null) {
+            viewModel.onTokenizeFailed("Enter a valid card")
+            return
         }
+        if (key.isNullOrBlank()) {
+            viewModel.onTokenizeFailed("Payments are unavailable right now")
+            return
+        }
+        viewModel.onTokenizing()
+        Stripe(context, key).createPaymentMethod(params, callback = object : ApiResultCallback<PaymentMethod> {
+            override fun onSuccess(result: PaymentMethod) = viewModel.join(result.id)
+            override fun onError(e: Exception) = viewModel.onTokenizeFailed(e.localizedMessage)
+        })
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Founding Member", fontWeight = FontWeight.SemiBold) },
+                title = { Text("Founding Driver", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
+                    IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DollorDriverColors.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Lx.Surface)
             )
         }
     ) { padding ->
         if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) { CircularProgressIndicator() }
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             return@Scaffold
         }
 
@@ -115,132 +96,120 @@ fun FoundingMemberScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
-                modifier = Modifier
-                    .size(96.dp)
-                    .clip(CircleShape)
-                    .background(Gold.copy(alpha = 0.15f)),
+                Modifier.size(96.dp).clip(CircleShape).background(Gold.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
+            ) { Icon(Icons.Default.WorkspacePremium, null, tint = Gold, modifier = Modifier.size(52.dp)) }
+
+            Spacer(Modifier.height(16.dp))
+            Text("Become a Founding Driver", fontSize = Lx.FontSize.title, fontWeight = FontWeight.Bold, color = DollorDriverColors.Gray900, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "A one-time $${"%.0f".format(state.deposit)} joins you as a Dollor.ai founding driver and locks your fees for life.",
+                fontSize = Lx.FontSize.footnote,
+                color = DollorDriverColors.Gray500,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(24.dp))
+
+            if (state.isFounder) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(Lx.Radius.card),
+                    colors = CardDefaults.cardColors(containerColor = DollorDriverColors.Green.copy(alpha = 0.1f))
+                ) {
+                    Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CheckCircle, null, tint = DollorDriverColors.Green, modifier = Modifier.size(28.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("You're a Founding Driver", fontWeight = FontWeight.Bold, color = DollorDriverColors.Gray900)
+                            Text(
+                                "Your lifetime fee-lock is active" + (state.founderState?.let { " in $it." } ?: "."),
+                                fontSize = Lx.FontSize.footnote,
+                                color = DollorDriverColors.Gray500
+                            )
+                        }
+                    }
+                }
+                return@Column
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(Lx.Radius.card),
+                colors = CardDefaults.cardColors(containerColor = Lx.Surface)
             ) {
-                Icon(
-                    Icons.Default.WorkspacePremium,
-                    contentDescription = null,
-                    tint = Gold,
-                    modifier = Modifier.size(52.dp)
+                Column(Modifier.padding(20.dp)) {
+                    Text("Lifetime fee lock", fontWeight = FontWeight.Bold, fontSize = Lx.FontSize.callout, color = DollorDriverColors.Gray900)
+                    Spacer(Modifier.height(12.dp))
+                    Benefit(state.benefit ?: "Lock today's platform fee for life. Government fees still apply.")
+                    Benefit("One-time $${"%.0f".format(state.deposit)}, non-refundable - no recurring charges")
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            UsStatePicker(selected = state.selectedState, onSelected = viewModel::selectState, modifier = Modifier.fillMaxWidth())
+            state.slotsRemaining?.let {
+                Spacer(Modifier.height(8.dp))
+                Text("$it founding spots left in ${state.selectedState}", fontSize = Lx.FontSize.footnote, color = DollorDriverColors.Blue)
+            }
+
+            val canJoin = state.eligible && (state.slotsRemaining ?: 1) > 0
+            if (canJoin && !state.isDemo) {
+                Spacer(Modifier.height(16.dp))
+                AndroidView(
+                    factory = { ctx -> CardInputWidget(ctx).also { cardWidget = it } },
+                    modifier = Modifier.fillMaxWidth().background(Lx.Surface, RoundedCornerShape(Lx.Radius.button)).padding(12.dp)
                 )
             }
 
             Spacer(Modifier.height(16.dp))
-            Text(
-                "Driver Founding Member",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = DollorDriverColors.Gray900,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Lock in the lowest platform fee for life as one of our first drivers.",
-                fontSize = 14.sp,
-                color = DollorDriverColors.Gray500,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(24.dp))
-
-            if (state.isMember) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = DollorDriverColors.Green.copy(alpha = 0.1f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.CheckCircle, null, tint = DollorDriverColors.Green, modifier = Modifier.size(28.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text("You're a Founding Member", fontWeight = FontWeight.Bold, color = DollorDriverColors.Gray900)
-                            Text("Your lifetime fee-lock is active.", fontSize = 13.sp, color = DollorDriverColors.Gray500)
-                        }
-                    }
+            Button(
+                onClick = { if (state.isDemo) viewModel.join(null) else confirm = true },
+                enabled = canJoin && !state.isJoining,
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
+                colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue)
+            ) {
+                if (state.isJoining) {
+                    CircularProgressIndicator(Modifier.size(20.dp), color = DollorDriverColors.White, strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
                 }
-            } else {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text("Member Benefits", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DollorDriverColors.Gray900)
-                        Spacer(Modifier.height(12.dp))
-                        Benefit(state.feeLock ?: "Lifetime fee-lock - your per-ride platform fee never goes up")
-                        Benefit("One-time $${"%.0f".format(state.membershipFee)} - no recurring charges")
-                        Benefit("Priority ride matching and early access to new features")
-                    }
-                }
+                Text("Join for $${"%.0f".format(state.deposit)}", fontWeight = FontWeight.SemiBold)
+            }
 
-                Spacer(Modifier.height(16.dp))
-
-                val slotsText = when {
-                    state.slotsRemaining != null && state.slotsTotal != null ->
-                        "${state.slotsRemaining} of ${state.slotsTotal} founding spots left"
-                    state.slotsRemaining != null -> "${state.slotsRemaining} founding spots left"
-                    else -> null
-                }
-                if (slotsText != null) {
-                    Text(slotsText, fontSize = 13.sp, color = DollorDriverColors.Blue, fontWeight = FontWeight.Medium)
-                    Spacer(Modifier.height(16.dp))
-                }
-
-                val slotsRemaining = state.slotsRemaining
-                val canJoin = state.eligible && (slotsRemaining == null || slotsRemaining > 0)
-                Button(
-                    onClick = { viewModel.onJoinClicked() },
-                    enabled = canJoin && !state.isJoining,
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DollorDriverColors.Blue)
-                ) {
-                    if (state.isJoining) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = DollorDriverColors.White,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    Text("Join for $${"%.0f".format(state.membershipFee)}", fontWeight = FontWeight.SemiBold)
-                }
-
-                if (!canJoin) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = if (state.slotsRemaining == 0) "All founding spots have been claimed."
-                        else "Founding membership isn't available for your account yet.",
-                        fontSize = 12.sp,
-                        color = DollorDriverColors.Gray500,
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                if (state.isDemo) {
-                    Spacer(Modifier.height(8.dp))
-                    Text("Demo account - payment is bypassed.", fontSize = 12.sp, color = DollorDriverColors.Gray500)
-                }
+            if (!canJoin) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = when {
+                        state.slotsRemaining == 0 -> "All founding spots in ${state.selectedState} have been claimed."
+                        state.ridesTaken >= state.claimWindowRides ->
+                            "The founding offer is only available within your first ${state.claimWindowRides} rides."
+                        else -> "Founding membership isn't available for your account right now."
+                    },
+                    fontSize = Lx.FontSize.caption,
+                    color = DollorDriverColors.Gray500,
+                    textAlign = TextAlign.Center
+                )
             }
         }
+    }
+
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text("Confirm founding payment") },
+            text = { Text("Your card will be charged $${"%.0f".format(state.deposit)} once. This payment is non-refundable.") },
+            confirmButton = { TextButton(onClick = { confirm = false; payAndJoin() }) { Text("Pay $${"%.0f".format(state.deposit)}") } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancel") } }
+        )
     }
 }
 
 @Composable
 private fun Benefit(text: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.CheckCircle, null, tint = DollorDriverColors.Green, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
-        Text(text, fontSize = 13.sp, color = DollorDriverColors.Gray700)
+        Text(text, fontSize = Lx.FontSize.footnote, color = DollorDriverColors.Gray700)
     }
 }

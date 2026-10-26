@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.components
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,8 +25,8 @@ object DollorBrandColors {
     val PrimaryOrange = Color(0xFFFF6B00)  // Vibrant orange
     val DarkOrange = Color(0xFFE55A00)     // Darker orange for accents
     val LightOrange = Color(0xFFFF8C33)    // Lighter orange
-    val GoldAccent = Color(0xFFFFD700)     // Gold for premium feel
-    val BackgroundOrange = Color(0xFFFFF3E0)  // Light orange background
+    val GoldAccent = Lx.Gold     // Gold for premium feel
+    val BackgroundOrange = Lx.OrangeTint  // Light orange background
 }
 
 /**

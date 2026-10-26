@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.rideshare
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -76,14 +77,14 @@ fun DriverChatScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF4CAF50).copy(alpha = 0.15f)),
+                                .background(Lx.Success.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = driverName.take(1).uppercase(),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF4CAF50)
+                                color = Lx.Success
                             )
                         }
                         Column {
@@ -169,7 +170,7 @@ fun DriverChatScreen(
 
             // Message Input
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().imePadding(),
                 tonalElevation = 3.dp
             ) {
                 Row(
@@ -185,9 +186,9 @@ fun DriverChatScreen(
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Type a message...") },
                         singleLine = true,
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(Lx.Radius.sheet),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF2196F3),
+                            focusedBorderColor = Lx.Orange,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                         )
                     )
@@ -211,7 +212,7 @@ fun DriverChatScreen(
                         },
                         enabled = messageText.isNotBlank() && !isSending,
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = Color(0xFF2196F3),
+                            containerColor = Lx.Orange,
                             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) {
@@ -256,14 +257,14 @@ fun CustomerChatBubble(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF4CAF50).copy(alpha = 0.15f)),
+                    .background(Lx.Success.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = driverName.take(1).uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4CAF50)
+                    color = Lx.Success
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
@@ -281,7 +282,7 @@ fun CustomerChatBubble(
                     )
                 )
                 .background(
-                    if (isFromCustomer) Color(0xFF2196F3)
+                    if (isFromCustomer) Lx.Orange
                     else MaterialTheme.colorScheme.surfaceVariant
                 )
                 .padding(12.dp),
@@ -314,14 +315,14 @@ fun CustomerChatBubble(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2196F3).copy(alpha = 0.15f)),
+                    .background(Lx.Orange.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Default.Person,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = Color(0xFF2196F3)
+                    tint = Lx.Orange
                 )
             }
         }

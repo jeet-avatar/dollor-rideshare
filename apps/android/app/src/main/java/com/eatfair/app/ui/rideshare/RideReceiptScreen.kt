@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.rideshare
 
+import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eatfair.app.data.RideReceipt
 
-private val Brand = Color(0xFF6C63FF)
+private val Brand = Lx.Orange
 
 /**
  * Itemized ride receipt shown after a ride completes (parity with iOS).
@@ -41,10 +42,10 @@ fun RideReceiptScreen(
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Lx.Surface)
             )
         },
-        containerColor = Color.White
+        containerColor = Lx.Surface
     ) { padding ->
         when {
             isLoading && receipt == null -> {
@@ -57,7 +58,7 @@ fun RideReceiptScreen(
                 Box(
                     modifier = Modifier.fillMaxSize().padding(padding),
                     contentAlignment = Alignment.Center
-                ) { Text("Receipt unavailable.", color = Color.Gray) }
+                ) { Text("Receipt unavailable.", color = Lx.TextSecondary) }
             }
             else -> {
                 Column(
@@ -79,23 +80,24 @@ fun RideReceiptScreen(
                     }
 
                     Spacer(Modifier.height(12.dp))
-                    Text("Ride Receipt", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text("Ride Receipt", fontSize = Lx.FontSize.title, fontWeight = FontWeight.Bold)
                     (receipt.rideNumber ?: receipt.rideRequestId?.let { "#$it" })?.let {
-                        Text(it, fontSize = 13.sp, color = Color.Gray)
+                        Text(it, fontSize = Lx.FontSize.footnote, color = Lx.TextSecondary)
                     }
                     (receipt.completedAt ?: receipt.date)?.let {
-                        Text(it, fontSize = 13.sp, color = Color.Gray)
+                        Text(it, fontSize = Lx.FontSize.footnote, color = Lx.TextSecondary)
                     }
 
                     Spacer(Modifier.height(20.dp))
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F9))
+                        shape = RoundedCornerShape(Lx.Radius.button),
+                        colors = CardDefaults.cardColors(containerColor = Lx.Surface2)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             receipt.driverName?.let { Row2("Driver", it) }
+                            receipt.vehicle?.let { Row2("Vehicle", it) }
                             receipt.pickupAddress?.let { Row2("From", it) }
                             receipt.dropoffAddress?.let { Row2("To", it) }
                             receipt.distanceMiles?.let { Row2("Distance", String.format("%.1f mi", it)) }
@@ -108,17 +110,38 @@ fun RideReceiptScreen(
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(Lx.Radius.button),
+                        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             receipt.fare?.let { AmountRow("Fare", it) }
                             receipt.platformFee?.let { AmountRow("Platform fee", it) }
+                            receipt.accessForAllFee?.let { if (it > 0) AmountRow("CPUC Access for All fee", it) }
                             receipt.tip?.let { if (it > 0) AmountRow("Tip", it) }
                             if (receipt.total != null) {
                                 Divider(modifier = Modifier.padding(vertical = 8.dp))
                                 AmountRow("Total", receipt.total, bold = true)
+                            }
+                        }
+                    }
+
+                    if (receipt.zeroTolerancePolicy != null || receipt.cpucPhone != null) {
+                        Spacer(Modifier.height(16.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            receipt.zeroTolerancePolicy?.let { Text(it, fontSize = Lx.FontSize.caption, color = Lx.TextSecondary) }
+                            Text(
+                                "Safety concerns: support@dollor.ai",
+                                fontSize = Lx.FontSize.caption,
+                                color = Lx.TextSecondary
+                            )
+                            if (receipt.cpucPhone != null) {
+                                Text(
+                                    "California Public Utilities Commission complaints: ${receipt.cpucPhone}" +
+                                        (receipt.cpucEmail?.let { " · $it" } ?: ""),
+                                    fontSize = Lx.FontSize.caption,
+                                    color = Lx.TextSecondary
+                                )
                             }
                         }
                     }
@@ -134,11 +157,11 @@ private fun Row2(label: String, value: String) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, fontSize = 13.sp, color = Color.Gray)
+        Text(label, fontSize = Lx.FontSize.footnote, color = Lx.TextSecondary)
         Text(
             value,
-            fontSize = 13.sp,
-            color = Color.Black,
+            fontSize = Lx.FontSize.footnote,
+            color = Lx.Text,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(start = 16.dp)
         )

@@ -1,5 +1,10 @@
 package com.eatfair.app.ui.rideshare
 
+import com.eatfair.app.R
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.eatfair.shared.ui.Lx
+import com.eatfair.shared.ui.LxButton
+import com.eatfair.shared.ui.LxButtonRole
 import android.Manifest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -71,6 +76,8 @@ fun RideRequestScreen(
     val estimatedFare by viewModel.estimatedFare.collectAsState()
     val suggestedPrice by viewModel.suggestedPrice.collectAsState()
     val incomingBids by viewModel.incomingBids.collectAsState()
+    val ratingSubmitted by viewModel.ratingSubmitted.collectAsState()
+    val activeRideForCountdown by viewModel.activeRideRequest.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val showError by viewModel.showError.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
@@ -105,7 +112,7 @@ fun RideRequestScreen(
     }
 
     // Map camera state - centers on user's current location
-    val defaultLocation = LatLng(34.0522, -118.2437) // LA fallback
+    val defaultLocation = LatLng(AppConfig.Location.FALLBACK_LATITUDE, AppConfig.Location.FALLBACK_LONGITUDE)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 14f)
     }
@@ -149,7 +156,8 @@ fun RideRequestScreen(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
-                isMyLocationEnabled = locationPermission.status.isGranted
+                isMyLocationEnabled = locationPermission.status.isGranted,
+                mapStyleOptions = rememberDarkMapStyle()
             ),
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
@@ -200,8 +208,8 @@ fun RideRequestScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    shape = RoundedCornerShape(Lx.Radius.button),
+                    colors = CardDefaults.cardColors(containerColor = Lx.Surface)
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
@@ -245,10 +253,7 @@ fun RideRequestScreen(
                         onPickupClick = { showPickupSearch = true },
                         onDropoffClick = { showDropoffSearch = true },
                         onRequestRide = {
-                            viewModel.createRideRequest(
-                                customerName = "Customer",
-                                customerPhone = null
-                            )
+                            viewModel.createRideRequest()
                         },
                         onMakeOffer = { showNegotiateSheet = true },
                         onDismiss = onBackClick,
@@ -258,6 +263,7 @@ fun RideRequestScreen(
 
                 RideRequestViewModel.RideStep.WAITING_FOR_BIDS -> {
                     WaitingForBidsSheet(
+                        biddingEndsAtMillis = activeRideForCountdown?.biddingExpiresAtMillis,
                         onCancel = { viewModel.cancelRide() }
                     )
                 }
@@ -265,6 +271,7 @@ fun RideRequestScreen(
                 RideRequestViewModel.RideStep.VIEW_BIDS -> {
                     ViewBidsSheet(
                         bids = incomingBids,
+                        biddingEndsAtMillis = activeRideForCountdown?.biddingExpiresAtMillis,
                         onAcceptBid = { viewModel.acceptBid(it) },
                         onRejectBid = { viewModel.rejectBid(it) },
                         onCounterBid = { bid, price -> viewModel.counterBid(bid, price, null) },
@@ -294,6 +301,7 @@ fun RideRequestScreen(
                 RideRequestViewModel.RideStep.COMPLETED -> {
                     RideCompletedSheet(
                         selectedBid = selectedBid,
+                        ratingSubmitted = ratingSubmitted,
                         onRateDriver = { showRating = true },
                         onViewReceipt = {
                             viewModel.loadReceipt()
@@ -416,15 +424,15 @@ fun RideBottomSheet(
     val canRequestRide = pickupLocation != null && dropoffLocation != null
     val currentFare = suggestedPrice ?: estimatedFare
     val totalAmount = currentFare + selectedTip
-    val driverEarnings = (currentFare * 0.96) + selectedTip // 96% to driver + full tip
+    val driverEarnings = (currentFare - AppConfig.Rideshare.calculatePlatformFee(currentFare)).coerceAtLeast(0.0) + selectedTip // fare minus flat fee, plus 100% of tip
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
             .background(
-                color = Color.White,
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                color = Lx.Surface,
+                shape = RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet)
             )
     ) {
         // Handle - Matches iOS
@@ -435,7 +443,7 @@ fun RideBottomSheet(
                 .width(40.dp)
                 .height(5.dp)
                 .clip(RoundedCornerShape(3.dp))
-                .background(Color.Gray.copy(alpha = 0.3f))
+                .background(Lx.TextSecondary.copy(alpha = 0.3f))
         )
 
         // Header - Matches iOS
@@ -449,7 +457,7 @@ fun RideBottomSheet(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close",
-                    tint = Color.Gray
+                    tint = Lx.TextSecondary
                 )
             }
 
@@ -458,7 +466,7 @@ fun RideBottomSheet(
             Text(
                 text = "Find a Driver",
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 17.sp
+                fontSize = Lx.FontSize.body
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -471,7 +479,7 @@ fun RideBottomSheet(
             )
         }
 
-        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
+        HorizontalDivider(color = Lx.Hairline.copy(alpha = 0.5f))
 
         // Location Inputs - Matches iOS
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -483,19 +491,19 @@ fun RideBottomSheet(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Blue circle indicator - Matches iOS
+                // Pickup marker (green) - Matches iOS
                 Box(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF2196F3).copy(alpha = 0.15f)),
+                        .background(Lx.Pickup.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
                             .size(12.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF2196F3))
+                            .background(Lx.Pickup)
                     )
                 }
 
@@ -504,14 +512,14 @@ fun RideBottomSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "PICKUP",
-                        fontSize = 10.sp,
+                        fontSize = Lx.FontSize.caption,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF2196F3)
+                        color = Lx.Pickup
                     )
                     Text(
                         text = pickupLocation?.fullAddress ?: "Select pickup location",
-                        fontSize = 14.sp,
-                        color = if (pickupLocation != null) Color.Black else Color.Gray,
+                        fontSize = Lx.FontSize.footnote,
+                        color = if (pickupLocation != null) Lx.Text else Lx.TextSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -520,7 +528,7 @@ fun RideBottomSheet(
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = Color.Gray,
+                    tint = Lx.TextSecondary,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -532,7 +540,7 @@ fun RideBottomSheet(
                         .padding(start = 17.dp)
                         .width(2.dp)
                         .height(24.dp)
-                        .background(Color.Gray.copy(alpha = 0.3f))
+                        .background(Lx.TextSecondary.copy(alpha = 0.3f))
                 )
                 Spacer(modifier = Modifier.weight(1f))
             }
@@ -550,13 +558,13 @@ fun RideBottomSheet(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(DollorTheme.Brand.green.copy(alpha = 0.15f)),
+                        .background(Lx.Dropoff.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = null,
-                        tint = DollorTheme.Brand.green,
+                        tint = Lx.Dropoff,
                         modifier = Modifier.size(14.dp)
                     )
                 }
@@ -566,14 +574,14 @@ fun RideBottomSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "DROPOFF",
-                        fontSize = 10.sp,
+                        fontSize = Lx.FontSize.caption,
                         fontWeight = FontWeight.SemiBold,
-                        color = DollorTheme.Brand.green
+                        color = Lx.Dropoff
                     )
                     Text(
                         text = dropoffLocation?.fullAddress ?: "Select dropoff location",
-                        fontSize = 14.sp,
-                        color = if (dropoffLocation != null) Color.Black else Color.Gray,
+                        fontSize = Lx.FontSize.footnote,
+                        color = if (dropoffLocation != null) Lx.Text else Lx.TextSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -582,13 +590,13 @@ fun RideBottomSheet(
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = Color.Gray,
+                    tint = Lx.TextSecondary,
                     modifier = Modifier.size(16.dp)
                 )
             }
         }
 
-        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
+        HorizontalDivider(color = Lx.Hairline.copy(alpha = 0.5f))
 
         // Price Summary - Matches iOS World Class Fare Breakdown
         if (canRequestRide) {
@@ -599,6 +607,11 @@ fun RideBottomSheet(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // TNC-12: accessible vehicle request (matches iOS toggle + options)
+                item {
+                    AccessibilityRequestSection(viewModel = viewModel)
+                }
+
                 // Trip Estimate Header
                 item {
                     Row(
@@ -609,9 +622,9 @@ fun RideBottomSheet(
                         Column {
                             Text(
                                 text = "SUGGESTED OFFER",
-                                fontSize = 10.sp,
+                                fontSize = Lx.FontSize.caption,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.Gray
+                                color = Lx.TextSecondary
                             )
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -621,11 +634,11 @@ fun RideBottomSheet(
                                         Icons.Default.Route,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
-                                        tint = Color.Gray
+                                        tint = Lx.TextSecondary
                                     )
                                     Text(
                                         text = " ${viewModel.formattedDistance}",
-                                        fontSize = 14.sp
+                                        fontSize = Lx.FontSize.footnote
                                     )
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -633,11 +646,11 @@ fun RideBottomSheet(
                                         Icons.Default.Schedule,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
-                                        tint = Color.Gray
+                                        tint = Lx.TextSecondary
                                     )
                                     Text(
                                         text = " ${viewModel.formattedDuration}",
-                                        fontSize = 14.sp
+                                        fontSize = Lx.FontSize.footnote
                                     )
                                 }
                             }
@@ -667,16 +680,16 @@ fun RideBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text("Connection Fee", fontSize = 14.sp, color = Color.Gray)
+                            Text("Connection Fee", fontSize = Lx.FontSize.footnote, color = Lx.TextSecondary)
                             Text(
                                 text = viewModel.platformFeeTierDescription,
-                                fontSize = 10.sp,
+                                fontSize = Lx.FontSize.caption,
                                 color = DollorTheme.Brand.orange
                             )
                         }
                         Text(
                             text = "$${String.format("%.2f", platformFee)}",
-                            fontSize = 14.sp,
+                            fontSize = Lx.FontSize.footnote,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -684,7 +697,7 @@ fun RideBottomSheet(
 
                 item { HorizontalDivider() }
 
-                // 96% to driver message - Matches iOS
+                // Driver-keeps-fare message (matches iOS)
                 item {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -697,8 +710,8 @@ fun RideBottomSheet(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "96%+ goes to your driver",
-                            fontSize = 14.sp,
+                            text = "Drivers keep the fare minus the flat connection fee",
+                            fontSize = Lx.FontSize.footnote,
                             fontWeight = FontWeight.SemiBold,
                             color = DollorTheme.Brand.green
                         )
@@ -712,8 +725,8 @@ fun RideBottomSheet(
                     Column {
                         Text(
                             text = "Add Extra for Driver (Optional)",
-                            fontSize = 14.sp,
-                            color = Color.Gray
+                            fontSize = Lx.FontSize.footnote,
+                            color = Lx.TextSecondary
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
@@ -724,12 +737,12 @@ fun RideBottomSheet(
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
+                                        .clip(RoundedCornerShape(Lx.Radius.chip))
                                         .background(
                                             if (selectedTip == tipAmount)
-                                                Color(0xFF2196F3)
+                                                Lx.Orange
                                             else
-                                                Color.Gray.copy(alpha = 0.1f)
+                                                Lx.TextSecondary.copy(alpha = 0.1f)
                                         )
                                         .clickable { onTipSelected(tipAmount) }
                                         .padding(vertical = 10.dp),
@@ -737,9 +750,9 @@ fun RideBottomSheet(
                                 ) {
                                     Text(
                                         text = if (tipAmount == 0.0) "None" else "$${tipAmount.toInt()}",
-                                        fontSize = 14.sp,
+                                        fontSize = Lx.FontSize.footnote,
                                         fontWeight = FontWeight.Medium,
-                                        color = if (selectedTip == tipAmount) Color.White else Color.Black
+                                        color = if (selectedTip == tipAmount) Color.White else Lx.Text
                                     )
                                 }
                             }
@@ -759,14 +772,14 @@ fun RideBottomSheet(
                         ) {
                             Text(
                                 text = "Your Offer",
-                                fontSize = 17.sp,
+                                fontSize = Lx.FontSize.body,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = "$${String.format("%.2f", totalAmount)}",
-                                fontSize = 22.sp,
+                                fontSize = Lx.FontSize.title,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF2196F3)
+                                color = Lx.Orange
                             )
                         }
 
@@ -782,13 +795,13 @@ fun RideBottomSheet(
                             )
                             Text(
                                 text = " Driver receives: $${String.format("%.2f", driverEarnings)}",
-                                fontSize = 12.sp,
+                                fontSize = Lx.FontSize.caption,
                                 color = DollorTheme.Brand.green
                             )
                             Text(
                                 text = " (You pay driver directly)",
-                                fontSize = 10.sp,
-                                color = Color.Gray
+                                fontSize = Lx.FontSize.caption,
+                                color = Lx.TextSecondary
                             )
                         }
                     }
@@ -801,15 +814,15 @@ fun RideBottomSheet(
                     Column {
                         Text(
                             text = "PEER-TO-PEER RIDESHARE",
-                            fontSize = 10.sp,
+                            fontSize = Lx.FontSize.caption,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.Gray
+                            color = Lx.TextSecondary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Dollor.ai connects riders with independent drivers. Drivers set their own rates and may accept, decline, or counter your offer. The connection fee is for using our matchmaking service. Transportation is provided directly by the driver, not Dollor.ai. By using this service, you agree to our Terms of Service.",
-                            fontSize = 10.sp,
-                            color = Color.Gray,
+                            fontSize = Lx.FontSize.caption,
+                            color = Lx.TextSecondary,
                             lineHeight = 14.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -817,13 +830,13 @@ fun RideBottomSheet(
                             Icon(
                                 Icons.Default.Info,
                                 contentDescription = null,
-                                tint = Color.Gray,
+                                tint = Lx.TextSecondary,
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
                                 text = " Connection fee: $${String.format("%.2f", platformFee)} (tiered $1-$3) • Driver sets final price",
-                                fontSize = 10.sp,
-                                color = Color.Gray
+                                fontSize = Lx.FontSize.caption,
+                                color = Lx.TextSecondary
                             )
                         }
                     }
@@ -842,7 +855,7 @@ fun RideBottomSheet(
                         .fillMaxWidth()
                         .height(52.dp),
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DollorTheme.Brand.green
                     )
@@ -874,7 +887,7 @@ fun RideBottomSheet(
                         .fillMaxWidth()
                         .height(48.dp),
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = DollorTheme.Brand.orange
                     ),
@@ -909,8 +922,8 @@ fun RideBottomSheet(
                     )
                     Text(
                         text = " $1-$3 tiered connection fee • Drivers are independent",
-                        fontSize = 10.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.caption,
+                        color = Lx.TextSecondary
                     )
                 }
             }
@@ -929,8 +942,8 @@ fun FareLineItem(label: String, amount: Double) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = label, fontSize = 14.sp, color = Color.Gray)
-        Text(text = "$${String.format("%.2f", amount)}", fontSize = 14.sp)
+        Text(text = label, fontSize = Lx.FontSize.footnote, color = Lx.TextSecondary)
+        Text(text = "$${String.format("%.2f", amount)}", fontSize = Lx.FontSize.footnote)
     }
 }
 
@@ -938,12 +951,12 @@ fun FareLineItem(label: String, amount: Double) {
  * Waiting for Bids Sheet
  */
 @Composable
-fun WaitingForBidsSheet(onCancel: () -> Unit) {
+fun WaitingForBidsSheet(biddingEndsAtMillis: Long?, onCancel: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .background(Color.White, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
+            .background(Lx.Surface, RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -953,7 +966,7 @@ fun WaitingForBidsSheet(onCancel: () -> Unit) {
                 .width(40.dp)
                 .height(5.dp)
                 .clip(RoundedCornerShape(3.dp))
-                .background(Color.Gray.copy(alpha = 0.3f))
+                .background(Lx.TextSecondary.copy(alpha = 0.3f))
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -963,12 +976,12 @@ fun WaitingForBidsSheet(onCancel: () -> Unit) {
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF2196F3).copy(alpha = 0.1f)),
+                .background(Lx.Orange.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator(
                 modifier = Modifier.size(30.dp),
-                color = Color(0xFF2196F3),
+                color = Lx.Orange,
                 strokeWidth = 3.dp
             )
         }
@@ -977,7 +990,7 @@ fun WaitingForBidsSheet(onCancel: () -> Unit) {
 
         Text(
             text = "Finding available drivers...",
-            fontSize = 17.sp,
+            fontSize = Lx.FontSize.body,
             fontWeight = FontWeight.SemiBold
         )
 
@@ -985,15 +998,16 @@ fun WaitingForBidsSheet(onCancel: () -> Unit) {
 
         Text(
             text = "Drivers are reviewing your ride request.\nYou'll see bids soon!",
-            fontSize = 14.sp,
-            color = Color.Gray,
+            fontSize = Lx.FontSize.footnote,
+            color = Lx.TextSecondary,
             textAlign = TextAlign.Center
         )
+        BiddingCountdown(biddingEndsAtMillis)
 
         Spacer(modifier = Modifier.height(24.dp))
 
         TextButton(onClick = onCancel) {
-            Text("Cancel Request", color = Color.Red)
+            Text("Cancel Request", color = Lx.Error)
         }
     }
 }
@@ -1004,6 +1018,7 @@ fun WaitingForBidsSheet(onCancel: () -> Unit) {
 @Composable
 fun ViewBidsSheet(
     bids: List<DriverBidForCustomer>,
+    biddingEndsAtMillis: Long?,
     onAcceptBid: (DriverBidForCustomer) -> Unit,
     onRejectBid: (DriverBidForCustomer) -> Unit,
     onCounterBid: (DriverBidForCustomer, Double) -> Unit,
@@ -1016,8 +1031,8 @@ fun ViewBidsSheet(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.6f)
-            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .background(Color.White, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
+            .background(Lx.Surface, RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
     ) {
         // Handle
         Box(
@@ -1027,15 +1042,17 @@ fun ViewBidsSheet(
                 .width(40.dp)
                 .height(5.dp)
                 .clip(RoundedCornerShape(3.dp))
-                .background(Color.Gray.copy(alpha = 0.3f))
+                .background(Lx.TextSecondary.copy(alpha = 0.3f))
         )
 
-        Text(
-            text = "${bids.size} driver${if (bids.size != 1) "s" else ""} interested",
-            modifier = Modifier.padding(16.dp),
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "${bids.size} driver${if (bids.size != 1) "s" else ""} interested",
+                fontSize = Lx.FontSize.body,
+                fontWeight = FontWeight.SemiBold
+            )
+            BiddingCountdown(biddingEndsAtMillis)
+        }
 
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -1061,7 +1078,7 @@ fun ViewBidsSheet(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text("Cancel Request", color = Color.Red)
+            Text("Cancel Request", color = Lx.Error)
         }
     }
 
@@ -1102,9 +1119,9 @@ fun DriverBidCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+            .clickable(enabled = bid.status != "countered", onClick = onClick),
+        shape = RoundedCornerShape(Lx.Radius.card),
+        colors = CardDefaults.cardColors(containerColor = Lx.Surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -1117,14 +1134,14 @@ fun DriverBidCard(
                     modifier = Modifier
                         .size(50.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF2196F3).copy(alpha = 0.1f)),
+                        .background(Lx.Orange.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = (bid.driverName ?: "D").take(1).uppercase(),
-                        fontSize = 20.sp,
+                        fontSize = Lx.FontSize.title,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2196F3)
+                        color = Lx.Orange
                     )
                 }
 
@@ -1134,19 +1151,27 @@ fun DriverBidCard(
                     Text(
                         text = bid.driverName ?: "Driver",
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
+                        fontSize = Lx.FontSize.callout
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.Star,
                             contentDescription = null,
-                            tint = Color(0xFFFFC107),
+                            tint = Lx.Gold,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = " ${bid.formattedRating} • ${bid.formattedTrips} trips",
-                            fontSize = 12.sp,
-                            color = Color.Gray
+                            fontSize = Lx.FontSize.caption,
+                            color = Lx.TextSecondary
+                        )
+                    }
+                    val vehicle = listOfNotNull(bid.vehicleColor, bid.vehicleMake, bid.vehicleModel).joinToString(" ")
+                    if (vehicle.isNotBlank() || !bid.vehiclePlate.isNullOrBlank()) {
+                        Text(
+                            text = listOfNotNull(vehicle.takeIf { it.isNotBlank() }, bid.vehiclePlate).joinToString(" · "),
+                            fontSize = Lx.FontSize.caption,
+                            color = Lx.TextSecondary
                         )
                     }
                 }
@@ -1155,18 +1180,39 @@ fun DriverBidCard(
                     Text(
                         text = "$${String.format("%.2f", bid.proposedPrice)}",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
+                        fontSize = Lx.FontSize.body,
                         color = DollorTheme.Brand.green
                     )
-                    Text(
-                        text = "${bid.formattedArrival} away",
-                        fontSize = 11.sp,
-                        color = Color.Gray
-                    )
+                    if (bid.estimatedArrivalMinutes != null) {
+                        Text(
+                            text = "${bid.formattedArrival} away",
+                            fontSize = Lx.FontSize.caption,
+                            color = Lx.TextSecondary
+                        )
+                    }
                 }
             }
 
+            if (!bid.message.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "\"${bid.message}\"",
+                    fontSize = Lx.FontSize.footnote,
+                    color = Lx.TextSecondary,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
+
+            if (bid.status == "countered") {
+                Text(
+                    text = "Your counter: $${String.format("%.2f", bid.customerCounterPrice ?: 0.0)} · waiting for ${bid.driverName ?: "the driver"} to respond…",
+                    fontSize = Lx.FontSize.footnote,
+                    color = DollorTheme.Brand.orange
+                )
+                return@Column
+            }
 
             // Quick action buttons
             Row(
@@ -1177,21 +1223,21 @@ fun DriverBidCard(
                     onClick = onAccept,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = DollorTheme.Brand.green),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(Lx.Radius.chip)
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Accept", fontSize = 13.sp)
+                    Text("Accept", fontSize = Lx.FontSize.footnote)
                 }
 
                 OutlinedButton(
                     onClick = onClick,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(Lx.Radius.chip)
                 ) {
                     Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Counter", fontSize = 13.sp)
+                    Text("Counter", fontSize = Lx.FontSize.footnote)
                 }
             }
         }
@@ -1212,14 +1258,17 @@ fun RideStatusSheet(
     val context = LocalContext.current
     val driverPhone = rideTracking?.driver?.phone
 
-    val statusText = when (currentStep) {
-        RideRequestViewModel.RideStep.MATCHED -> "Driver matched!"
-        RideRequestViewModel.RideStep.DRIVER_EN_ROUTE -> "Driver is on the way"
-        RideRequestViewModel.RideStep.RIDE_IN_PROGRESS -> "Ride in progress"
+    val driverArrived = rideTracking?.hasDriverArrived == true &&
+        currentStep != RideRequestViewModel.RideStep.RIDE_IN_PROGRESS
+    val statusText = when {
+        driverArrived -> "Driver has arrived!"
+        currentStep == RideRequestViewModel.RideStep.MATCHED -> "Driver matched!"
+        currentStep == RideRequestViewModel.RideStep.DRIVER_EN_ROUTE -> "Driver is on the way"
+        currentStep == RideRequestViewModel.RideStep.RIDE_IN_PROGRESS -> "Ride in progress"
         else -> "Processing..."
     }
 
-    val statusIcon = when (currentStep) {
+    val statusIcon = if (driverArrived) Icons.Default.CheckCircle else when (currentStep) {
         RideRequestViewModel.RideStep.MATCHED -> Icons.Default.CheckCircle
         RideRequestViewModel.RideStep.DRIVER_EN_ROUTE -> Icons.Default.DirectionsCar
         RideRequestViewModel.RideStep.RIDE_IN_PROGRESS -> Icons.Default.Navigation
@@ -1229,8 +1278,8 @@ fun RideStatusSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .background(Color.White, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
+            .background(Lx.Surface, RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
             .padding(16.dp)
     ) {
         // Handle
@@ -1240,7 +1289,7 @@ fun RideStatusSheet(
                 .width(40.dp)
                 .height(5.dp)
                 .clip(RoundedCornerShape(3.dp))
-                .background(Color.Gray.copy(alpha = 0.3f))
+                .background(Lx.TextSecondary.copy(alpha = 0.3f))
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -1254,19 +1303,20 @@ fun RideStatusSheet(
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2196F3).copy(alpha = 0.1f)),
+                    .background(Lx.Orange.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (currentStep == RideRequestViewModel.RideStep.MATCHED) {
+                if (currentStep == RideRequestViewModel.RideStep.MATCHED && !driverArrived) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
+                        color = Lx.Orange
                     )
                 } else {
                     Icon(
                         imageVector = statusIcon,
                         contentDescription = null,
-                        tint = Color(0xFF2196F3)
+                        tint = Lx.Orange
                     )
                 }
             }
@@ -1277,23 +1327,23 @@ fun RideStatusSheet(
                 Text(
                     text = statusText,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 17.sp
+                    fontSize = Lx.FontSize.body
                 )
                 rideTracking?.let {
                     Text(
                         text = "Ride #${it.rideNumber ?: it.rideRequestId}",
-                        fontSize = 12.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.caption,
+                        color = Lx.TextSecondary
                     )
                 }
             }
 
-            rideTracking?.etaMinutes?.let { eta ->
+            rideTracking?.etaMinutes?.takeIf { !driverArrived }?.let { eta ->
                 Text(
                     text = "$eta min",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color(0xFF2196F3)
+                    fontSize = Lx.FontSize.callout,
+                    color = Lx.Orange
                 )
             }
         }
@@ -1306,8 +1356,8 @@ fun RideStatusSheet(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-            shape = RoundedCornerShape(12.dp)
+            colors = CardDefaults.cardColors(containerColor = Lx.Surface2),
+            shape = RoundedCornerShape(Lx.Radius.button)
         ) {
             Row(
                 modifier = Modifier
@@ -1319,14 +1369,14 @@ fun RideStatusSheet(
                     modifier = Modifier
                         .size(50.dp)
                         .clip(CircleShape)
-                        .background(Color.Gray.copy(alpha = 0.2f)),
+                        .background(Lx.TextSecondary.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = driverName.take(1).uppercase(),
-                        fontSize = 20.sp,
+                        fontSize = Lx.FontSize.title,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Gray
+                        color = Lx.TextSecondary
                     )
                 }
 
@@ -1339,16 +1389,42 @@ fun RideStatusSheet(
                     )
                     Text(
                         text = vehicleInfo,
-                        fontSize = 12.sp,
-                        color = Color.Gray
+                        fontSize = Lx.FontSize.caption,
+                        color = Lx.TextSecondary
                     )
+                    val rating = rideTracking?.driver?.rating ?: selectedBid?.driverRating
+                    val plate = rideTracking?.driver?.vehiclePlate ?: selectedBid?.vehiclePlate
+                    if (rating != null || !plate.isNullOrBlank()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Lx.Spacing.s),
+                            modifier = Modifier.padding(top = Lx.Spacing.xs)
+                        ) {
+                            if (rating != null) {
+                                Icon(Icons.Default.Star, null, tint = Lx.Gold, modifier = Modifier.size(14.dp))
+                                Text(String.format("%.1f", rating), fontSize = Lx.FontSize.caption, color = Lx.TextSecondary)
+                            }
+                            if (!plate.isNullOrBlank()) {
+                                Text(
+                                    text = plate,
+                                    fontSize = Lx.FontSize.subheadline,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Lx.Text,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(Lx.Radius.chip))
+                                        .background(Lx.Gold.copy(alpha = 0.25f))
+                                        .padding(horizontal = Lx.Spacing.s, vertical = Lx.Spacing.xs)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 IconButton(onClick = onChatClick) {
                     Icon(
                         Icons.Default.Chat,
                         contentDescription = "Chat",
-                        tint = Color(0xFF2196F3)
+                        tint = Lx.Orange
                     )
                 }
 
@@ -1364,7 +1440,7 @@ fun RideStatusSheet(
                         Icon(
                             Icons.Default.Phone,
                             contentDescription = "Call",
-                            tint = DollorTheme.Brand.green
+                            tint = Lx.Success
                         )
                     }
                 }
@@ -1374,11 +1450,35 @@ fun RideStatusSheet(
         // Cancel button (only if not in progress)
         if (currentStep != RideRequestViewModel.RideStep.RIDE_IN_PROGRESS) {
             Spacer(modifier = Modifier.height(16.dp))
+            var showCancelConfirm by remember { mutableStateOf(false) }
             TextButton(
-                onClick = onCancelRide,
+                onClick = { showCancelConfirm = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Cancel Ride", color = Color.Red)
+                Text("Cancel Ride", color = Lx.Error)
+            }
+            if (showCancelConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showCancelConfirm = false },
+                    containerColor = Lx.Surface,
+                    title = { Text("Cancel Ride?", color = Lx.Text) },
+                    text = {
+                        Text(
+                            "Your driver has already accepted this ride. Cancelling frees them for another rider.",
+                            color = Lx.TextSecondary
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showCancelConfirm = false; onCancelRide() }) {
+                            Text("Cancel Ride", color = Lx.Error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showCancelConfirm = false }) {
+                            Text("Keep Ride", color = Lx.Orange)
+                        }
+                    }
+                )
             }
         }
 
@@ -1392,6 +1492,7 @@ fun RideStatusSheet(
 @Composable
 fun RideCompletedSheet(
     selectedBid: DriverBidForCustomer?,
+    ratingSubmitted: Boolean = false,
     onRateDriver: () -> Unit = {},
     onViewReceipt: () -> Unit = {},
     onDone: () -> Unit
@@ -1399,8 +1500,8 @@ fun RideCompletedSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .background(Color.White, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
+            .background(Lx.Surface, RoundedCornerShape(topStart = Lx.Radius.sheet, topEnd = Lx.Radius.sheet))
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -1415,48 +1516,46 @@ fun RideCompletedSheet(
 
         Text(
             text = "Ride Completed!",
-            fontSize = 24.sp,
+            fontSize = Lx.FontSize.title,
             fontWeight = FontWeight.Bold
         )
 
         selectedBid?.let { bid ->
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Total: $${String.format("%.2f", bid.proposedPrice)}",
-                fontSize = 18.sp,
-                color = Color.Gray
+                text = "Fare: $${String.format("%.2f", bid.proposedPrice)} · see receipt for fees",
+                fontSize = Lx.FontSize.body,
+                color = Lx.TextSecondary
             )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Rate your driver (primary post-ride action)
-        Button(
-            onClick = onRateDriver,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = DollorTheme.Brand.green)
-        ) {
-            Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Rate your driver", fontWeight = FontWeight.SemiBold)
+        // Rate your driver (primary post-ride action), replaced by a confirmation once rated
+        if (ratingSubmitted) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Lx.Spacing.s)
+            ) {
+                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Lx.Success)
+                Text("Thanks for rating your driver", color = Lx.TextSecondary, fontSize = Lx.FontSize.subheadline)
+            }
+        } else {
+            LxButton(
+                text = "Rate your driver",
+                onClick = onRateDriver,
+                leading = { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(20.dp)) }
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedButton(
+        LxButton(
+            text = "View receipt",
             onClick = onViewReceipt,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("View receipt", fontWeight = FontWeight.SemiBold)
-        }
+            role = LxButtonRole.Secondary,
+            leading = { Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(20.dp)) }
+        )
 
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -1464,7 +1563,7 @@ fun RideCompletedSheet(
             onClick = onDone,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Done", color = Color.Gray)
+            Text("Done", color = Lx.TextSecondary)
         }
     }
 }
@@ -1501,7 +1600,7 @@ fun RideLocationSearchSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White
+        containerColor = Lx.Surface
     ) {
         Column(
             modifier = Modifier
@@ -1510,7 +1609,7 @@ fun RideLocationSearchSheet(
         ) {
             Text(
                 text = title,
-                fontSize = 20.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold
             )
 
@@ -1523,16 +1622,16 @@ fun RideLocationSearchSheet(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Search address...") },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
+                    Icon(Icons.Default.Search, contentDescription = null, tint = Lx.TextSecondary)
                 },
                 trailingIcon = {
                     if (searchText.isNotEmpty()) {
                         IconButton(onClick = { searchText = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = Color.Gray)
+                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = Lx.TextSecondary)
                         }
                     }
                 },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 singleLine = true
             )
 
@@ -1551,13 +1650,13 @@ fun RideLocationSearchSheet(
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF2196F3).copy(alpha = 0.1f)),
+                            .background(Lx.Orange.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Default.MyLocation,
                             contentDescription = null,
-                            tint = Color(0xFF2196F3)
+                            tint = Lx.Orange
                         )
                     }
 
@@ -1570,8 +1669,8 @@ fun RideLocationSearchSheet(
                         )
                         Text(
                             text = "Based on your GPS",
-                            fontSize = 12.sp,
-                            color = Color.Gray
+                            fontSize = Lx.FontSize.caption,
+                            color = Lx.TextSecondary
                         )
                     }
 
@@ -1580,7 +1679,7 @@ fun RideLocationSearchSheet(
                     Icon(
                         Icons.Default.ChevronRight,
                         contentDescription = null,
-                        tint = Color.Gray,
+                        tint = Lx.TextSecondary,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -1625,7 +1724,7 @@ fun RideLocationSearchSheet(
                             Icon(
                                 Icons.Default.LocationOn,
                                 contentDescription = null,
-                                tint = Color.Gray,
+                                tint = Lx.TextSecondary,
                                 modifier = Modifier.size(24.dp)
                             )
 
@@ -1638,8 +1737,8 @@ fun RideLocationSearchSheet(
                                 )
                                 Text(
                                     text = result.fullAddress,
-                                    fontSize = 12.sp,
-                                    color = Color.Gray,
+                                    fontSize = Lx.FontSize.caption,
+                                    color = Lx.TextSecondary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -1654,7 +1753,7 @@ fun RideLocationSearchSheet(
             if (searchText.length > 2 && searchResults.isEmpty() && !isSearching) {
                 Text(
                     text = "No addresses found",
-                    color = Color.Gray,
+                    color = Lx.TextSecondary,
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -1748,7 +1847,7 @@ fun PreRequestNegotiationSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White
+        containerColor = Lx.Surface
     ) {
         Column(
             modifier = Modifier
@@ -1776,14 +1875,14 @@ fun PreRequestNegotiationSheet(
 
             Text(
                 text = "Make Your Offer",
-                fontSize = 22.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
                 text = "Independent drivers can accept, decline, or counter",
-                fontSize = 14.sp,
-                color = Color.Gray
+                fontSize = Lx.FontSize.footnote,
+                color = Lx.TextSecondary
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -1796,32 +1895,32 @@ fun PreRequestNegotiationSheet(
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.Gray.copy(alpha = 0.1f))
+                        .clip(RoundedCornerShape(Lx.Radius.button))
+                        .background(Lx.TextSecondary.copy(alpha = 0.1f))
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Suggested", fontSize = 12.sp, color = Color.Gray)
+                    Text("Suggested", fontSize = Lx.FontSize.caption, color = Lx.TextSecondary)
                     Text(
                         "$${String.format("%.2f", estimatedFare)}",
-                        fontSize = 20.sp,
+                        fontSize = Lx.FontSize.title,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Gray
+                        color = Lx.TextSecondary
                     )
                 }
 
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(Lx.Radius.button))
                         .background(DollorTheme.Brand.orange.copy(alpha = 0.1f))
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Your Offer", fontSize = 12.sp, color = DollorTheme.Brand.orange)
+                    Text("Your Offer", fontSize = Lx.FontSize.caption, color = DollorTheme.Brand.orange)
                     Text(
                         if (currentOffer != null) "$${String.format("%.2f", currentOffer)}" else "--",
-                        fontSize = 20.sp,
+                        fontSize = Lx.FontSize.title,
                         fontWeight = FontWeight.Bold,
                         color = DollorTheme.Brand.orange
                     )
@@ -1848,12 +1947,12 @@ fun PreRequestNegotiationSheet(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(Lx.Radius.button))
                             .background(
                                 if (selectedQuickOffer == amount)
                                     DollorTheme.Brand.orange
                                 else
-                                    Color.Gray.copy(alpha = 0.1f)
+                                    Lx.TextSecondary.copy(alpha = 0.1f)
                             )
                             .clickable {
                                 selectedQuickOffer = amount
@@ -1864,14 +1963,14 @@ fun PreRequestNegotiationSheet(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                "$${String.format("%.0f", amount)}",
+                                "$${String.format("%.2f", amount)}",
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (selectedQuickOffer == amount) Color.White else Color.Black
+                                color = if (selectedQuickOffer == amount) Color.White else Lx.Text
                             )
                             if (savings > 0) {
                                 Text(
-                                    "Save $${String.format("%.0f", savings)}",
-                                    fontSize = 10.sp,
+                                    "Save $${String.format("%.2f", savings)}",
+                                    fontSize = Lx.FontSize.caption,
                                     color = if (selectedQuickOffer == amount) Color.White.copy(alpha = 0.8f) else DollorTheme.Brand.green
                                 )
                             }
@@ -1899,10 +1998,10 @@ fun PreRequestNegotiationSheet(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("0.00") },
-                prefix = { Text("$", fontSize = 18.sp) },
+                prefix = { Text("$", fontSize = Lx.FontSize.body) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Lx.Radius.button)
             )
 
             Text(
@@ -1910,8 +2009,8 @@ fun PreRequestNegotiationSheet(
                 modifier = Modifier
                     .align(Alignment.Start)
                     .padding(top = 4.dp),
-                fontSize = 12.sp,
-                color = Color.Gray
+                fontSize = Lx.FontSize.caption,
+                color = Lx.TextSecondary
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -1923,13 +2022,13 @@ fun PreRequestNegotiationSheet(
                     .fillMaxWidth()
                     .height(52.dp),
                 enabled = currentOffer != null && currentOffer >= minFare,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = ButtonDefaults.buttonColors(containerColor = DollorTheme.Brand.orange)
             ) {
                 Icon(Icons.Default.Send, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (currentOffer != null) "Request with $${String.format("%.0f", currentOffer)} Offer" else "Enter an Amount",
+                    text = if (currentOffer != null) "Request with $${String.format("%.2f", currentOffer)} Offer" else "Enter an Amount",
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -1956,7 +2055,7 @@ fun BidActionBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White
+        containerColor = Lx.Surface
     ) {
         Column(
             modifier = Modifier
@@ -1966,7 +2065,7 @@ fun BidActionBottomSheet(
             Text(
                 text = "Respond to ${bid.driverName ?: "Driver"}'s Offer",
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
+                fontSize = Lx.FontSize.title
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -1975,7 +2074,7 @@ fun BidActionBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Driver's Offer", color = Color.Gray)
+                Text("Driver's Offer", color = Lx.TextSecondary)
                 Text(
                     "$${String.format("%.2f", bid.proposedPrice)}",
                     fontWeight = FontWeight.Bold,
@@ -1992,7 +2091,7 @@ fun BidActionBottomSheet(
                         .fillMaxWidth()
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = DollorTheme.Brand.green),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Lx.Radius.button)
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -2006,7 +2105,7 @@ fun BidActionBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Lx.Radius.button)
                 ) {
                     Icon(Icons.Default.SwapHoriz, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -2019,7 +2118,7 @@ fun BidActionBottomSheet(
                     onClick = onReject,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Decline", color = Color.Red)
+                    Text("Decline", color = Lx.Error)
                 }
             } else {
                 OutlinedTextField(
@@ -2047,7 +2146,7 @@ fun BidActionBottomSheet(
                     Button(
                         onClick = { counterPrice.toDoubleOrNull()?.let { onCounter(it) } },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                        colors = ButtonDefaults.buttonColors(containerColor = Lx.Orange)
                     ) {
                         Text("Send Counter")
                     }
@@ -2057,4 +2156,112 @@ fun BidActionBottomSheet(
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
+}
+
+@androidx.compose.runtime.Composable
+private fun rememberDarkMapStyle(): MapStyleOptions {
+    val context = LocalContext.current
+    return androidx.compose.runtime.remember { MapStyleOptions.loadRawResourceStyle(context, R.raw.map_dark) }
+}
+
+@Composable
+private fun AccessibilityRequestSection(viewModel: RideRequestViewModel) {
+    val requested by viewModel.accessibilityRequested.collectAsState()
+    val selected by viewModel.accessibilityOptions.collectAsState()
+    val notes by viewModel.accessibilityNotes.collectAsState()
+    val optionLabels = listOf(
+        "wheelchair" to "Wheelchair accessible vehicle",
+        "service_animal" to "Service animal",
+        "mobility_storage" to "Mobility aid storage",
+        "audio_visual" to "Audio/visual assistance"
+    )
+
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Accessible,
+                contentDescription = null,
+                tint = Lx.Orange,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "I need an accessible vehicle",
+                fontSize = Lx.FontSize.footnote,
+                fontWeight = FontWeight.Medium,
+                color = Lx.Text,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = requested,
+                onCheckedChange = { viewModel.setAccessibilityRequested(it) },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Lx.Text,
+                    checkedTrackColor = Lx.Orange,
+                    uncheckedThumbColor = Lx.TextSecondary,
+                    uncheckedTrackColor = Lx.Surface2,
+                    uncheckedBorderColor = Lx.Hairline
+                )
+            )
+        }
+        if (requested) {
+            Text("Select your needs:", fontSize = Lx.FontSize.caption, color = Lx.TextSecondary)
+            optionLabels.forEach { (key, label) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.toggleAccessibilityOption(key) },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = key in selected,
+                        onCheckedChange = { viewModel.toggleAccessibilityOption(key) },
+                        colors = CheckboxDefaults.colors(checkedColor = Lx.Orange)
+                    )
+                    Text(label, fontSize = Lx.FontSize.footnote, color = Lx.Text)
+                }
+            }
+            OutlinedTextField(
+                value = notes,
+                onValueChange = { viewModel.setAccessibilityNotes(it) },
+                placeholder = { Text("Additional accessibility notes (optional)", fontSize = Lx.FontSize.footnote) },
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 3,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Lx.Text,
+                    unfocusedTextColor = Lx.Text,
+                    focusedBorderColor = Lx.Orange,
+                    unfocusedBorderColor = Lx.Hairline
+                )
+            )
+        }
+    }
+}
+
+/** "Bidding closes in m:ss" — ticks every second; hidden when the expiry is unknown. */
+@Composable
+fun BiddingCountdown(endsAtMillis: Long?) {
+    if (endsAtMillis == null) return
+    val remaining by produceState(initialValue = endsAtMillis - System.currentTimeMillis(), endsAtMillis) {
+        while (true) {
+            value = endsAtMillis - System.currentTimeMillis()
+            kotlinx.coroutines.delay(1_000)
+        }
+    }
+    val text = if (remaining > 0) {
+        val total = (remaining / 1000).toInt()
+        "Bidding closes in %d:%02d".format(total / 60, total % 60)
+    } else {
+        "Bidding closed"
+    }
+    Text(
+        text = text,
+        fontSize = Lx.FontSize.caption,
+        fontWeight = FontWeight.SemiBold,
+        color = if (remaining in 1..59_999) Lx.Error else Lx.Orange,
+        modifier = Modifier.padding(top = Lx.Spacing.s)
+    )
 }

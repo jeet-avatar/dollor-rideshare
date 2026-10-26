@@ -63,6 +63,13 @@ interface DollorApiService {
      * Backend reads name/phone as QUERY params (no request body), so this uses
      * @PUT + @Query to match. Only name and phone are updatable server-side.
      */
+    /** PUT /api/auth/customer/profile {full_name} — what iOS sends (Edit Profile sheet). */
+    @PUT("auth/customer/profile")
+    suspend fun updateCustomerFullName(
+        @Body request: com.eatfair.shared.model.UpdateFullNameRequest,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.UpdateProfileAck
+
     @PUT("customer/{customerId}/profile")
     suspend fun updateCustomerProfile(
         @Path("customerId") customerId: Int,
@@ -291,8 +298,13 @@ interface DollorApiService {
     @POST("auth/driver/apple-auth")
     suspend fun driverAppleAuth(@Body request: AppleAuthRequest): DriverLoginResponse
 
-    @POST("auth/driver/forgot-password")
+    /** POST /api/driver/password-reset/request -> emails a reset code (same endpoint as iOS). */
+    @POST("driver/password-reset/request")
     suspend fun driverForgotPassword(@Body request: PasswordResetRequest): GenericResponse
+
+    /** POST /api/driver/password-reset/confirm {email, code, new_password} */
+    @POST("driver/password-reset/confirm")
+    suspend fun driverResetPassword(@Body request: PasswordResetConfirmRequest): GenericResponse
 
     /**
      * Refresh driver auth token
@@ -443,6 +455,31 @@ interface DollorApiService {
         @Header("Authorization") token: String
     ): com.eatfair.shared.model.rideshare.SubmitBidResponse
 
+    @GET("rides/driver/{driverId}/bids")
+    suspend fun getDriverOwnBids(
+        @Path("driverId") driverId: Int,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.DriverOwnBidsResponse
+
+    @POST("rides/bid/{bidId}/accept-counter")
+    suspend fun acceptRiderCounter(
+        @Path("bidId") bidId: Int,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.BidActionResponse
+
+    @POST("rides/bid/{bidId}/reject-counter")
+    suspend fun rejectRiderCounter(
+        @Path("bidId") bidId: Int,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.BidActionResponse
+
+    @POST("rides/bid/{bidId}/driver-counter")
+    suspend fun driverFinalCounter(
+        @Path("bidId") bidId: Int,
+        @Body request: com.eatfair.shared.model.rideshare.DriverCounterRequest,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.BidActionResponse
+
     /** POST /api/rides/request/{id}/arrived */
     @POST("rides/request/{requestId}/arrived")
     suspend fun markRideRequestArrived(
@@ -464,16 +501,61 @@ interface DollorApiService {
         @Header("Authorization") token: String
     ): com.eatfair.shared.model.rideshare.RideStatusResponse
 
-    /**
-     * Unified driver earnings with period breakdown.
-     * GET /api/drivers/{driver_id}/earnings?period=today|week|month|year
-     */
-    @GET("drivers/{driverId}/earnings")
-    suspend fun getDriverEarningsDetailed(
-        @Path("driverId") driverId: Int,
+    @POST("rides/request/{requestId}/driver-cancel")
+    suspend fun driverCancelRideRequest(
+        @Path("requestId") requestId: Int,
+        @Body request: com.eatfair.shared.model.rideshare.DriverCancelRideRequest,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.BidActionResponse
+
+    @POST("rides/request/{requestId}/no-show")
+    suspend fun markPassengerNoShow(
+        @Path("requestId") requestId: Int,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.BidActionResponse
+
+    @POST("rides/request/{requestId}/rate-passenger")
+    suspend fun ratePassenger(
+        @Path("requestId") requestId: Int,
+        @Body request: com.eatfair.shared.model.rideshare.PassengerRatingRequest,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.BidActionResponse
+
+    @GET("p2p/ride-requests/{requestId}/chat")
+    suspend fun getRideChat(
+        @Path("requestId") requestId: Int,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.RideChatListResponse
+
+    @POST("p2p/ride-requests/{requestId}/chat")
+    suspend fun sendRideChat(
+        @Path("requestId") requestId: Int,
+        @Body request: com.eatfair.shared.model.rideshare.SendRideChatRequest,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.BidActionResponse
+
+    @GET("auth/driver/me")
+    suspend fun getDriverMe(
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.DriverMeResponse
+
+    @GET("tnc/driver/accessibility")
+    suspend fun getDriverAccessibility(
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.DriverAccessibilitySettings
+
+    @retrofit2.http.PATCH("tnc/driver/accessibility")
+    suspend fun updateDriverAccessibility(
+        @Body body: com.eatfair.shared.model.rideshare.DriverAccessibilitySettings,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.DriverAccessibilitySettings
+
+    /** GET /api/driver/earnings?period=today|week|month|all (driver resolved from token) */
+    @GET("driver/earnings")
+    suspend fun getDriverEarningsSummary(
         @Query("period") period: String,
         @Header("Authorization") token: String
-    ): com.eatfair.shared.model.driver.DriverEarningsResponse
+    ): com.eatfair.shared.model.driver.DriverEarningsSummaryDto
 
     /**
      * Request a manual payout via Stripe Connect.
@@ -626,6 +708,22 @@ interface DollorApiService {
      * Register FCM push token with backend
      * Called when app starts and when token refreshes
      */
+    /** POST /api/erp/customers/{id}/fcm-token {fcm_token, platform} (iOS parity) */
+    @POST("erp/customers/{customerId}/fcm-token")
+    suspend fun registerCustomerFcmToken(
+        @Path("customerId") customerId: Int,
+        @Body request: com.eatfair.shared.model.FcmTokenRequest,
+        @Header("Authorization") token: String
+    ): GenericResponse
+
+    /** POST /api/erp/drivers/{id}/fcm-token {fcm_token, platform} (iOS parity) */
+    @POST("erp/drivers/{driverId}/fcm-token")
+    suspend fun registerDriverFcmToken(
+        @Path("driverId") driverId: Int,
+        @Body request: com.eatfair.shared.model.FcmTokenRequest,
+        @Header("Authorization") token: String
+    ): GenericResponse
+
     @POST("notifications/register-token")
     suspend fun registerPushToken(
         @Body request: RegisterPushTokenRequest,
@@ -664,6 +762,7 @@ interface DollorApiService {
     /** GET /api/founding/status */
     @GET("founding/status")
     suspend fun getFoundingStatus(
+        @Query("state") state: String,
         @Header("Authorization") token: String
     ): FoundingStatusResponse
 
@@ -681,6 +780,7 @@ interface DollorApiService {
     /** GET /api/founding/driver/status */
     @GET("founding/driver/status")
     suspend fun getDriverFoundingStatus(
+        @Query("state") state: String,
         @Header("Authorization") token: String
     ): FoundingStatusResponse
 

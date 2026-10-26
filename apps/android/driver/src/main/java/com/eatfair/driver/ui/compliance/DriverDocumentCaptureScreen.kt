@@ -1,5 +1,6 @@
 package com.eatfair.driver.ui.compliance
 
+import com.eatfair.shared.ui.Lx
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -121,7 +122,7 @@ fun DriverDocumentCaptureScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DollorDriverColors.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Lx.Surface)
             )
         }
     ) { padding ->
@@ -153,7 +154,7 @@ fun DriverDocumentCaptureScreen(
 
             Text(
                 text = title,
-                fontSize = 24.sp,
+                fontSize = Lx.FontSize.title,
                 fontWeight = FontWeight.Bold,
                 color = DollorDriverColors.Gray900,
                 textAlign = TextAlign.Center,
@@ -161,7 +162,7 @@ fun DriverDocumentCaptureScreen(
             )
             Text(
                 text = subtitle,
-                fontSize = 14.sp,
+                fontSize = Lx.FontSize.footnote,
                 color = DollorDriverColors.Gray500,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -172,8 +173,8 @@ fun DriverDocumentCaptureScreen(
             if (requirementBullets.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = DollorDriverColors.White)
+                    shape = RoundedCornerShape(Lx.Radius.button),
+                    colors = CardDefaults.cardColors(containerColor = Lx.Surface)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         requirementBullets.forEach { item ->
@@ -188,7 +189,7 @@ fun DriverDocumentCaptureScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(text = item, fontSize = 14.sp, color = DollorDriverColors.Gray700)
+                                Text(text = item, fontSize = Lx.FontSize.footnote, color = DollorDriverColors.Gray700)
                             }
                         }
                     }
@@ -202,10 +203,10 @@ fun DriverDocumentCaptureScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(Lx.Radius.button))
                     .then(
                         if (effectiveUri == null && !isUploaded) {
-                            Modifier.border(1.5.dp, DollorDriverColors.Gray300, RoundedCornerShape(12.dp))
+                            Modifier.border(1.5.dp, DollorDriverColors.Gray300, RoundedCornerShape(Lx.Radius.button))
                         } else Modifier
                     )
                     .background(
@@ -254,7 +255,7 @@ fun DriverDocumentCaptureScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("Uploaded", fontWeight = FontWeight.SemiBold, color = DollorDriverColors.Gray900)
-                            Text("Tap to replace", fontSize = 12.sp, color = DollorDriverColors.Gray500)
+                            Text("Tap to replace", fontSize = Lx.FontSize.caption, color = DollorDriverColors.Gray500)
                         }
                     }
 
@@ -267,7 +268,7 @@ fun DriverDocumentCaptureScreen(
                                 modifier = Modifier.size(36.dp)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Take a photo or choose from library", fontSize = 13.sp, color = DollorDriverColors.Gray500)
+                            Text("Take a photo or choose from library", fontSize = Lx.FontSize.footnote, color = DollorDriverColors.Gray500)
                         }
                     }
                 }
@@ -294,14 +295,14 @@ fun DriverDocumentCaptureScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Lx.Radius.button),
                     colors = CardDefaults.cardColors(containerColor = DollorDriverColors.Error.copy(alpha = 0.1f))
                 ) {
                     Text(
                         text = error,
                         modifier = Modifier.padding(12.dp),
                         color = DollorDriverColors.Error,
-                        fontSize = 13.sp
+                        fontSize = Lx.FontSize.footnote
                     )
                 }
             }
@@ -312,13 +313,13 @@ fun DriverDocumentCaptureScreen(
                 onClick = onContinue,
                 enabled = isUploaded && !isUploading,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Lx.Radius.button),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DollorDriverColors.Blue,
                     disabledContainerColor = DollorDriverColors.Gray300
                 )
             ) {
-                Text(text = "Continue", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = "Continue", fontSize = Lx.FontSize.callout, fontWeight = FontWeight.SemiBold)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
