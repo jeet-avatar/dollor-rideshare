@@ -6,7 +6,7 @@ Branches (nothing is merged or deployed; `main` is untouched):
 - Apps and docs: `release/rideshare-launch-ready-20261026` (head `3c3017d0`)
 - Backend: `release/rideshare-backend-20261026` (head `349a7e2a`)
 
-Production (`api.dollor.ai`) is built from `main` of this repo (`apps/web/p2p-platform/backend`) by `.github/workflows/deploy-dollar-ai.yml` into ECS cluster `dollor-production`, service `dollor-api-service`. Production runs `origin/main` at `259cdf3b`. None of the backend fixes below are live until the backend branch is merged to `main`.
+Production (`api.dollor.ai`) is built from `main` of this repo (`apps/web/p2p-platform/backend`) by `.github/workflows/deploy-dollar-ai.yml` into ECS cluster `dollor-production`, service `dollor-api-service`. I could not confirm which commit production runs (its health endpoint reports version 1.0.18, build 2026-02-11, and it behaves differently from the repo code on the iOS tracking route, see section 9). None of the backend fixes below are live until the backend branch is merged to `main` and deployed.
 
 ---
 
@@ -101,8 +101,8 @@ Both apps build in Release for the simulator and launch without a crash after th
 | # | Bug | Evidence | Where fixed |
 |---|---|---|---|
 | 1 | **Rides matched by the driver accepting the rider's counter were never charged** (no PaymentIntent created) | Test fails without fix, passes with | Backend: shared `_authorize_ride_payment`, used by both match paths |
-| 2 | **iOS rider tracking crashed on every call** (`'Depends' object has no attribute 'get'`), also on production | Reproduced with a test | Backend alias now passes its auth |
-| 3 | **Any signed-in user could read and post in any ride's chat**, and could post as the other party | Test | Backend: participant check, sender from token, id-less tokens resolved by email |
+| 2 | **iOS rider tracking route crashed on every call in the repo code** (`'Depends' object has no attribute 'get'`). On the live production API the same route returned 200 on 2026-10-26, so production is not running this code | Reproduced with a test against the repo; production probed live | Backend alias now passes its auth |
+| 3 | **Any signed-in user could read and post in any ride's chat**, and could post as the other party. **Confirmed live on production** (an unrelated driver read a ride's chat and posted as the customer) | Test; production probe |  Backend: participant check, sender from token, id-less tokens resolved by email |
 | 4 | iOS chat send showed failure although the message was saved | Reply lacked `id` and `sender_id` | Backend reply now includes them |
 | 5 | **Android drivers never saw rides at the 10 and 25 mile dispatch steps** (default radius 15 km) | Test fails without fix | Backend default is the widest dispatch step |
 | 6 | A counter could be accepted after the ride was matched to someone else | Test | Backend returns 409; countered rival bids are closed |
@@ -176,3 +176,43 @@ Backend cleanup that needs an owner call: 12 never-imported scripts, `/api/demo/
 6. Do not push local `main`: it is 8 commits ahead of `origin/main`, includes backend changes, and a push deploys production.
 
 Supporting audits: `docs/audit-2026-10-26/` (hardcodes, dead code, API map and cross-app feature matrix, Uber/Lyft research). Line numbers in those files predate the fixes above.
+
+---
+
+## 9. Action-by-action test results (2026-10-26, production API, demo accounts)
+
+### 9.1 API: every rider and driver action (`docs/audit-2026-10-26/action_matrix.py`)
+
+78 checks against `https://api.dollor.ai` covering login, profile, addresses, cards, estimate, request, bids, counter and driver counter, accept-counter, reject, accept, cancel (rider before match, rider after match, driver), track (both routes), chat both ways, arrived, start, complete, no-show refusal, tip, rating both ways, receipt, history, notifications, online/offline, location, earnings and an offline guard.
+
+**77 of 78 behave as expected.** The two apparent failures in the first run were a wrong notifications path in my script (`/api/customer/notifications` returns 200) and the new config endpoint, which returns 401 on production because the new backend is not deployed. One real failure remains:
+- **Chat send reply on production lacks `id` and `sender_id`**, so the iOS app cannot decode it (message saved, app shows failure). Fixed in the backend branch; live only after deploy.
+
+Also confirmed live on production: an unrelated authenticated driver can read a ride's chat and post as the customer (fixed in the branch). My probe left one test message in the chat of demo ride 602.
+
+Expected-and-observed: iOS "tip of 0" returns 422 on production (client no longer sends it); no-show before the wait returns 400.
+
+Production timings in this run: reads 160 to 530 ms; create ride 370 to 490 ms; bid 390 to 550 ms; accept 500 to 660 ms; complete 690 to 820 ms.
+
+### 9.2 Android apps through the UI (signed release builds, real production API)
+
+| Step | Result |
+|---|---|
+| Rider: sign in, accept terms (Continue button label visible), reach Find a Driver | Pass |
+| Rider: set pickup (current location) and dropoff (SFO search), see fare breakdown and offer | Pass; offer $20.24 (it moves a few cents with time of day, which also shows the backend applies time multipliers) |
+| Rider: Find Driver creates the request | Pass (request appeared in the driver app) |
+| Driver: sign in, accept terms, go online | Pass |
+| Driver: see the ride, open the bid sheet, slide to submit | Pass; bid $19.30 |
+| Rider: sees the bid with name, rating, vehicle and plate, taps Accept | Pass |
+| Driver: sees "Heading to pickup", I've Arrived, Start Trip, Complete Trip | Pass |
+| Driver: Trip complete dialog | Pass: fare $19.30, minus $1.00 fee, minus $0.05 CPUC, earns $18.25 |
+| Driver: rate the rider | Submit tapped |
+| Rider: Ride Completed, View receipt | Pass: RIDE2026000605, $19.30, platform fee $1.00, "Demo account (no charge)" |
+| Rider: Trips tab lists the ride at $19.30; driver Earnings tab shows 12 rides, $110.37 | Pass |
+| Rider and driver tab sweep | No crash in the system log |
+
+### 9.3 Not exercised through a UI in this pass
+
+iOS apps (build and launch only); in-app chat screens, call, SOS and share-trip buttons; rider counter-offer and cancel dialogs; driver cancel and no-show on a device; profile sub-pages (edit, addresses, payment methods, notifications, help, settings); sign out; forgot password; delete account (deliberately not run); real card payments; push notifications; scheduled and recurring rides; the two-driver competition test (driver 129 still pending approval).
+
+Android UI timing note: the five-minute bidding window expired during my first two attempts because the UI automation was slow; the third, scripted run completed inside it.
