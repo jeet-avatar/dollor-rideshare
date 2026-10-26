@@ -62,3 +62,13 @@ def test_sender_comes_from_the_token_not_the_body(client, db_session, test_custo
     assert reply.status_code == 200
     assert reply.json()["sender_type"] == "driver"
     assert reply.json()["sender_id"] == test_driver.id
+
+
+def test_token_without_id_claims_cannot_use_a_ride_chat(client, db_session, test_customer, test_driver):
+    """A token that only carries an email (anyone can register a User with someone else's email) must not unlock a chat."""
+    ride = _matched_ride(db_session, test_customer, test_driver, "RIDE-CHAT-NOID")
+    id_less = {"Authorization": "Bearer " + create_access_token(data={"sub": test_customer.email})}
+
+    assert client.get(f"/api/p2p/ride-requests/{ride.id}/chat", headers=id_less).status_code == 403
+    assert client.post(f"/api/p2p/ride-requests/{ride.id}/chat",
+                       json={"message": "hi", "sender_type": "customer"}, headers=id_less).status_code == 403

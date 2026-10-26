@@ -91,3 +91,19 @@ def test_default_radius_reaches_the_widest_dispatch_step(client, db_session, ope
     db_session.commit()
     twenty_miles_out = (37.7879 + 20 / 69.0, -122.4075)
     assert open_ride in available(client, driver_headers_online, *twenty_miles_out)
+
+
+def test_dropped_bids_do_not_freeze_the_search_radius(client, db_session, open_ride, driver_headers_online, online_driver):
+    """A ride whose only bid was withdrawn must keep widening its search like a ride with no bids."""
+    from models import BidStatus, RideBid
+
+    ride = db_session.query(RideRequest).get(open_ride)
+    ride.created_at = datetime.utcnow() - timedelta(seconds=130)
+    db_session.add(RideBid(
+        bid_id="BID-WITHDRAWN-TEST", ride_request_id=ride.id, driver_id=online_driver.id,
+        proposed_price=10.0, status=BidStatus.WITHDRAWN,
+    ))
+    db_session.commit()
+    twenty_miles_out = (37.7879 + 20 / 69.0, -122.4075)
+
+    assert open_ride in available(client, driver_headers_online, *twenty_miles_out)

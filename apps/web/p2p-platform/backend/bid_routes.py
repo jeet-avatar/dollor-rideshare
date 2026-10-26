@@ -793,7 +793,7 @@ def _authorize_ride_payment(db: Session, ride_request: RideRequest, bid: RideBid
                             param="payment_method", code="no_payment_method"
                         )
 
-                final_price_cents = int(float(amount) * 100)
+                final_price_cents = int(round(float(amount) * 100))
                 if final_price_cents > 0:
                     payment_intent = stripe.PaymentIntent.create(
                         amount=final_price_cents,
@@ -810,7 +810,7 @@ def _authorize_ride_payment(db: Session, ride_request: RideRequest, bid: RideBid
                             "type": "rideshare"
                         },
                         capture_method="manual",
-                        idempotency_key=f"ride-pi-{ride_request.id}"
+                        idempotency_key=f"ride-pi-{ride_request.id}-{bid.id}-{final_price_cents}"
                     )
                     if payment_intent.status not in ("succeeded", "requires_capture"):
                         raise stripe.error.CardError(
@@ -1438,7 +1438,9 @@ async def get_available_ride_requests(
             age_seconds = (now - (request.created_at or now)).total_seconds()
             if not is_driver_notified(
                 driver.id, request.pickup_latitude, request.pickup_longitude,
-                online_points, age_seconds, has_bids=bool(getattr(request, "bids", None)),
+                online_points, age_seconds, has_bids=any(
+                    b.status in (BidStatus.PENDING, BidStatus.COUNTERED) for b in (getattr(request, "bids", None) or [])
+                ),
             ):
                 continue
         # Calculate distance if driver location provided
@@ -2421,7 +2423,7 @@ async def mark_passenger_no_show(request_id: int, request: Request, auth_driver:
         if stripe_customer_id and default_pm_id:
             try:
                 fee_intent = stripe.PaymentIntent.create(
-                    amount=500,  # $5.00 in cents
+                    amount=int(round(cancellation_fee * 100)),
                     currency="usd",
                     customer=stripe_customer_id,
                     payment_method=default_pm_id,
@@ -2441,7 +2443,7 @@ async def mark_passenger_no_show(request_id: int, request: Request, auth_driver:
                 if matched_driver and getattr(matched_driver, 'stripe_account_id', None) and getattr(matched_driver, 'stripe_onboarded', False):
                     if not ride_request.stripe_transfer_id:
                         transfer = stripe.Transfer.create(
-                            amount=400,  # $4.00 in cents
+                            amount=int(round(ride_request.driver_payout * 100)),
                             currency="usd",
                             destination=matched_driver.stripe_account_id,
                             description=f"No-show compensation — Ride {ride_request.request_id}",

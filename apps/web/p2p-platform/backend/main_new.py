@@ -10459,14 +10459,6 @@ def _require_ride_chat_participant(db: Session, ride_request_id: int, auth: dict
         return "admin"
     customer_id = auth.get("customer_id")
     driver_id = auth.get("driver_id")
-    if not customer_id and not driver_id and auth.get("sub"):
-        # Tokens issued without an id claim: resolve the account from the token's email
-        email = str(auth["sub"]).lower()
-        account = db.query(Customer).filter(func.lower(Customer.email) == email).first()
-        customer_id = account.id if account else None
-        if not account:
-            driver_account = db.query(Driver).filter(func.lower(Driver.email) == email).first()
-            driver_id = driver_account.id if driver_account else None
     if customer_id and customer_id == ride.customer_id:
         return "customer"
     if driver_id and driver_id == ride.matched_driver_id:
