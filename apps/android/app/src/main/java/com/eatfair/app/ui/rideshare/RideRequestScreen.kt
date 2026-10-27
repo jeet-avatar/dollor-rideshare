@@ -82,6 +82,7 @@ fun RideRequestScreen(
     val showError by viewModel.showError.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val messageTitle by viewModel.messageTitle.collectAsState()
+    val riderFirstName by viewModel.riderFirstName.collectAsState(initial = "")
     val selectedBid by viewModel.selectedBid.collectAsState()
     val rideTracking by viewModel.rideTracking.collectAsState()
     val platformFee by viewModel.platformFee.collectAsState()
@@ -284,6 +285,7 @@ fun RideRequestScreen(
                 RideRequestViewModel.RideStep.DRIVER_EN_ROUTE,
                 RideRequestViewModel.RideStep.RIDE_IN_PROGRESS -> {
                     RideStatusSheet(
+                        riderFirstName = riderFirstName,
                         selectedBid = selectedBid,
                         rideTracking = rideTracking,
                         currentStep = currentStep,
@@ -1250,6 +1252,7 @@ fun DriverBidCard(
  */
 @Composable
 fun RideStatusSheet(
+    riderFirstName: String,
     selectedBid: DriverBidForCustomer?,
     rideTracking: com.eatfair.shared.model.rideshare.CustomerRideTracking?,
     currentStep: RideRequestViewModel.RideStep,
@@ -1330,9 +1333,9 @@ fun RideStatusSheet(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = Lx.FontSize.body
                 )
-                rideTracking?.let {
+                if (riderFirstName.isNotBlank()) {
                     Text(
-                        text = "Ride #${it.rideNumber ?: it.rideRequestId}",
+                        text = "Hi $riderFirstName",
                         fontSize = Lx.FontSize.caption,
                         color = Lx.TextSecondary
                     )

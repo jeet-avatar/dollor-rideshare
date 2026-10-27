@@ -1755,6 +1755,7 @@ struct RideTrackingView: View {
 // MARK: - Ride Status Card
 struct RideStatusCard: View {
     @ObservedObject var viewModel: RideRequestViewModel
+    @EnvironmentObject var authViewModel: AuthViewModel
     @State private var showCancelConfirm = false
     @State private var showNegotiateSheet = false
     @State private var customerOfferAmount: String = ""
@@ -1774,6 +1775,10 @@ struct RideStatusCard: View {
     @State private var ratingErrorMessage = ""
     @State private var showTipError = false
     @State private var tipErrorMessage = ""
+
+    private var riderFirstName: String {
+        authViewModel.customerName.trimmingCharacters(in: .whitespaces).components(separatedBy: " ").first ?? ""
+    }
 
     var statusText: String {
         switch viewModel.currentStep {
@@ -1838,8 +1843,8 @@ struct RideStatusCard: View {
                         .font(.headline)
                         .foregroundColor(Theme.lxText)
 
-                    if let ride = viewModel.activeRide {
-                        Text("Ride #\(ride.rideNumber ?? "—")")
+                    if !riderFirstName.isEmpty {
+                        Text("Hi \(riderFirstName)")
                             .font(.caption)
                             .foregroundColor(Theme.lxTextSecondary)
                     }
@@ -2440,8 +2445,8 @@ struct RideStatusCard: View {
                         .fontWeight(.semibold)
                         .foregroundColor(Lx.Palette.textSecondary)
                     Spacer()
-                    if let ride = viewModel.activeRide {
-                        Text("Ride #\(ride.rideNumber ?? "—")")
+                    if !riderFirstName.isEmpty {
+                        Text(riderFirstName)
                             .font(.caption)
                             .foregroundColor(Lx.Palette.textSecondary)
                     }

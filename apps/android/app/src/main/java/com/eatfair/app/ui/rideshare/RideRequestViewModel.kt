@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eatfair.app.data.CustomerRideshareApiService
 import com.eatfair.shared.data.local.SecureStorage
+import com.eatfair.shared.data.local.SessionManager
 import com.eatfair.shared.model.rideshare.*
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -19,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,8 +35,12 @@ import kotlin.math.*
  */
 @HiltViewModel
 class RideRequestViewModel @Inject constructor(
-    private val secureStorage: SecureStorage
+    private val secureStorage: SecureStorage,
+    sessionManager: SessionManager
 ) : ViewModel() {
+
+    /** The rider's own name, shown on the ride status card in place of the internal ride number. */
+    val riderFirstName = sessionManager.userNameFlow.map { it.orEmpty().trim().substringBefore(" ") }
 
     companion object {
         private const val TAG = "RideRequestViewModel"
