@@ -39,9 +39,6 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.android.gms.maps.CameraUpdateFactory
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 private val CANCEL_REASONS_BEFORE_ARRIVAL = listOf(
     "Rider asked me to cancel",
@@ -78,8 +75,11 @@ private fun dial(context: Context, number: String) {
 private fun secondsSince(iso: String?): Long? {
     iso ?: return null
     return runCatching {
-        val t = runCatching { Instant.parse(iso) }.getOrElse { LocalDateTime.parse(iso).toInstant(ZoneOffset.UTC) }
-        (System.currentTimeMillis() - t.toEpochMilli()) / 1000
+        // The server sends UTC, with or without a zone suffix. SimpleDateFormat works on API 24; java.time does not.
+        val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+            timeZone = java.util.TimeZone.getTimeZone("UTC")
+        }
+        (System.currentTimeMillis() - parser.parse(iso.take(19))!!.time) / 1000
     }.getOrNull()
 }
 

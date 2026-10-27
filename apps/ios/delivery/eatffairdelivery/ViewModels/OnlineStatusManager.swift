@@ -32,6 +32,10 @@ final class OnlineStatusManager: ObservableObject {
     private var isRequestInFlight = false
     /// How many times we've retried the current in-flight request after a network error.
     private var retryCount = 0
+    /// True while a go-online retry is waiting; the server still reports offline then, so syncing must not undo the toggle.
+    private var isRetryPending = false
+    /// Incremented on every toggle so a slow server read cannot overwrite a newer choice.
+    private var toggleGeneration = 0
 
     private init() {}
 
@@ -48,6 +52,7 @@ final class OnlineStatusManager: ObservableObject {
         }
 
         retryCount = 0
+        toggleGeneration += 1
         sendOnlineStatusRequest(online: online)
     }
 
@@ -99,9 +104,12 @@ final class OnlineStatusManager: ObservableObject {
                     } else if self.retryCount < 1 {
                         // Network error on go-online: keep optimistic state, retry after 5 s.
                         self.retryCount += 1
+                        self.isRetryPending = true
                         logger.warning("[OnlineStatusManager] go-online failed (network) — retry \(self.retryCount) in 5 s")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-                            guard let self = self, self.isOnline else { return }
+                            guard let self = self else { return }
+                            self.isRetryPending = false
+                            guard self.isOnline else { return }
                             self.sendOnlineStatusRequest(online: online)
                         }
                     } else {
@@ -120,18 +128,25 @@ final class OnlineStatusManager: ObservableObject {
     /// Adopts the server's online flag (relaunch, or the driver went online from another device)
     /// so the toggle never contradicts what riders see. Never overrides an in-flight toggle.
     func syncFromServer() {
-        guard !isRequestInFlight else { return }
+        guard !isRequestInFlight, !isRetryPending else { return }
+        let generation = toggleGeneration
         p2pService.getDriverMe { [weak self] result in
-            guard let self = self, !self.isRequestInFlight else { return }
-            guard case .success(let json) = result,
-                  let serverOnline = json["is_online"] as? Bool,
-                  serverOnline != self.isOnline else { return }
-            self.isOnline = serverOnline
-            if serverOnline {
-                LocationManager.shared.startTracking()
-            } else {
-                LocationManager.shared.stopTracking()
+            DispatchQueue.main.async {
+                self?.applyServerStatus(result, generation: generation)
             }
+        }
+    }
+
+    private func applyServerStatus(_ result: Result<[String: Any], Error>, generation: Int) {
+        guard !isRequestInFlight, !isRetryPending, generation == toggleGeneration else { return }
+        guard case .success(let json) = result,
+              let serverOnline = json["is_online"] as? Bool,
+              serverOnline != isOnline else { return }
+        isOnline = serverOnline
+        if serverOnline {
+            LocationManager.shared.startTracking()
+        } else {
+            LocationManager.shared.stopTracking()
         }
     }
 

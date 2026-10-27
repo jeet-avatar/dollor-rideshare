@@ -242,25 +242,9 @@ class VoiceAssistantManager: NSObject, ObservableObject {
     }
 
     // MARK: - Process Commands
-    private func processCommand(_ text: String) {
-        for command in VoiceCommand.allCases {
-            if text.contains(command.rawValue) {
-                DispatchQueue.main.async {
-                    self.recognizedCommands.append(command)
-                    self.speak(command.confirmationMessage)
-
-                    // Post notification for the command
-                    NotificationCenter.default.post(
-                        name: .voiceCommandRecognized,
-                        object: nil,
-                        userInfo: ["command": command]
-                    )
-                }
-                stopListening()
-                return
-            }
-        }
-    }
+    /// Voice is used for dictation only. No screen acts on spoken commands, so matching them here would
+    /// announce actions ("Calling customer now", "Order accepted") that never happen and would cut off dictation.
+    private func processCommand(_ text: String) {}
 
     // MARK: - Text to Speech
     func speak(_ text: String) {

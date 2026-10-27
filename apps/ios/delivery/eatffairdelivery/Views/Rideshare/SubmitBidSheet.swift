@@ -5,6 +5,10 @@ import EatFairShared
 /// SubmitBidSheet - Submit a competitive bid on a ride request
 /// Matches web app RideBidding.tsx bid submission modal
 struct SubmitBidSheet: View {
+    private static func percentText(_ factor: Double) -> String {
+        "\(Int((factor * 100).rounded()))%"
+    }
+
     let request: RideRequestForBidding
     @ObservedObject var viewModel: RideBiddingViewModel
     let onDismiss: () -> Void
@@ -281,7 +285,7 @@ struct SubmitBidSheet: View {
                     // Quick Accept - 92% (8% discount to win fast)
                     BidOptionButton(
                         title: "Quick Accept",
-                        subtitle: "92%",
+                        subtitle: Self.percentText(AppConfig.shared.bidQuickAcceptFactor),
                         amount: suggestedBids.quickAccept,
                         earnings: viewModel.calculateEarnings(proposedPrice: suggestedBids.quickAccept),
                         color: Theme.lxOrange,
@@ -294,7 +298,7 @@ struct SubmitBidSheet: View {
                     // Fair Price - 100% (market rate)
                     BidOptionButton(
                         title: "Fair Price",
-                        subtitle: "100%",
+                        subtitle: Self.percentText(AppConfig.shared.bidFairFactor),
                         amount: suggestedBids.fairPrice,
                         earnings: viewModel.calculateEarnings(proposedPrice: suggestedBids.fairPrice),
                         color: Theme.lxOrangeBright,
@@ -307,7 +311,7 @@ struct SubmitBidSheet: View {
                     // Premium - 108% (8% premium for guaranteed higher earnings)
                     BidOptionButton(
                         title: "Premium",
-                        subtitle: "108%",
+                        subtitle: Self.percentText(AppConfig.shared.bidPremiumFactor),
                         amount: suggestedBids.premium,
                         earnings: viewModel.calculateEarnings(proposedPrice: suggestedBids.premium),
                         color: Theme.lxSuccess,
@@ -517,7 +521,7 @@ struct SubmitBidSheet: View {
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxSuccess)
 
-                    Text("$1-3 flat fee, NOT a percentage")
+                    Text("\(AppConfig.shared.rideshareFeeRangeText) flat fee, NOT a percentage")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(Theme.lxSuccess)

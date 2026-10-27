@@ -2245,9 +2245,10 @@ private fun AccessibilityRequestSection(viewModel: RideRequestViewModel) {
 @Composable
 fun BiddingCountdown(endsAtMillis: Long?) {
     if (endsAtMillis == null) return
-    val remaining by produceState(initialValue = endsAtMillis - System.currentTimeMillis(), endsAtMillis) {
+    var remaining by remember(endsAtMillis) { mutableStateOf(endsAtMillis - System.currentTimeMillis()) }
+    LaunchedEffect(endsAtMillis) {
         while (true) {
-            value = endsAtMillis - System.currentTimeMillis()
+            remaining = endsAtMillis - System.currentTimeMillis()
             kotlinx.coroutines.delay(1_000)
         }
     }

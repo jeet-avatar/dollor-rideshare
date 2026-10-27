@@ -211,21 +211,26 @@ public class AppConfig: ObservableObject {
     static func money(_ value: Double) -> String { "$\(Int(value.rounded()))" }
 
     /// One-line fee summary for FAQ / legal copy, e.g. "$1 for fares up to $25, $2 for fares $25-$50, $3 for fares over $50".
+    /// "$1" for whole amounts, "$1.50" otherwise, so fractional fees are never truncated.
+    static func feeAmount(_ value: Double) -> String {
+        value == value.rounded() ? "$\(Int(value))" : String(format: "$%.2f", value)
+    }
+
     /// Lowest-to-highest platform fee, e.g. "$1-$3". Always in sync with the tier config.
     public var rideshareFeeRangeText: String {
-        "$\(Int(rideshareTier1Fee))-$\(Int(rideshareTier3Fee))"
+        "\(Self.feeAmount(rideshareTier1Fee))-\(Self.feeAmount(rideshareTier3Fee))"
     }
 
     public var rideshareFeeSummary: String {
-        "$\(Int(rideshareTier1Fee)) for fares up to \(Self.money(rideshareTier1MaxFare)), $\(Int(rideshareTier2Fee)) for fares \(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare)), $\(Int(rideshareTier3Fee)) for fares over \(Self.money(rideshareTier2MaxFare))"
+        "\(Self.feeAmount(rideshareTier1Fee)) for fares up to \(Self.money(rideshareTier1MaxFare)), \(Self.feeAmount(rideshareTier2Fee)) for fares \(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare)), \(Self.feeAmount(rideshareTier3Fee)) for fares over \(Self.money(rideshareTier2MaxFare))"
     }
 
     /// Human-readable fee tiers for UI/legal copy, always in sync with the tier config above.
     public var rideshareTierRows: [(label: String, fee: String)] {
         [
-            ("Fares up to \(Self.money(rideshareTier1MaxFare))", "$\(Int(rideshareTier1Fee)) flat"),
-            ("Fares \(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare))", "$\(Int(rideshareTier2Fee)) flat"),
-            ("Fares over \(Self.money(rideshareTier2MaxFare))", "$\(Int(rideshareTier3Fee)) flat")
+            ("Fares up to \(Self.money(rideshareTier1MaxFare))", "\(Self.feeAmount(rideshareTier1Fee)) flat"),
+            ("Fares \(Self.money(rideshareTier1MaxFare))-\(Self.money(rideshareTier2MaxFare))", "\(Self.feeAmount(rideshareTier2Fee)) flat"),
+            ("Fares over \(Self.money(rideshareTier2MaxFare))", "\(Self.feeAmount(rideshareTier3Fee)) flat")
         ]
     }
 

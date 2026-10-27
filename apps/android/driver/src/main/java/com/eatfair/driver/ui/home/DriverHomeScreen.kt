@@ -326,9 +326,9 @@ fun DriverHomeScreen(
                             data = Uri.parse("mailto:${AppConfig.Rideshare.support.email}")
                             putExtra(Intent.EXTRA_SUBJECT, "Dollor Driver Support")
                         }
-                        if (intent.resolveActivity(context.packageManager) != null) {
+                        try {
                             context.startActivity(intent)
-                        } else {
+                        } catch (e: android.content.ActivityNotFoundException) {
                             Toast.makeText(context, AppConfig.Rideshare.support.email, Toast.LENGTH_LONG).show()
                         }
                     }

@@ -1064,10 +1064,12 @@ data class ReceiptEnvelope(val receipt: ReceiptBody? = null) {
     /** Backend timestamps are naive UTC ISO strings; show them in the rider's local time. */
     private fun formatUtc(iso: String?): String? = iso?.let {
         runCatching {
-            java.time.LocalDateTime.parse(it)
-                .atZone(java.time.ZoneOffset.UTC)
-                .withZoneSameInstant(java.time.ZoneId.systemDefault())
-                .format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a"))
+            // SimpleDateFormat works on Android 7 (API 24); java.time needs API 26
+            val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }
+            java.text.SimpleDateFormat("MMM d, yyyy 'at' h:mm a", java.util.Locale.getDefault())
+                .format(parser.parse(it.take(19))!!)
         }.getOrDefault(it)
     }
 

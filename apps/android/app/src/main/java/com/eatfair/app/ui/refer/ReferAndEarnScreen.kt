@@ -1,5 +1,6 @@
 package com.eatfair.app.ui.refer
 
+import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.ui.Lx
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -92,7 +93,7 @@ fun ReferAndEarnScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Share your referral code and both you and your friend will get $5 off your next ride!",
+                text = "Share your referral code with friends." + (AppConfig.Rideshare.referralRewardText?.let { " Reward: $it." } ?: ""),
                 fontSize = Lx.FontSize.footnote,
                 color = Lx.TextSecondary,
                 textAlign = TextAlign.Center,
@@ -218,8 +219,8 @@ fun ReferAndEarnScreen(
 
             InviteStep(
                 number = "3",
-                title = "You both get $5",
-                description = "Rewards are added to both accounts"
+                title = "Earn your reward",
+                description = AppConfig.Rideshare.referralRewardText ?: "Rewards are shown here once available"
             )
 
             Spacer(modifier = Modifier.height(100.dp))
