@@ -25,7 +25,7 @@ struct ReferAndEarnView: View {
                             .fontWeight(.bold)
                             .foregroundColor(Theme.lxText)
 
-                        Text("Share Dollor.ai with friends and both of you earn credits!")
+                        Text("Share Dollor.ai with friends." + (AppConfig.shared.referralRewardText.map { " Reward: \($0)." } ?? ""))
                             .font(.subheadline)
                             .foregroundColor(Theme.lxTextSecondary)
                             .multilineTextAlignment(.center)
@@ -143,8 +143,8 @@ struct ReferAndEarnView: View {
 
                             HowItWorksRow(
                                 step: "4",
-                                title: "Both Earn Credits",
-                                description: "You both get $5 in credits!",
+                                title: "Earn Your Reward",
+                                description: AppConfig.shared.referralRewardText ?? "Rewards appear here once available",
                                 isLast: true
                             )
                         }
@@ -158,9 +158,6 @@ struct ReferAndEarnView: View {
                     .padding(.horizontal)
 
                     // Terms
-                    Text("Referral credits expire 90 days after issue. Terms apply.")
-                        .font(.caption)
-                        .foregroundColor(Theme.lxTextMuted)
                         .padding(.horizontal)
                         .padding(.bottom, 30)
                 }

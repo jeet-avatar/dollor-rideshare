@@ -45,11 +45,11 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Dollor AI Service needs your location to track rides and navigate to pickup and dropoff locations.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access enables voice commands and voice messages for hands-free operation while driving.</string>
+	<string>Microphone access lets you dictate chat messages hands-free while driving.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo library access allows you to upload profile photos and driver documentation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Voice commands allow hands-free control while driving - accept rides, navigate, and send messages safely.</string>
+	<string>Speech recognition lets you dictate chat messages hands-free while driving.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

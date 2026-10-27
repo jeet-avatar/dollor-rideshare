@@ -1,5 +1,7 @@
 package com.eatfair.driver.ui.orders
 
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -81,10 +83,10 @@ fun SubmitBidSheet(
     onDismiss: () -> Unit
 ) {
     val suggested = ride.suggestedPrice ?: ride.riderOffer ?: 0.0
-    var priceText by remember { mutableStateOf(String.format("%.2f", suggested)) }
+    var priceText by remember { mutableStateOf(String.format(java.util.Locale.US, "%.2f", suggested)) }
     var eta by remember { mutableIntStateOf(5) }
     var message by remember { mutableStateOf("") }
-    val price = priceText.toDoubleOrNull() ?: 0.0
+    val price = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
     val canSubmit = price > AppConfig.Rideshare.calculatePlatformFee(price) && !isBusy
 
     ModalBottomSheet(
@@ -141,7 +143,7 @@ fun SubmitBidSheet(
                                 amount = amount,
                                 color = color,
                                 selected = kotlin.math.abs(price - amount) < 0.005,
-                                onClick = { priceText = String.format("%.2f", amount) }
+                                onClick = { priceText = String.format(java.util.Locale.US, "%.2f", amount) }
                             )
                         }
                     }
@@ -340,6 +342,8 @@ private fun FeeInfoCard() {
 /** Slide-to-confirm control, equivalent to the iOS `SlideToConfirmButton`. */
 @Composable
 fun SlideToConfirm(label: String, enabled: Boolean, onConfirmed: () -> Unit) {
+    // The drag handler is started once; always call the latest callback so the price shown is the price submitted
+    val latestOnConfirmed by rememberUpdatedState(onConfirmed)
     val handle = 52.dp
     val density = LocalDensity.current
     var trackWidthPx by remember { mutableIntStateOf(0) }
@@ -378,7 +382,7 @@ fun SlideToConfirm(label: String, enabled: Boolean, onConfirmed: () -> Unit) {
                         onDragEnd = {
                             if (offsetPx >= maxOffset * 0.85f) {
                                 offsetPx = 0f
-                                onConfirmed()
+                                latestOnConfirmed()
                             } else {
                                 offsetPx = 0f
                             }

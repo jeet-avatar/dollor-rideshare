@@ -275,7 +275,8 @@ object AppConfig {
             }
         }
 
-        private fun money(amount: Double): String = "$" + amount.toInt()
+        private fun money(amount: Double): String =
+            if (amount == Math.rint(amount)) "$" + amount.toInt() else "$" + String.format(java.util.Locale.US, "%.2f", amount)
 
         /** Lowest-to-highest platform fee, e.g. "$1-$3". Always in sync with the tier config. */
         val feeRangeText: String

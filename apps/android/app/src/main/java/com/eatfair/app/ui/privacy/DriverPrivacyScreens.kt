@@ -447,28 +447,12 @@ fun SafetyFeaturesPage(
             Spacer(modifier = Modifier.height(16.dp))
 
             SafetyFeatureCard(
-                icon = Icons.Default.Share,
-                title = "Share Your Trip",
-                description = "Share your ride status with friends and family for added peace of mind.",
-                features = listOf(
-                    "Share live location",
-                    "Send ETA to contacts",
-                    "Trip details sharing",
-                    "One-tap sharing"
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SafetyFeatureCard(
                 icon = Icons.Default.Support,
-                title = "24/7 Support",
-                description = "Our support team is available around the clock to help with any safety concerns.",
+                title = "Support",
+                description = "Our support team can help with any safety concerns.",
                 features = listOf(
                     "In-app help center",
-                    "Emergency assistance",
-                    "Incident reporting",
-                    "Quick response team"
+                    "Email support"
                 )
             )
 

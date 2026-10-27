@@ -41,6 +41,8 @@ class TripsViewModel : ViewModel() {
         val isLoading: Boolean = true,
         val trips: List<RideHistoryItem> = emptyList(),
         val hasMore: Boolean = false,
+        /** Rows fetched so far, including ones filtered out of the list; this is the paging offset. */
+        val fetched: Int = 0,
         val error: String? = null,
         val receipt: RideReceipt? = null,
         val receiptOpen: Boolean = false,
@@ -58,7 +60,7 @@ class TripsViewModel : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             CustomerRideshareApiService.getRideHistory()
-                .onSuccess { r -> _state.update { it.copy(isLoading = false, trips = r.rides.filter(::isRealTrip), hasMore = r.hasMore) } }
+                .onSuccess { r -> _state.update { it.copy(isLoading = false, trips = r.rides.filter(::isRealTrip).distinctBy { t -> t.id }, hasMore = r.hasMore, fetched = r.rides.size) } }
                 .onFailure { e -> _state.update { it.copy(isLoading = false, error = e.message) } }
         }
     }
@@ -67,8 +69,8 @@ class TripsViewModel : ViewModel() {
         val s = _state.value
         if (!s.hasMore || s.isLoading) return
         viewModelScope.launch {
-            CustomerRideshareApiService.getRideHistory(offset = s.trips.size).onSuccess { r ->
-                _state.update { it.copy(trips = it.trips + r.rides.filter(::isRealTrip), hasMore = r.hasMore) }
+            CustomerRideshareApiService.getRideHistory(offset = s.fetched).onSuccess { r ->
+                _state.update { it.copy(trips = (it.trips + r.rides.filter(::isRealTrip)).distinctBy { t -> t.id }, hasMore = r.hasMore, fetched = it.fetched + r.rides.size) }
             }
         }
     }

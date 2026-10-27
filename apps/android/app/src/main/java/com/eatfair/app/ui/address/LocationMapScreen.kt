@@ -120,6 +120,13 @@ fun LocationMapScreen(
     // Define requestFreshLocation first (before getCurrentLocation which calls it)
     @SuppressLint("MissingPermission")
     fun requestFreshLocation() {
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!granted) return
         Log.d("LocationMapScreen", "Requesting fresh GPS location with HIGH_ACCURACY")
 
         val locationRequest = LocationRequest.Builder(
@@ -160,6 +167,13 @@ fun LocationMapScreen(
 
     @SuppressLint("MissingPermission")
     fun getCurrentLocation() {
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!granted) return
         scope.launch {
             // Ensure we only proceed if permissions are actually granted
             if (locationPermissionsState.allPermissionsGranted) {
