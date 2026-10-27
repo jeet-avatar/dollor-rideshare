@@ -115,6 +115,8 @@ public class AppConfig: ObservableObject {
     @Published public var rideshareTier1Fee: Double = 1.00   // $1 for fares ≤ $35
     @Published public var rideshareTier2Fee: Double = 2.00   // $2 for fares $35.01-$70
     @Published public var rideshareTier3Fee: Double = 3.00   // $3 for fares > $70
+    /// CPUC Access for All share deducted from the driver's payout (backend: access_for_all_fee.driver_share).
+    @Published public var rideshareDriverRegulatoryShare: Double = 0.05
 
     // Driver bid presets as a share of the suggested fare (same on Android AppConfig)
     // Defaults mirror the backend; GET /api/config/rideshare replaces them (see applyRideshareConfig).
@@ -446,6 +448,7 @@ public class AppConfig: ObservableObject {
             if let v = fees["tier1Fee"] as? Double { rideshareTier1Fee = v }
             if let v = fees["tier2Fee"] as? Double { rideshareTier2Fee = v }
             if let v = fees["tier3Fee"] as? Double { rideshareTier3Fee = v }
+            if let v = fees["accessForAllDriverShare"] as? Double { rideshareDriverRegulatoryShare = v }
             if let v = fees["riderCancellationFee"] as? Double {
                 rideCancellationFee = v
                 rideCancellationFeeDriverEnRoute = v

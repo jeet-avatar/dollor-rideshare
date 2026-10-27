@@ -58,6 +58,15 @@ class RideRequestViewModel: ObservableObject {
     @Published var surgeLabel: String = "Standard"  // Demand label from backend
     @Published var backendTotal: Double?       // Backend's calculated total (includes time_adjustment, long_distance_discount)
     @Published var backendSubtotal: Double?    // Backend's calculated subtotal (pre-tax)
+    @Published var backendPlatformFee: Double?       // Backend's connection fee for this estimate
+    @Published var backendRegulatoryFee: Double?     // Backend's CPUC Access for All customer share
+    @Published var fareLines: [FareLine] = []        // Backend breakdown lines; they sum to backendSubtotal
+
+    struct FareLine: Identifiable {
+        let label: String
+        let amount: Double
+        var id: String { label }
+    }
 
     // Active ride tracking
     @Published var activeRide: RideRequestResponse?
@@ -135,6 +144,7 @@ class RideRequestViewModel: ObservableObject {
     }
 
     var platformFee: Double {
+        if let backendPlatformFee = backendPlatformFee { return backendPlatformFee }
         // Calculate platform fee based on FARE (not distance)
         return config.calculateRidesharePlatformFee(fareAmount: fareForTierCalculation)
     }
@@ -182,16 +192,23 @@ class RideRequestViewModel: ObservableObject {
     /// Regulatory fee (e.g. CPUC "Access for All" customer share) = whatever the backend
     /// total includes beyond the fare + platform fee. Zero on the local fallback path.
     var regulatoryFee: Double {
+        if let backendRegulatoryFee = backendRegulatoryFee { return backendRegulatoryFee }
         guard let total = backendTotal else { return 0 }
         let remainder = total - fareBeforeTax - platformFee
         return remainder > 0.005 ? remainder : 0
     }
 
-    /// What driver receives (fare - driver's platform fee). Tip is added post-ride.
+    /// Any difference between the server total and fare + connection fee + regulatory fee,
+    /// shown as its own line so the visible lines always add up to the displayed total.
+    var totalAdjustment: Double {
+        guard let total = backendTotal else { return 0 }
+        let remainder = total - fareBeforeTax - platformFee - regulatoryFee
+        return abs(remainder) > 0.005 ? remainder : 0
+    }
+
+    /// What driver receives (fare - driver's platform fee - CPUC driver share). Tip is added post-ride.
     var driverEarnings: Double {
-        let driverPortion = (baseFare + distanceFee + timeFee) * surgeMultiplier
-        let fare = max(driverPortion, minimumFare)
-        return fare - driverPlatformFee
+        fareBeforeTax - driverPlatformFee - config.rideshareDriverRegulatoryShare
     }
 
     /// Connection fee for matchmaking service (tiered: $1-$3 based on fare)
@@ -250,6 +267,45 @@ class RideRequestViewModel: ObservableObject {
         wsManager.disconnect()
     }
 
+    // MARK: - Resume In-Flight Ride
+
+    private static let resumableStatuses: Set<String> = [
+        "open", "bidding", "matched", "driver_en_route", "in_progress"
+    ]
+
+    /// Restores the customer's open ride after a relaunch (GET /api/rides/customer/{id}/requests).
+    /// No-op while a ride is already on screen or being requested.
+    func resumeActiveRide() {
+        guard activeRide == nil, !isRideActive, !isLoading else { return }
+        let customerId = UserDefaults.standard.integer(forKey: "p2p_customer_id")
+        guard customerId > 0 else { return }
+
+        p2pService.getCustomerRideRequests(customerId: customerId, limit: 10) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self, self.activeRide == nil, !self.isRideActive, !self.isLoading else { return }
+                guard case .success(let requests) = result,
+                      let ride = requests.first(where: { Self.resumableStatuses.contains($0.status.lowercased()) }) else { return }
+                self.restoreRide(ride)
+            }
+        }
+    }
+
+    private func restoreRide(_ ride: RideRequestForBidding) {
+        pickupAddress = RideAddressInput(street: ride.pickup.address, city: "", state: "", zip: "",
+                                         lat: ride.pickup.latitude, lng: ride.pickup.longitude)
+        dropoffAddress = RideAddressInput(street: ride.dropoff.address, city: "", state: "", zip: "",
+                                          lat: ride.dropoff.latitude, lng: ride.dropoff.longitude)
+        activeRide = RideRequestResponse(success: true, message: nil, ride_request: ride)
+        updateRideStep(from: ride.status)
+        isRideActive = true
+        startTrackingRide()
+
+        // Still waiting on a match: resume bid polling (it also re-opens the bids list).
+        if currentStep == .waitingForDriver {
+            startBidPolling()
+        }
+    }
+
     // MARK: - Set Pickup Location
     func setPickupLocation(street: String, city: String, state: String, zip: String, lat: Double, lng: Double) {
         pickupAddress = RideAddressInput(
@@ -290,6 +346,9 @@ class RideRequestViewModel: ObservableObject {
         isEstimatingFare = true
         backendTotal = nil
         backendSubtotal = nil
+        backendPlatformFee = nil
+        backendRegulatoryFee = nil
+        fareLines = []
 
         // Get state code for tax calculation
         let stateCode = StateTaxRates.stateCode(from: pickup.state)
@@ -317,6 +376,8 @@ class RideRequestViewModel: ObservableObject {
                 // Store backend totals for direct display (includes time_adjustment, long_distance_discount)
                 self.backendTotal = estimate.total
                 self.backendSubtotal = estimate.subtotal
+                self.backendPlatformFee = estimate.platformFee
+                self.backendRegulatoryFee = estimate.accessForAllFee?.customerShare
 
                 // Apply surge/demand multiplier from backend
                 if let surge = estimate.surgeMultiplier {
@@ -326,6 +387,7 @@ class RideRequestViewModel: ObservableObject {
                     self.surgeLabel = label
                 }
 
+                self.fareLines = Self.fareLines(from: estimate)
                 self.fareEstimateReceived = true
                 self.isEstimatingFare = false
 
@@ -350,6 +412,29 @@ class RideRequestViewModel: ObservableObject {
                 self.isEstimatingFare = false
             }
         }
+    }
+
+    /// Server breakdown lines plus one adjustment line (demand multiplier / minimum fare)
+    /// so the lines add up to the server subtotal.
+    private static func fareLines(from estimate: RideFareEstimate) -> [FareLine] {
+        let breakdown = estimate.breakdown
+        var lines = [
+            FareLine(label: "Base fare", amount: breakdown.baseFare),
+            FareLine(label: "Distance", amount: breakdown.distanceCost),
+            FareLine(label: "Time", amount: breakdown.timeCost)
+        ]
+        if let adjustment = breakdown.timeAdjustment, abs(adjustment) > 0.005 {
+            lines.append(FareLine(label: breakdown.timeAdjustmentLabel ?? "Time adjustment", amount: adjustment))
+        }
+        if let discount = breakdown.longDistanceDiscount, discount > 0.005 {
+            lines.append(FareLine(label: "Long-distance discount", amount: -discount))
+        }
+        let remainder = estimate.subtotal - lines.reduce(0) { $0 + $1.amount }
+        if abs(remainder) > 0.005 {
+            let isDemandPriced = (estimate.surgeMultiplier ?? 1.0) != 1.0
+            lines.append(FareLine(label: isDemandPriced ? "Demand adjustment" : "Minimum fare adjustment", amount: remainder))
+        }
+        return lines
     }
 
     /// Fallback local calculation if API is unavailable
@@ -820,6 +905,17 @@ class RideRequestViewModel: ObservableObject {
                     self.incomingBids.removeAll { $0.id == bid.id }
                     logger.info("Bid rejected successfully")
 
+                    // The declined bid may have been the one under negotiation: drop the stale
+                    // "Counter-offer sent" state so the card returns to the normal waiting state.
+                    if self.incomingBids.isEmpty || self.selectedBidForCounter?.id == bid.id {
+                        self.isNegotiating = false
+                        self.stopNegotiationPolling()
+                        self.negotiationMessage = nil
+                        self.driverOfferAmount = nil
+                        self.showNegotiationSheet = false
+                        self.selectedBidForCounter = nil
+                    }
+
                 case .failure(let error):
                     logger.error("Failed to reject bid: \(error.localizedDescription)")
                 }
@@ -975,6 +1071,8 @@ class RideRequestViewModel: ObservableObject {
                   let total = breakdown["total"] as? Double else { return }
             self?.backendSubtotal = baseFare
             self?.backendTotal = total
+            self?.backendPlatformFee = nil
+            self?.backendRegulatoryFee = nil
         }
     }
 
@@ -986,7 +1084,7 @@ class RideRequestViewModel: ObservableObject {
             driverETA = nil
             driverHasArrived = false
             currentStep = .waitingForDriver
-        case "matched", "accepted", "driver_assigned", "driver_arrived":
+        case "matched", "accepted", "driver_assigned", "driver_arrived", "driver_en_route":
             currentStep = .driverEnRoute
         case "picked_up", "in_progress":
             currentStep = .rideInProgress
@@ -998,7 +1096,8 @@ class RideRequestViewModel: ObservableObject {
             stopTracking()
             NotificationCenter.default.post(name: NSNotification.Name("RideRequestExpired"), object: nil)
         case "cancelled":
-            stopTracking()
+            // Cancelled elsewhere (e.g. another device): clear the ride so the form is not left stale.
+            resetRide()
             showErrorMessage("Your ride was cancelled.")
         default:
             break
@@ -1117,6 +1216,9 @@ class RideRequestViewModel: ObservableObject {
         // Fare estimate state
         backendTotal = nil
         backendSubtotal = nil
+        backendPlatformFee = nil
+        backendRegulatoryFee = nil
+        fareLines = []
         fareEstimateReceived = false
         estimatedDistance = 0.0
         estimatedDuration = 0.0

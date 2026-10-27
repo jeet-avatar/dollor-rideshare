@@ -5471,6 +5471,7 @@ public struct RideFareEstimate: Codable {
     public let breakdown: RideFareBreakdown
     public let subtotal: Double
     public let platformFee: Double
+    public let accessForAllFee: RideAccessForAllFee?
     public let total: Double
     public let tier: Int
     public let tierLabel: String
@@ -5488,6 +5489,7 @@ public struct RideFareEstimate: Codable {
         case durationMinutes = "duration_minutes"
         case breakdown, subtotal
         case platformFee = "platform_fee"
+        case accessForAllFee = "access_for_all_fee"
         case total, tier
         case tierLabel = "tier_label"
         case driverInfo = "driver_info"
@@ -5498,6 +5500,19 @@ public struct RideFareEstimate: Codable {
         case surgeMultiplier = "surge_multiplier"
         case surgeLabel = "surge_label"
         case isSurging = "is_surging"
+    }
+}
+
+/// CPUC Access for All fee split from the fare estimate
+public struct RideAccessForAllFee: Codable {
+    public let total: Double?
+    public let customerShare: Double?
+    public let driverShare: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case total
+        case customerShare = "customer_share"
+        case driverShare = "driver_share"
     }
 }
 
@@ -5589,6 +5604,12 @@ public struct RideRequestResponse: Codable {
     public let success: Bool
     public let message: String?
     public let ride_request: RideRequestForBidding?
+
+    public init(success: Bool, message: String?, ride_request: RideRequestForBidding?) {
+        self.success = success
+        self.message = message
+        self.ride_request = ride_request
+    }
 
     /// Convenience accessors for the ride request details
     public var rideId: Int? { ride_request?.id }
@@ -6536,6 +6557,7 @@ public struct RideRequestForBidding: Identifiable, Codable, Equatable {
     public let distance_to_pickup_km: Double?
     public let already_bid: Bool?
     public let driver_arrived_at: String?
+    public let driver_payout: Double?
     // Note: my_bid removed to avoid circular reference - fetch separately if needed
 }
 

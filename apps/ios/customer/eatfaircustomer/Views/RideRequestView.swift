@@ -21,6 +21,7 @@ struct RideRequestView: View {
     @StateObject private var locationManager = RideLocationManager()
     @EnvironmentObject var authViewModel: AuthViewModel
     @Environment(\.dismiss) var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var showPickupSearch = false
     @State private var showDropoffSearch = false
@@ -152,6 +153,10 @@ struct RideRequestView: View {
         }
         .fullScreenCover(isPresented: $viewModel.isRideActive) {
             RideTrackingView(viewModel: viewModel)
+        }
+        .onAppear { viewModel.resumeActiveRide() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { viewModel.resumeActiveRide() }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RideRequestExpired"))) { _ in
             withAnimation {
@@ -578,6 +583,14 @@ struct RideBottomSheet: View {
 
                     // Suggested Payment Breakdown (Driver sets final price)
                     VStack(spacing: 6) {
+                        // Backend breakdown lines (time adjustment, discounts, demand), summing to the ride fare
+                        ForEach(viewModel.fareLines) { line in
+                            FareLineItem(label: line.label, amount: line.amount)
+                        }
+                        if !viewModel.fareLines.isEmpty {
+                            Divider().overlay(Theme.lxHairline)
+                        }
+
                         // Ride fare (distance + time, from the backend estimate)
                         FareLineItem(
                             label: "Ride Fare (\(viewModel.estimatedDistanceText) · \(viewModel.estimatedTimeText))",
@@ -608,6 +621,10 @@ struct RideBottomSheet: View {
 
                         if viewModel.regulatoryFee > 0 {
                             FareLineItem(label: "Regulatory Fee (CPUC)", amount: viewModel.regulatoryFee)
+                        }
+
+                        if viewModel.totalAdjustment != 0 {
+                            FareLineItem(label: "Pricing adjustment", amount: viewModel.totalAdjustment)
                         }
 
                         if viewModel.backendTotal == nil && viewModel.taxAmount > 0 {
@@ -703,6 +720,8 @@ struct RideBottomSheet: View {
                              ? "Checking payment…"
                              : viewModel.isEstimatingFare
                              ? "Estimating fare…"
+                             : !viewModel.fareEstimateReceived
+                             ? "Find Driver"
                              : "Find Driver • $\(String(format: "%.2f", viewModel.estimatedFare))")
                     }
                 }
@@ -1505,7 +1524,7 @@ struct FareLineItem: View {
                 .font(.subheadline)
                 .foregroundColor(Theme.lxTextSecondary)
             Spacer()
-            Text("$\(String(format: "%.2f", amount))")
+            Text("\(amount < 0 ? "-" : "")$\(String(format: "%.2f", abs(amount)))")
                 .font(.subheadline)
                 .foregroundColor(Theme.lxText)
         }
@@ -1596,7 +1615,8 @@ struct RideTrackingView: View {
             // ETA Overlay (top-left)
             VStack {
                 HStack {
-                    if let tracking = viewModel.rideTracking,
+                    if viewModel.currentStep == .driverEnRoute || viewModel.currentStep == .rideInProgress,
+                       let tracking = viewModel.rideTracking,
                        let eta = tracking.currentETAMinutes ?? clientETAMinutes {
                         VStack(spacing: 2) {
                             Text("\(eta)")

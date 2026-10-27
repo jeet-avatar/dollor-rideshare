@@ -87,8 +87,10 @@ struct ActiveRideView: View {
     }
 
     private var driverEarnings: Double {
-        viewModel.completionData?.driver_payout
-            ?? max(0, finalPrice - AppConfig.shared.calculateRidesharePlatformFee(fareAmount: finalPrice))
+        let config = AppConfig.shared
+        return viewModel.completionData?.driver_payout
+            ?? request?.driver_payout
+            ?? max(0, finalPrice - config.calculateRidesharePlatformFee(fareAmount: finalPrice) - config.rideshareDriverRegulatoryShare)
     }
 
     private var hasRiderPhone: Bool {
