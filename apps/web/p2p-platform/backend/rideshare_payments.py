@@ -131,7 +131,7 @@ async def create_payment_intent(http_request: Request, data: CreatePaymentIntent
 
     try:
         payment_intent = stripe.PaymentIntent.create(
-            amount=int(customer_pays * 100),
+            amount=int(round(customer_pays * 100)),
             currency="usd",
             metadata={
                 "ride_id": ride.id,

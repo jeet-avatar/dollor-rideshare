@@ -12,7 +12,12 @@ Requires a live database with the migration applied (alembic upgrade head).
 """
 import pytest
 from sqlalchemy import text
-from database import SessionLocal
+from database import SessionLocal, engine
+
+pytestmark = pytest.mark.skipif(
+    engine.dialect.name != "postgresql",
+    reason="Needs a Postgres DB with `alembic upgrade head` applied (uses information_schema)",
+)
 
 
 def test_ride_requests_prop22_columns():

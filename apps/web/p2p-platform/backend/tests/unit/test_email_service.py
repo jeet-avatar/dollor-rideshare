@@ -517,7 +517,7 @@ class TestSendDriverApprovalEmail:
         # Verify call arguments
         call_args = mock_send_email.call_args[0]
         assert call_args[0] == to_email
-        assert "ACTION REQUIRED" in call_args[1]  # Subject mentions activation requirement
+        assert "activate" in call_args[1].lower()  # Subject mentions activation requirement
         assert driver_name in call_args[2]  # HTML body
         assert driver_code in call_args[2]
         assert driver_name in call_args[3]  # Text body
@@ -563,7 +563,7 @@ class TestSendDriverApprovalEmail:
 
     @patch('email_service.send_email')
     def test_driver_approval_email_contains_app_download_links(self, mock_send_email):
-        """Should include app store download links"""
+        """Should tell the driver to download the Dollor Driver app (iOS or Android)"""
         # Arrange
         mock_send_email.return_value = True
 
@@ -576,8 +576,8 @@ class TestSendDriverApprovalEmail:
         assert result is True
         call_args = mock_send_email.call_args[0]
         html_body = call_args[2]
-        assert "apps.apple.com" in html_body or "App Store" in html_body
-        assert "play.google.com" in html_body or "Google Play" in html_body
+        assert "Dollor Driver app" in html_body
+        assert "iOS" in html_body and "Android" in html_body
 
     @patch('email_service.send_email')
     def test_driver_approval_email_special_characters_in_name(self, mock_send_email):
@@ -635,7 +635,8 @@ class TestSendDriverRegistrationConfirmation:
         # Verify call arguments
         call_args = mock_send_email.call_args[0]
         assert call_args[0] == to_email
-        assert driver_code in call_args[1]  # Subject contains driver code
+        assert driver_name in call_args[1]  # Subject welcomes the driver by name
+        assert "Application Received" in call_args[1]
         assert driver_name in call_args[2]  # HTML body
         assert driver_code in call_args[2]
         assert driver_name in call_args[3]  # Text body
@@ -677,7 +678,7 @@ class TestSendDriverRegistrationConfirmation:
         call_args = mock_send_email.call_args[0]
         html_body = call_args[2]
         # Check for timeline/process information
-        assert "Document Review" in html_body or "Background Check" in html_body
+        assert "Document review" in html_body and "Background check" in html_body
 
     @patch('email_service.send_email')
     def test_driver_registration_confirmation_send_failure(self, mock_send_email):

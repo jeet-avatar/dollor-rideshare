@@ -424,7 +424,7 @@ async def accept_driver_bid(http_request: Request, request: AcceptBidRequest, db
     if request.stripe_payment_method_id:
         try:
             payment_intent = stripe.PaymentIntent.create(
-                amount=int(connection_fee * 100),  # Connection fee only
+                amount=int(round(connection_fee * 100)),  # Connection fee only
                 currency="usd",
                 payment_method=request.stripe_payment_method_id,
                 confirm=True,

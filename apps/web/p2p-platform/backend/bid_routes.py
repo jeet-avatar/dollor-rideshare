@@ -2840,7 +2840,7 @@ async def complete_ride(request_id: int, request: Request, auth_driver: Driver =
                     if ride_request.stripe_transfer_id:
                         logger.info(f"Ride {ride_request.id} transfer already exists ({ride_request.stripe_transfer_id}), skipping")
                     else:
-                        payout_cents = int(ride_request.driver_payout * 100)
+                        payout_cents = int(round(ride_request.driver_payout * 100))
                         if payout_cents > 0:
                             transfer = stripe.Transfer.create(
                                 amount=payout_cents,
@@ -3653,7 +3653,7 @@ async def resolve_dispute(dispute_id: int, data: ResolveDisputeInput, request: R
                 stripe_lib.api_key = os.getenv("STRIPE_SECRET_KEY")
                 refund = stripe_lib.Refund.create(
                     payment_intent=ride.stripe_payment_intent_id,
-                    amount=int(refund_amount * 100),
+                    amount=int(round(refund_amount * 100)),
                     metadata={"dispute_id": str(dispute_id), "ride_id": str(ride.id)}
                 )
                 stripe_refund_id = refund.id

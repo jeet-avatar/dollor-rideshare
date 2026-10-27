@@ -4903,51 +4903,77 @@ def get_driver_stripe_onboarding_link(
 
     import stripe
     import os
-    stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+    from sqlalchemy.exc import SQLAlchemyError
+    stripe_key = os.getenv("STRIPE_SECRET_KEY")
+    if not stripe_key:
+        logger.error("Stripe onboarding link requested but STRIPE_SECRET_KEY is not configured")
+        raise HTTPException(status_code=503, detail="Payout setup is temporarily unavailable. Please try again later.")
+    stripe.api_key = stripe_key
 
-    # Create Stripe account if doesn't exist
-    if not driver.stripe_account_id:
-        try:
-            account = stripe.Account.create(
-                type="express",
-                country="US",
-                email=driver.email,
-                capabilities={
-                    "card_payments": {"requested": True},
-                    "transfers": {"requested": True},
-                },
-                business_type="individual",
-                metadata={
-                    "driver_id": str(driver.id),
-                    "driver_code": driver.driver_id,
-                    "platform": "dollor.ai"
-                }
-            )
-            driver.stripe_account_id = account.id
-            db.commit()
-        except stripe.error.StripeError as e:
-            logger.error(f"API error at line 5212: {e}")
-            raise HTTPException(status_code=500, detail="Failed to set up payment account. Please try again or contact support.")
+    def create_connect_account() -> None:
+        account = stripe.Account.create(
+            type="express",
+            country="US",
+            email=driver.email,
+            capabilities={
+                "card_payments": {"requested": True},
+                "transfers": {"requested": True},
+            },
+            business_type="individual",
+            metadata={
+                "driver_id": str(driver.id),
+                "driver_code": driver.driver_id,
+                "platform": "dollor.ai"
+            }
+        )
+        driver.stripe_account_id = account.id
+        db.commit()
 
-    try:
-        # Create Account Link for onboarding
-        account_link = stripe.AccountLink.create(
+    def create_account_link():
+        return stripe.AccountLink.create(
             account=driver.stripe_account_id,
             refresh_url=refresh_url,
             return_url=return_url,
             type="account_onboarding",
         )
 
-        return {
-            "success": True,
-            "onboarding_url": account_link.url,
-            "expires_at": account_link.expires_at,
-            "stripe_account_id": driver.stripe_account_id
-        }
+    try:
+        if not driver.stripe_account_id:
+            create_connect_account()
+        try:
+            account_link = create_account_link()
+        except stripe.error.InvalidRequestError as e:
+            if getattr(e, "code", None) != "resource_missing":
+                raise
+            # The saved account id is unknown to Stripe (e.g. platform key changed): start over once
+            logger.warning(f"Driver {driver_id}: Stripe account {driver.stripe_account_id} not found, creating a new one")
+            create_connect_account()
+            account_link = create_account_link()
+    except HTTPException:
+        raise
+    except Exception as e:
+        if isinstance(e, SQLAlchemyError):
+            db.rollback()
+        status_code, detail = _stripe_error_response(e)
+        logger.error(f"Stripe onboarding link failed for driver {driver_id}: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=status_code, detail=detail)
 
-    except stripe.error.StripeError as e:
-        logger.error(f"API error at line 5231: {e}")
-        raise HTTPException(status_code=500, detail="Payment processing error. Please try again or contact support.")
+    return {
+        "success": True,
+        "onboarding_url": account_link.url,
+        "expires_at": account_link.expires_at,
+        "stripe_account_id": driver.stripe_account_id
+    }
+
+
+def _stripe_error_response(error: Exception) -> tuple:
+    """Map a Stripe (or unexpected) exception to a (status_code, client-safe detail) pair."""
+    import stripe
+    if isinstance(error, (stripe.error.AuthenticationError, stripe.error.APIConnectionError)):
+        return 503, "Payout setup is temporarily unavailable. Please try again later."
+    if isinstance(error, stripe.error.RateLimitError):
+        return 429, "Too many requests. Please wait a moment and try again."
+    return 502, "Payout setup could not be started. Please try again or contact support."
 
 
 @app.get("/api/drivers/{driver_id}/stripe/status")
@@ -5366,7 +5392,7 @@ def request_driver_payout(
     try:
         payout_method = "instant" if request.payout_type == "instant" else "standard"
         payout = stripe.Payout.create(
-            amount=int(request.amount * 100),
+            amount=int(round(request.amount * 100)),
             currency="usd",
             method=payout_method,
             metadata={"driver_id": str(driver_id), "platform": "dollor.ai"},
@@ -5465,7 +5491,7 @@ async def complete_ride_and_pay_driver(
     tip = float(ride.tip_amount or 0)
 
     driver_payout = round(ride_fare - platform_fee + tip, 2)
-    driver_payout_cents = int(driver_payout * 100)
+    driver_payout_cents = int(round(driver_payout * 100))
 
     if driver_payout_cents <= 0:
         raise HTTPException(status_code=400, detail="Invalid payout amount")
@@ -6930,10 +6956,10 @@ async def get_driver_prop22_period_rides(
         rides = (
             db.query(RideRequest)
             .filter(
-                RideRequest.driver_id == driver.id,
+                RideRequest.matched_driver_id == driver.id,
                 RideRequest.matched_at >= period.period_start,
                 RideRequest.matched_at < period.period_end,
-                RideRequest.status == "completed",
+                RideRequest.status == RideRequestStatus.COMPLETED,
             )
             .order_by(RideRequest.completed_at.desc())
             .all()
@@ -9526,6 +9552,48 @@ async def cancel_ride_ios_alias(
     """
     return await cancel_ride(ride_id, reason, db, _auth)
 
+# ---- iOS legacy fare-negotiation routes -------------------------------------------------
+# These only exist for the iOS apps' pre-bidding negotiation screens. They must authorise the
+# caller against the ride (final_price drives the Stripe charge and driver payout) and answer
+# bad input with 4xx, never a 500.
+
+_NEGOTIABLE_STATUSES = ("OPEN", "BIDDING")
+
+
+def _ride_for_negotiation(db: Session, ride_id: int):
+    from models import RideRequest
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    return ride
+
+
+def _parse_fare(value, field: str) -> float:
+    """Return a finite fare > 0 or raise 400. Accepts numbers and numeric strings."""
+    import math
+    if isinstance(value, bool) or value is None:
+        raise HTTPException(status_code=400, detail=f"{field} must be a positive number")
+    try:
+        fare = float(value)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail=f"{field} must be a positive number")
+    if not math.isfinite(fare) or fare <= 0:
+        raise HTTPException(status_code=400, detail=f"{field} must be a positive number")
+    return round(fare, 2)
+
+
+def _require_ride_customer(ride, auth: dict) -> None:
+    customer_id = auth.get("customer_id")
+    if not customer_id or ride.customer_id is None or int(customer_id) != int(ride.customer_id):
+        raise HTTPException(status_code=403, detail="Only the rider who requested this ride can do this")
+
+
+def _require_negotiable(ride) -> None:
+    if ride.status is None or ride.status.name not in _NEGOTIABLE_STATUSES:
+        current = ride.status.value if ride.status else "unknown"
+        raise HTTPException(status_code=409, detail=f"Fare can no longer be negotiated (ride is {current})")
+
+
 @app.post("/erp/rides/{ride_id}/negotiate")
 @app.post("/api/erp/rides/{ride_id}/negotiate")
 async def negotiate_ride_ios_alias(
@@ -9538,15 +9606,21 @@ async def negotiate_ride_ios_alias(
     iOS calls: POST /api/erp/rides/{rideId}/negotiate
     Body: {"proposed_fare": 10.0, "is_driver_offer": true}
 
+    Driver offers need a driver token; rider offers need the token of the rider who owns the ride.
     Returns FareNegotiationResponse format for iOS decode compatibility.
     """
-    from models import RideRequest
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
+    ride = _ride_for_negotiation(db, ride_id)
 
-    proposed_fare = request.get("proposed_fare", ride.suggested_price or 15.0)
-    is_driver_offer = request.get("is_driver_offer", True)
+    is_driver_offer = bool(request.get("is_driver_offer", True))
+    if is_driver_offer:
+        if not _auth.get("driver_id"):
+            raise HTTPException(status_code=403, detail="Only drivers can send a driver offer")
+    else:
+        _require_ride_customer(ride, _auth)
+    _require_negotiable(ride)
+
+    default_fare = ride.suggested_price or 15.0
+    proposed_fare = _parse_fare(request.get("proposed_fare", default_fare), "proposed_fare")
 
     # Calculate platform fee based on fare (tiered: $1/$2/$3)
     platform_fee = platform_fee_for(proposed_fare)
@@ -9602,13 +9676,15 @@ async def accept_fare_ios_alias(
     """Alias for iOS apps - accept negotiated fare
     iOS calls: POST /api/erp/rides/{rideId}/accept-fare
     Body: {"accepted_fare": 12.0}
-    """
-    from models import RideRequest
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
 
-    accepted_fare = request.get("accepted_fare", ride.final_price or 15.0)
+    Only the ride's rider may fix the fare, and only before a driver is matched
+    (after matching, final_price is set by accepting a bid and must not be rewritten).
+    """
+    ride = _ride_for_negotiation(db, ride_id)
+    _require_ride_customer(ride, _auth)
+    _require_negotiable(ride)
+
+    accepted_fare = _parse_fare(request.get("accepted_fare", ride.final_price or 15.0), "accepted_fare")
     ride.final_price = accepted_fare
     db.commit()
 
@@ -9636,19 +9712,18 @@ async def customer_negotiate_ios_alias(
     Android/Web calls: POST /api/rides/{rideId}/negotiate with JSON body
 
     This endpoint updates the customer's preferred price so drivers can see it.
+    Only the rider who owns the ride may call it.
     Returns FareNegotiationResponse format for all platforms.
     """
-    from models import RideRequest
+    ride = _ride_for_negotiation(db, ride_id)
+    _require_ride_customer(ride, _auth)
+    _require_negotiable(ride)
+    proposed_fare = _parse_fare(proposed_fare, "proposed_fare")
 
-    # Update the ride request with customer's offer
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if ride:
-        ride.customer_preferred_price = proposed_fare
-        ride.updated_at = datetime.utcnow()
-        db.commit()
-        logger.info(f"Customer updated offer for ride {ride_id} to ${proposed_fare}")
-    else:
-        logger.warning(f"Ride {ride_id} not found for negotiation")
+    ride.customer_preferred_price = proposed_fare
+    ride.updated_at = datetime.utcnow()
+    db.commit()
+    logger.info(f"Customer updated offer for ride {ride_id} to ${proposed_fare}")
 
     return {
         "success": True,
@@ -9672,13 +9747,18 @@ async def customer_accept_fare_ios_alias(
 ):
     """Alias for iOS Customer app - accept driver's fare
     iOS calls: POST /erp/rides/{rideId}/customer-accept-fare?accepted_fare=12.0
-    Returns FareNegotiationResponse format for iOS
+    Returns FareNegotiationResponse format for iOS.
+
+    Only the ride's rider may call it, and only before matching: final_price drives the
+    Stripe charge and the driver payout.
     """
-    from models import RideRequest
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if ride:
-        ride.final_price = accepted_fare
-        db.commit()
+    ride = _ride_for_negotiation(db, ride_id)
+    _require_ride_customer(ride, _auth)
+    _require_negotiable(ride)
+    accepted_fare = _parse_fare(accepted_fare, "accepted_fare")
+
+    ride.final_price = accepted_fare
+    db.commit()
 
     return {
         "success": True,
@@ -9699,19 +9779,62 @@ async def negotiation_status_ios_alias(
 ):
     """Alias for iOS apps - get negotiation status
     iOS calls: GET /erp/rides/{rideId}/negotiation-status
+
+    Visible to the ride's rider, its matched driver, and drivers who have bid on it.
+    The body satisfies the iOS RideNegotiationStatus decoder; the older keys
+    (status, current_fare, negotiation_rounds, last_offer_by) are kept for other callers.
     """
-    from models import RideRequest
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
+    from models import RideBid, BidStatus
+    ride = _ride_for_negotiation(db, ride_id)
+
+    caller_driver_id = _auth.get("driver_id")
+    caller_customer_id = _auth.get("customer_id")
+    is_rider = bool(caller_customer_id and ride.customer_id and int(caller_customer_id) == int(ride.customer_id))
+    is_matched_driver = bool(caller_driver_id and ride.matched_driver_id and int(caller_driver_id) == int(ride.matched_driver_id))
+    has_bid = bool(caller_driver_id) and db.query(RideBid).filter(
+        RideBid.ride_request_id == ride.id, RideBid.driver_id == int(caller_driver_id)
+    ).first() is not None
+    if not (is_rider or is_matched_driver or has_bid):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    pending_bids = db.query(RideBid).filter(
+        RideBid.ride_request_id == ride.id, RideBid.status == BidStatus.PENDING
+    ).all()
+    driver_offer = min((b.proposed_price for b in pending_bids), default=None)
+
+    ride_status = ride.status.name if ride.status else "OPEN"
+    agreed_fare = ride.final_price if ride_status in ("MATCHED", "IN_PROGRESS", "COMPLETED") else None
+    if agreed_fare is not None:
+        negotiation_status, last_offer_by = "accepted", None
+    elif ride_status in ("CANCELLED", "EXPIRED"):
+        negotiation_status, last_offer_by = "rejected", None
+    elif driver_offer is not None:
+        negotiation_status, last_offer_by = "driver_countered", "driver"
+    elif ride.customer_preferred_price:
+        negotiation_status, last_offer_by = "customer_offered", "customer"
+    else:
+        negotiation_status, last_offer_by = "none", None
+
+    current_fare = agreed_fare or ride.customer_preferred_price or ride.suggested_price
+    fee_basis = agreed_fare or driver_offer or ride.customer_preferred_price or ride.suggested_price
+    platform_fee = platform_fee_for(fee_basis) if fee_basis else 1.0
 
     return {
         "success": True,
         "ride_id": ride_id,
+        "negotiation_status": negotiation_status,
+        "customer_offer": ride.customer_preferred_price,
+        "driver_offer": driver_offer,
+        "agreed_fare": agreed_fare,
+        "platform_fee": platform_fee,
+        "driver_earnings": round(agreed_fare - platform_fee, 2) if agreed_fare is not None else None,
+        "message": None,
+        "last_updated": ride.updated_at.isoformat() if getattr(ride, "updated_at", None) else None,
+        # legacy keys
         "status": ride.status.value if ride.status else "pending",
-        "current_fare": ride.final_price or ride.estimated_price,
-        "negotiation_rounds": 0,
-        "last_offer_by": None
+        "current_fare": current_fare,
+        "negotiation_rounds": len(pending_bids),
+        "last_offer_by": last_offer_by,
     }
 
 # NOTE: Auto-Onboarding (Nova), Promotions (Sierra), Menu Verification (Aria), and
@@ -10193,7 +10316,7 @@ async def tip_ride_driver(
             if actual_tip > 0:
                 stripe_lib.PaymentIntent.modify(
                     pi_id,
-                    amount=int(total_charge * 100),
+                    amount=int(round(total_charge * 100)),
                     metadata={"tip_amount": str(actual_tip)},
                 )
 
@@ -10209,7 +10332,7 @@ async def tip_ride_driver(
         if driver and getattr(driver, "stripe_account_id", None) and getattr(driver, "stripe_onboarded", False):
             tier_fee = get_tier_fee(ride_fare)
             driver_payout = round(ride_fare - tier_fee + actual_tip, 2)
-            payout_cents = int(driver_payout * 100)
+            payout_cents = int(round(driver_payout * 100))
             if payout_cents > 0:
                 try:
                     transfer = stripe_lib.Transfer.create(
@@ -12907,6 +13030,79 @@ def update_driver_location_android(request: dict, db: Session = Depends(get_db),
         "latitude": latitude,
         "longitude": longitude,
         "updated_at": datetime.now().isoformat()
+    }
+
+
+class RideDriverLocationUpdate(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    updated_at: Optional[str] = None  # sent by the iOS driver app, informational only
+
+
+@app.get("/erp/orders/{ride_id}/driver-location")
+@app.get("/api/erp/orders/{ride_id}/driver-location")
+def get_ride_driver_location(
+    ride_id: int,
+    _auth: dict = Depends(require_any_auth),
+    db: Session = Depends(get_db),
+):
+    """Matched driver's last known position (iOS P2PDriverLocation shape). Rider or matched driver only."""
+    from models import RideRequest as RR
+    ride = db.query(RR).filter(RR.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    caller_customer_id = _auth.get("customer_id")
+    caller_driver_id = _auth.get("driver_id")
+    is_rider = bool(caller_customer_id and ride.customer_id and int(caller_customer_id) == int(ride.customer_id))
+    is_driver = bool(caller_driver_id and ride.matched_driver_id and int(caller_driver_id) == int(ride.matched_driver_id))
+    if not (is_rider or is_driver):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    driver = db.query(Driver).filter(Driver.id == ride.matched_driver_id).first() if ride.matched_driver_id else None
+    has_position = driver is not None and driver.current_latitude is not None and driver.current_longitude is not None
+    return {
+        "success": True,
+        "order_id": ride.id,
+        "driver": {"id": driver.id, "name": driver.first_name} if driver else None,
+        "location": {"latitude": driver.current_latitude, "longitude": driver.current_longitude} if has_position else None,
+        "order_status": ride.status.value if ride.status else "pending",
+        "estimated_arrival": None,
+    }
+
+
+@app.put("/erp/orders/{ride_id}/driver-location")
+@app.put("/api/erp/orders/{ride_id}/driver-location")
+def update_ride_driver_location(
+    ride_id: int,
+    body: RideDriverLocationUpdate,
+    driver: Driver = Depends(require_driver),
+    db: Session = Depends(get_db),
+):
+    """Live-location push from the iOS driver app during a ride.
+
+    The iOS driver app still names this path after the old order flow, but the id is a ride
+    request id (RideBiddingViewModel passes rideRequest.id). Only the driver matched to the
+    ride may update it; the position is stored on the driver, which is what the rider's
+    tracking endpoint reads.
+    """
+    from models import RideRequest as RR, RideRequestStatus as RRS
+    ride = db.query(RR).filter(RR.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    if ride.matched_driver_id != driver.id:
+        raise HTTPException(status_code=403, detail="You are not the driver for this ride")
+    if ride.status not in (RRS.MATCHED, RRS.IN_PROGRESS):
+        raise HTTPException(status_code=409, detail=f"Ride is not active (current: {ride.status.value})")
+
+    driver.current_latitude = body.latitude
+    driver.current_longitude = body.longitude
+    driver.location_updated_at = datetime.utcnow()
+    db.commit()
+    return {
+        "success": True,
+        "ride_id": ride.id,
+        "latitude": body.latitude,
+        "longitude": body.longitude,
     }
 
 

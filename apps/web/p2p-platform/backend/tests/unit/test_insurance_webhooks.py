@@ -162,6 +162,27 @@ class TestBuildWebhookPayload:
         assert json_str  # Non-empty JSON string
 
 
+class _InlineThread:
+    """Stand-in for threading.Thread that runs the target synchronously on start()."""
+
+    def __init__(self, target=None, args=(), kwargs=None, daemon=None):
+        self._target, self._args, self._kwargs = target, args, kwargs or {}
+
+    def start(self):
+        self._target(*self._args, **self._kwargs)
+
+
+@pytest.fixture(autouse=True)
+def public_dns_and_inline_threads(monkeypatch):
+    """Keep dispatch tests hermetic: the SSRF guard resolves hostnames via DNS (fails offline),
+    and real threads would race the assertions."""
+    monkeypatch.setattr(
+        "insurance.webhooks.socket.getaddrinfo",
+        lambda host, *a, **k: [(2, 1, 6, "", ("93.184.216.34", 0))],
+    )
+    monkeypatch.setattr("insurance.webhooks.threading.Thread", _InlineThread)
+
+
 class TestDispatchWebhooks:
     def test_no_webhooks_configured(self, db_session, mock_event):
         """Test that dispatch gracefully handles zero configured webhooks."""

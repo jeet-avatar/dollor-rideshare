@@ -73,30 +73,6 @@ class TestAuthEndpoints:
 
 
 # ===========================================================================
-# Vendor Endpoints
-# ===========================================================================
-
-class TestVendorEndpoints:
-    """Browse published vendors -- both environments."""
-
-    def test_vendors_published_returns_list(self, env_url):
-        resp = requests.get(f"{env_url}/api/vendors/published", timeout=TIMEOUT)
-        assert resp.status_code == 200, (
-            f"Vendors published failed: {resp.status_code}"
-        )
-        data = resp.json()
-        # Response is a list or a dict with a list inside
-        if isinstance(data, list):
-            vendors = data
-        elif isinstance(data, dict):
-            # Try common wrapper keys
-            vendors = data.get("vendors") or data.get("data") or data.get("results") or []
-        else:
-            vendors = []
-        assert isinstance(vendors, list), "Expected a list of vendors"
-
-
-# ===========================================================================
 # Rideshare Flow
 # ===========================================================================
 

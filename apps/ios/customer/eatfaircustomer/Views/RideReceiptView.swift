@@ -53,7 +53,7 @@ struct RideReceipt: Codable {
     /// Regulatory (CPUC) + anything the total includes beyond fare + platform fee + tip.
     /// Only computed when the full ride_fare is available, so the lines always sum to the total.
     var regulatoryFee: Double {
-        guard fareBreakdown.rideFare != nil else { return 0 }
+        guard fareBreakdown.rideFare != nil else { return fareBreakdown.accessForAllCustomerShare ?? 0 }
         let remainder = totalCharged - rideFareAmount - platformFee - tipAmount
         return remainder > 0.005 ? remainder : 0
     }
@@ -87,6 +87,7 @@ struct ReceiptFareBreakdown: Codable {
     let rideFare: Double?            // full fare (base + distance + time); preferred
     let platformFee: Double?         // customer's platform fee (some endpoints)
     let customerPlatformFee: Double? // customer's platform fee (detailed breakdown)
+    let accessForAllCustomerShare: Double? // CPUC fee share when ride_fare is absent
     let tip: Double
     let total: Double
 
@@ -95,6 +96,7 @@ struct ReceiptFareBreakdown: Codable {
         case rideFare = "ride_fare"
         case platformFee = "platform_fee"
         case customerPlatformFee = "customer_platform_fee"
+        case accessForAllCustomerShare = "access_for_all_customer_share"
         case tip
         case total
     }

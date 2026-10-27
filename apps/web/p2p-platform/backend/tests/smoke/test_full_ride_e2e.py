@@ -7,8 +7,8 @@ Runs the complete rideshare flow end-to-end against a live environment
 
 Usage:
     cd apps/web/p2p-platform/backend
-    pytest tests/smoke/test_full_ride_e2e.py --env=production -v
-    pytest tests/smoke/test_full_ride_e2e.py --env=staging -v
+    RUN_LIVE_RIDE_E2E=1 pytest tests/smoke/test_full_ride_e2e.py --env=production -v
+    RUN_LIVE_RIDE_E2E=1 pytest tests/smoke/test_full_ride_e2e.py --env=staging -v
 
 Flow covered:
   1.  Customer login
@@ -26,10 +26,19 @@ Flow covered:
   13. Health check still OK          → system stable after full flow
 """
 
+import os
+
 import pytest
 import requests
 
 from .conftest import auth_header
+
+# This test WRITES to a live environment (creates, matches and completes a real ride and
+# sends real emails), so it never runs by default. Opt in explicitly.
+pytestmark = pytest.mark.skipif(
+    os.getenv("RUN_LIVE_RIDE_E2E") != "1",
+    reason="Live-environment write test: set RUN_LIVE_RIDE_E2E=1 and pass --env to run",
+)
 
 TIMEOUT = 15
 DEMO_DRIVER_ID = 48

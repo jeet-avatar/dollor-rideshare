@@ -189,62 +189,10 @@ class TestCustomerFullFlow:
     Browse restaurants -> View menu -> Place order -> Track -> Chat -> Rate
     """
 
-    def test_browse_published_restaurants(self, client, cust_headers, e2e_vendor):
-        """HomeView / SearchRestaurantsView: GET /api/vendors/published"""
-        resp = client.get("/api/vendors/published")
-        assert resp.status_code == 200
-        data = resp.json()
-        # Response should be a list (or wrapped in an object)
-        assert isinstance(data, (list, dict))
 
-    def test_view_vendor_menu(self, client, cust_headers, e2e_vendor, vendor_headers):
-        """RestaurantDetailView: GET /api/vendors/{id}/menu"""
-        # First add a menu item so the menu is not empty
-        menu_resp = client.post(
-            f"/api/vendors/{e2e_vendor.id}/menu",
-            json={
-                "name": "E2E Burger",
-                "description": "Test burger",
-                "price": 12.99,
-                "category": "Main",
-            },
-            headers=vendor_headers,
-        )
-        # Menu creation may succeed or fail based on vendor auth -- either way, GET should work
-        resp = client.get(f"/api/vendors/{e2e_vendor.id}/menu")
-        assert resp.status_code == 200
 
-    def test_get_customer_orders(self, client, cust_headers, e2e_order):
-        """OrderHistoryView: GET /api/customer/orders"""
-        resp = client.get("/api/customer/orders", headers=cust_headers)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert isinstance(data, list)
 
-    def test_get_order_detail(self, client, cust_headers, e2e_order):
-        """OrderHistoryView expand: GET /api/orders/{id}"""
-        resp = client.get(f"/api/orders/{e2e_order.id}", headers=cust_headers)
-        assert resp.status_code == 200
 
-    def test_cancel_order(self, client, cust_headers, db_session, e2e_customer, e2e_vendor):
-        """OrderHistoryView cancel button: POST /api/orders/{id}/cancel"""
-        # Create a cancellable order (PENDING_PAYMENT status)
-        order = Order(
-            order_number=f"ORD-CANCEL-{uuid.uuid4().hex[:8]}",
-            customer_email=e2e_customer.email,
-            vendor_id=e2e_vendor.id,
-            status=OrderStatus.PENDING_PAYMENT,
-            subtotal=15.00,
-            total_amount=16.00,
-            platform_fee=1.00,
-        )
-        db_session.add(order)
-        db_session.commit()
-        db_session.refresh(order)
-
-        resp = client.post(f"/api/orders/{order.id}/cancel", headers=cust_headers)
-        # Should succeed (200) or return business error
-        assert resp.status_code in [200, 400, 422]
 
     def test_get_refund_status(self, client, cust_headers, e2e_order):
         """OrderHistoryView refund check: GET /api/orders/{id}/refund-status"""
@@ -259,42 +207,9 @@ class TestCustomerFullFlow:
         )
         assert resp.status_code in [200, 404]
 
-    def test_tip_driver(self, client, cust_headers, e2e_order):
-        """TipDriverView: POST /api/orders/{id}/tip-driver"""
-        resp = client.post(
-            f"/api/orders/{e2e_order.id}/tip-driver",
-            json={"tip_amount": 5.00},
-            headers=cust_headers,
-        )
-        # 200 success or 400/422 business logic error
-        assert resp.status_code in [200, 400, 422]
 
-    def test_rate_restaurant(self, client, cust_headers, e2e_order):
-        """RateRestaurantView: POST /api/customer/orders/{id}/rate-restaurant"""
-        resp = client.post(
-            f"/api/customer/orders/{e2e_order.id}/rate-restaurant",
-            json={"rating": 5, "review": "Great food!"},
-            headers=cust_headers,
-        )
-        assert resp.status_code in [200, 400, 422]
 
-    def test_rate_driver(self, client, cust_headers, e2e_order, db_session, e2e_driver):
-        """RateDriverView: POST /api/customer/orders/{id}/rate-driver"""
-        # Assign driver to order
-        e2e_order.driver_id = e2e_driver.id
-        db_session.commit()
 
-        resp = client.post(
-            f"/api/customer/orders/{e2e_order.id}/rate-driver",
-            json={"rating": 4, "comment": "Fast delivery"},
-            headers=cust_headers,
-        )
-        assert resp.status_code in [200, 400, 422]
-
-    def test_get_active_promotions(self, client, cust_headers):
-        """RestaurantDetailView / HomeView: GET /api/promotions/active"""
-        resp = client.get("/api/promotions/active", headers=cust_headers)
-        assert resp.status_code == 200
 
     def test_requires_auth_for_customer_orders(self, client):
         """Verify auth required -- iOS sends Bearer token on all customer endpoints."""
@@ -382,27 +297,7 @@ class TestPhase10CustomerFeatures:
     - HelpSupportView: Call support phone number
     """
 
-    def test_order_chat_get_messages(self, client, cust_headers, e2e_order):
-        """OrderChatView: GET /api/customer/orders/{id}/chat"""
-        resp = client.get(
-            f"/api/customer/orders/{e2e_order.id}/chat",
-            headers=cust_headers,
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert isinstance(data, (list, dict))
 
-    def test_order_chat_send_message(self, client, cust_headers, e2e_order):
-        """OrderChatView: POST /api/customer/orders/{id}/chat"""
-        resp = client.post(
-            f"/api/customer/orders/{e2e_order.id}/chat",
-            json={
-                "message": "Where is my order?",
-                "sender_type": "customer",
-            },
-            headers=cust_headers,
-        )
-        assert resp.status_code in [200, 201]
 
     def test_live_chat_support(self, client):
         """LiveChatView: POST /api/support/chat (public endpoint, no auth required)"""

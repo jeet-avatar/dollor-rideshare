@@ -86,6 +86,8 @@ def e2e_driver(db_session) -> Driver:
         status=DriverStatus.APPROVED,
         current_latitude=37.78,
         current_longitude=-122.41,
+        is_online=True,  # get_available_ride_requests returns nothing for offline drivers
+        verification_status="verified",  # bid_routes KYC gate
     )
     db_session.add(driver)
     db_session.commit()
@@ -290,17 +292,18 @@ class TestRideshare12StepLifecycle:
         data = resp.json()
         assert data["success"] is True
         assert data["fare"] == 28.00
-        # Fare $28 is ≤ $35 → $1 platform fee
+        # Fare $28 is <= $35 -> $1 platform fee per side, plus the $0.05/side
+        # CPUC Access for All pass-through (TNC-13)
         assert data["tier_fee"] == 1.00
-        assert data["customer_pays"] == 29.00   # 28 + 1
-        assert data["driver_receives"] == 27.00  # 28 - 1
-        assert data["platform_earns"] == 2.00    # 1 × 2 (both sides pay $1)
+        assert data["customer_pays"] == pytest.approx(29.05)   # 28 + 1 + 0.05
+        assert data["driver_receives"] == pytest.approx(26.95)  # 28 - 1 - 0.05
+        assert data["platform_earns"] == 2.00    # 1 x 2 (both sides pay $1)
 
         # Verify Stripe was called with correct cents amount
         mock_stripe["payment_intent"].assert_called_once()
         call_kwargs = mock_stripe["payment_intent"].call_args
-        assert call_kwargs[1]["amount"] == 2900, \
-            f"Expected 2900 cents, got {call_kwargs[1]['amount']}"
+        assert call_kwargs[1]["amount"] == 2905, \
+            f"Expected 2905 cents, got {call_kwargs[1]['amount']}"
 
         # ── Step 11: Customer rates driver ───────────────────────────────────
         resp = client.post(f"/api/rides/{ride_id}/rate", json={

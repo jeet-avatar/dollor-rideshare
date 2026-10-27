@@ -2302,7 +2302,10 @@ struct RideStatusCard: View {
 
             // MARK: - Ride Completed Thank You Section
             if viewModel.currentStep == .completed {
-                rideCompletedSection
+                ScrollView(showsIndicators: false) {
+                    rideCompletedSection
+                }
+                .frame(maxHeight: UIScreen.main.bounds.height * 0.45)
             }
 
             Spacer().frame(height: 20)

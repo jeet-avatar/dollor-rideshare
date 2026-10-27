@@ -981,6 +981,10 @@ class RideRequestViewModel: ObservableObject {
     private func updateRideStep(from status: String) {
         switch status.lowercased() {
         case "open", "bidding", "preparing", "waiting_for_driver":
+            // The driver cancelled after matching and the ride was re-opened: drop the stale driver card.
+            acceptedDriver = nil
+            driverETA = nil
+            driverHasArrived = false
             currentStep = .waitingForDriver
         case "matched", "accepted", "driver_assigned", "driver_arrived":
             currentStep = .driverEnRoute
@@ -1111,6 +1115,9 @@ class RideRequestViewModel: ObservableObject {
         currentStep = .selectPickup
 
         // Fare estimate state
+        backendTotal = nil
+        backendSubtotal = nil
+        fareEstimateReceived = false
         estimatedDistance = 0.0
         estimatedDuration = 0.0
         baseFare = AppConfig.shared.rideBaseFare

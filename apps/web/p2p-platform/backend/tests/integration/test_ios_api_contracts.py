@@ -26,7 +26,7 @@ import pytest
 # the users table -- test fixtures create role-specific records (Customer/Driver/Vendor)
 # that may not have matching User records. 401 still proves the endpoint exists.
 # 500 is accepted for Stripe-dependent endpoints when STRIPE_SECRET_KEY is not set.
-AUTHED = [200, 201, 400, 401, 403, 404, 422, 500]
+AUTHED = [200, 201, 400, 401, 403, 404, 422, 500, 502, 503]  # 502/503 = route reached, upstream (e.g. Stripe) unavailable
 
 
 def safe_request(client, method, url, **kwargs):

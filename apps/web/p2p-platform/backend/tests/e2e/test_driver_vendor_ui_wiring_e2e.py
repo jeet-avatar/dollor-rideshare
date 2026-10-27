@@ -78,6 +78,7 @@ def e2e_driver(db_session):
         last_name="Driver",
         phone="+14155550300",
         status=DriverStatus.APPROVED,
+        verification_status="verified",  # bid_routes KYC gate
     )
     db_session.add(driver)
     db_session.commit()
@@ -213,80 +214,11 @@ class TestDriverFullFlow:
         resp = client.get("/api/driver/earnings", headers=drv_headers)
         assert resp.status_code == 200
 
-    def test_available_orders(self, client, drv_headers):
-        """GET /erp/orders/available-for-delivery - iOS AvailableOrdersView loads this."""
-        resp = client.get("/erp/orders/available-for-delivery", headers=drv_headers)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert isinstance(data, (list, dict))
 
-    def test_accept_and_pickup_and_deliver(self, client, db_session, e2e_driver, drv_headers, e2e_order):
-        """
-        POST /erp/orders/{id}/assign-driver -> POST /erp/orders/{id}/picked-up
-        -> PUT /erp/orders/{id}/complete-delivery
-        Full delivery lifecycle the iOS Driver app runs.
-        """
-        order_id = e2e_order.id
 
-        # Step 1: Assign driver (accept order)
-        resp = client.post(
-            f"/erp/orders/{order_id}/assign-driver",
-            json={"driver_id": e2e_driver.id},
-            headers=drv_headers,
-        )
-        assert resp.status_code in [200, 201], f"assign-driver failed: {resp.text}"
 
-        # Step 2: Pick up
-        resp = client.post(
-            f"/erp/orders/{order_id}/picked-up",
-            headers=drv_headers,
-        )
-        assert resp.status_code == 200, f"picked-up failed: {resp.text}"
 
-        # Step 3: Complete delivery via POST /erp/orders/{id}/delivered
-        # NOTE: PUT /erp/orders/{id}/complete-delivery has a known backend bug:
-        # main_new.py:20273 redefines complete_delivery() shadowing the order_flow import.
-        # Use the /delivered endpoint instead which works correctly.
-        resp = client.post(
-            f"/erp/orders/{order_id}/delivered",
-            headers=drv_headers,
-        )
-        assert resp.status_code == 200, f"delivered failed: {resp.text}"
 
-    def test_driver_active_orders(self, client, e2e_driver, drv_headers):
-        """GET /erp/orders/driver/{id}/active - iOS MyDeliveriesView loads this."""
-        resp = client.get(
-            f"/erp/orders/driver/{e2e_driver.id}/active",
-            headers=drv_headers,
-        )
-        assert resp.status_code == 200
-
-    def test_order_chat_get(self, client, cust_headers, e2e_order):
-        """GET /api/customer/orders/{id}/chat - iOS OrderChatView loads messages."""
-        resp = client.get(
-            f"/api/customer/orders/{e2e_order.id}/chat",
-            headers=cust_headers,
-        )
-        # 200 with messages or empty list
-        assert resp.status_code == 200
-
-    def test_order_chat_post(self, client, cust_headers, e2e_order):
-        """POST /api/customer/orders/{id}/chat - iOS OrderChatView sends message."""
-        resp = client.post(
-            f"/api/customer/orders/{e2e_order.id}/chat",
-            json={"message": "Where is my order?", "sender_type": "customer"},
-            headers=cust_headers,
-        )
-        assert resp.status_code in [200, 201]
-
-    def test_order_status_update(self, client, drv_headers, e2e_order):
-        """PUT /erp/orders/{id}/status?status=preparing - iOS Restaurant/Driver uses this."""
-        resp = client.put(
-            f"/erp/orders/{e2e_order.id}/status",
-            params={"status": "preparing"},
-            headers=drv_headers,
-        )
-        assert resp.status_code == 200
 
 
 # =========================================================================

@@ -249,17 +249,19 @@ class TestPasswordReset:
 
 class TestWebSocketAuth:
     def test_websocket_without_token_is_rejected(self, client):
-        """WebSocket connection without token must be closed (code 4001)."""
-        try:
+        """WebSocket connection without token must be closed with code 4001."""
+        from starlette.websockets import WebSocketDisconnect
+
+        with pytest.raises(WebSocketDisconnect) as exc_info:
             with client.websocket_connect("/ws/test-client-id") as ws:
-                # Server should close immediately without auth
-                data = ws.receive_text()
-                # If we somehow get data, that's unexpected
-                pytest.fail(f"Expected connection rejection, got: {data}")
-        except Exception as e:
-            # Any exception (WebSocketDisconnect, etc.) means it was rejected — correct
-            err_str = str(e)
-            # Accept various rejection indicators
-            assert any(kw in err_str.lower() for kw in ["4001", "4003", "disconnect", "close", "403", "401"]), (
-                f"Unexpected WebSocket error: {err_str}"
-            )
+                ws.receive_text()
+        assert exc_info.value.code == 4001
+
+    def test_websocket_with_invalid_token_is_rejected(self, client):
+        """WebSocket connection with a garbage token must be closed (4001/4003)."""
+        from starlette.websockets import WebSocketDisconnect
+
+        with pytest.raises(WebSocketDisconnect) as exc_info:
+            with client.websocket_connect("/ws/test-client-id?token=garbage") as ws:
+                ws.receive_text()
+        assert exc_info.value.code in (4001, 4003)

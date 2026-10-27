@@ -753,7 +753,7 @@ async def ride_completed(
         else:
             driver = db.query(Driver).filter(Driver.id == ride.matched_driver_id).first()
             if driver and getattr(driver, 'stripe_account_id', None) and getattr(driver, 'stripe_onboarded', False):
-                payout_cents = int(ride.driver_payout * 100)
+                payout_cents = int(round(ride.driver_payout * 100))
                 if payout_cents > 0:
                     transfer = stripe.Transfer.create(
                         amount=payout_cents,
@@ -1137,7 +1137,7 @@ def prop22_period_reconciliation_job():
                         try:
                             import stripe as stripe_lib
                             transfer = stripe_lib.Transfer.create(
-                                amount=int(top_up * 100),
+                                amount=int(round(top_up * 100)),
                                 currency="usd",
                                 destination=driver.stripe_account_id,
                                 idempotency_key=f"prop22_topup_{driver_id}_{period.id}",
