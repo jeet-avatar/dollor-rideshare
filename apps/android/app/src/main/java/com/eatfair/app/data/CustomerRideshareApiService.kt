@@ -227,10 +227,10 @@ object CustomerRideshareApiService {
      * Get bids for a specific ride request
      * Production: GET /api/rides/request/{request_id}/bids
      */
-    suspend fun getBidsForRide(rideRequestId: Int): Result<List<DriverBidForCustomer>> = withContext(Dispatchers.IO) {
+    suspend fun getBidsForRide(rideRequestId: Int): Result<BidsForRideResponse> = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
-                .url("$BASE_URL/api/rides/request/$rideRequestId/bids")
+                .url("$BASE_URL/api/rides/request/$rideRequestId/bids?include_countered=true")
                 .get()
                 .withCustomerAuth()
                 .build()
@@ -239,8 +239,7 @@ object CustomerRideshareApiService {
             val responseBody = response.body?.string()
 
             if (response.isSuccessful && responseBody != null) {
-                val bids = gson.fromJson(responseBody, BidsForRideResponse::class.java).bids
-                Result.success(bids)
+                Result.success(gson.fromJson(responseBody, BidsForRideResponse::class.java))
             } else {
                 Result.failure(Exception("Failed to fetch bids: ${response.code}"))
             }
@@ -964,7 +963,9 @@ object CustomerRideshareApiService {
 
 /** GET /api/rides/request/{request_id}/bids */
 data class BidsForRideResponse(
-    val bids: List<DriverBidForCustomer> = emptyList()
+    val bids: List<DriverBidForCustomer> = emptyList(),
+    /** True when the server listed countered bids too; an older server only lists pending ones. */
+    @SerializedName("includes_countered") val includesCountered: Boolean = false
 )
 
 /** GET /api/rides/customer/{customer_id}/requests */
@@ -1114,6 +1115,8 @@ data class RideHistoryItem(
     val pickup: String? = null,
     val dropoff: String? = null,
     val date: String? = null,
+    /** Naive UTC timestamp; `date` is the UTC calendar day and can be a day ahead of the rider's local date. */
+    @SerializedName("created_at") val createdAt: String? = null,
     val fare: Double? = null,
     @SerializedName("platform_fee") val platformFee: Double? = null,
     val tip: Double? = null,

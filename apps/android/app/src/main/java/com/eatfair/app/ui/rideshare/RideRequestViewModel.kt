@@ -216,6 +216,11 @@ class RideRequestViewModel @Inject constructor(
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
 
+    private val _messageTitle = MutableStateFlow("Error")
+    val messageTitle: StateFlow<String> = _messageTitle.asStateFlow()
+
+    private var riderCancelling = false
+
     private val _showSuccess = MutableStateFlow(false)
     val showSuccess: StateFlow<Boolean> = _showSuccess.asStateFlow()
 
@@ -713,13 +718,21 @@ class RideRequestViewModel @Inject constructor(
     private suspend fun fetchBids() {
         val rideRequest = _activeRideRequest.value ?: return
 
-        // The bids endpoint only lists pending bids; keep bids the rider countered
+        // A current server lists pending and countered bids, so a bid the driver declined or withdrew drops
+        // out on the next poll. An older server lists pending bids only: keep the rider's countered bids
         // visible until the driver answers (a driver re-counter returns it as pending).
-        CustomerRideshareApiService.getBidsForRide(rideRequest.id).onSuccess { bids ->
-            bids.forEach { counteredBids.remove(it.id) }
-            val merged = bids + counteredBids.values
-            _incomingBids.value = merged
-            if (merged.isNotEmpty() && _currentStep.value == RideStep.WAITING_FOR_BIDS) {
+        CustomerRideshareApiService.getBidsForRide(rideRequest.id).onSuccess { response ->
+            val bids = response.bids
+            val visible = if (response.includesCountered) {
+                counteredBids.clear()
+                bids.filter { it.status.equals("countered", ignoreCase = true) }.forEach { counteredBids[it.id] = it }
+                bids
+            } else {
+                bids.forEach { counteredBids.remove(it.id) }
+                bids + counteredBids.values
+            }
+            _incomingBids.value = visible
+            if (visible.isNotEmpty() && _currentStep.value == RideStep.WAITING_FOR_BIDS) {
                 _currentStep.value = RideStep.VIEW_BIDS
             }
         }
@@ -742,7 +755,7 @@ class RideRequestViewModel @Inject constructor(
                     _incomingBids.value = emptyList()
                     _activeRideRequest.value = null
                     _currentStep.value = RideStep.CONFIRM_RIDE
-                    showErrorMessage("No driver accepted in time. Please request again, or try a higher offer.")
+                    showInfoMessage("No driver accepted in time. Please request again, or try a higher offer.")
                 }
             }
         }
@@ -856,8 +869,20 @@ class RideRequestViewModel @Inject constructor(
             }
             "cancelled", "expired" -> {
                 if (_currentStep.value in setOf(RideStep.MATCHED, RideStep.DRIVER_EN_ROUTE, RideStep.RIDE_IN_PROGRESS)) {
-                    showErrorMessage("Your ride was cancelled. You can request a new ride anytime.")
+                    if (!riderCancelling) showInfoMessage("Your ride was cancelled. You can request a new ride anytime.")
                     resetRide()
+                }
+            }
+            "open", "bidding" -> {
+                // The matched driver cancelled and the request went back out for bids.
+                if (_currentStep.value in setOf(RideStep.MATCHED, RideStep.DRIVER_EN_ROUTE)) {
+                    stopTrackingRide()
+                    _selectedBid.value = null
+                    _rideTracking.value = null
+                    _incomingBids.value = emptyList()
+                    _currentStep.value = RideStep.WAITING_FOR_BIDS
+                    showInfoMessage("Your driver cancelled. We're finding you another driver.")
+                    startPollingForBids()
                 }
             }
         }
@@ -873,6 +898,7 @@ class RideRequestViewModel @Inject constructor(
         val rideRequest = _activeRideRequest.value ?: return
 
         _isLoading.value = true
+        riderCancelling = true
 
         viewModelScope.launch {
             val result = CustomerRideshareApiService.cancelRideRequest(rideRequest.id)
@@ -887,6 +913,7 @@ class RideRequestViewModel @Inject constructor(
             }.onFailure { error ->
                 showErrorMessage("Failed to cancel ride: ${error.message}")
             }
+            riderCancelling = false
         }
     }
 
@@ -917,7 +944,14 @@ class RideRequestViewModel @Inject constructor(
     // HELPERS
     // ==========================================
 
+    private fun showInfoMessage(message: String) {
+        _messageTitle.value = "Ride update"
+        _errorMessage.value = message
+        _showError.value = true
+    }
+
     private fun showErrorMessage(message: String) {
+        _messageTitle.value = "Error"
         _errorMessage.value = message
         _showError.value = true
     }

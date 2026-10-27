@@ -33,6 +33,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Requests that expired or were cancelled before any driver matched aren't trips. */
+/** `date` is the UTC day; prefer the timestamp so a late-evening trip shows the rider's local date. */
+private fun localTripDate(trip: RideHistoryItem): String? {
+    val iso = trip.createdAt ?: return trip.date
+    return runCatching {
+        val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+            timeZone = java.util.TimeZone.getTimeZone("UTC")
+        }
+        java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(parser.parse(iso.take(19))!!)
+    }.getOrDefault(trip.date)
+}
+
 private fun isRealTrip(t: RideHistoryItem): Boolean = t.status == "completed" || t.driverName != null
 
 /** Trips tab: ride history with receipts (iOS OrderHistoryView parity). */
@@ -159,7 +170,7 @@ private fun TripRow(trip: RideHistoryItem, onClick: () -> Unit) {
                 Text(trip.dropoff ?: "Trip", fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("From ${trip.pickup ?: "--"}", color = Lx.TextSecondary, fontSize = Lx.FontSize.footnote, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    listOfNotNull(trip.date, trip.driverName, status.takeIf { !completed }).joinToString(" · "),
+                    listOfNotNull(localTripDate(trip), trip.driverName, status.takeIf { !completed }).joinToString(" · "),
                     color = Lx.TextSecondary,
                     fontSize = Lx.FontSize.caption
                 )

@@ -67,7 +67,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "1",
                 "How do I track my ride?",
-                "You can track your ride by going to the Rides tab and selecting your active ride. Real-time tracking shows your driver's location and estimated arrival time.",
+                "You can track your ride from the Ride screen while your trip is active. Real-time tracking shows your driver's location and estimated arrival time.",
                 "Rides"
             ),
             FAQItem(
@@ -307,7 +307,7 @@ fun HelpSupportScreen(
                         )
 
                         Text(
-                            text = "Our support team is available 24/7",
+                            text = "Chat with us or send an email and we'll reply as soon as we can",
                             fontSize = Lx.FontSize.footnote,
                             color = Lx.TextSecondary
                         )

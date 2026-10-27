@@ -675,6 +675,13 @@ class DollorRepository @Inject constructor(
             safeApiCallWithDetail { apiService.rejectRiderCounter(bidId, token) }
         }
 
+    suspend fun withdrawBid(bidId: Int): Result<com.eatfair.shared.model.rideshare.BidActionResponse> =
+        withContext(Dispatchers.IO) {
+            val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
+                ?: return@withContext Result.failure(Exception("Not authenticated"))
+            safeApiCallWithDetail { apiService.withdrawBid(bidId, token) }
+        }
+
     suspend fun driverFinalCounter(bidId: Int, price: Double): Result<com.eatfair.shared.model.rideshare.BidActionResponse> =
         withContext(Dispatchers.IO) {
             val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)

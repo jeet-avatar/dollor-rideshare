@@ -6423,6 +6423,7 @@ async def get_customer_ride_history(
             "dropoff_lat": ride.dropoff_latitude,
             "dropoff_lng": ride.dropoff_longitude,
             "date": ride.created_at.strftime("%Y-%m-%d") if ride.created_at else None,
+            "created_at": ride.created_at.isoformat() if ride.created_at else None,
             "fare": float(ride.final_price or ride.suggested_price or 0),
             "platform_fee": float(ride.platform_fee or 0),
             "tip": float(ride.tip_amount or 0),

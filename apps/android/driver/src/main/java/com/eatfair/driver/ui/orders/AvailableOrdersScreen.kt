@@ -109,6 +109,7 @@ fun AvailableOrdersScreen(
                                     isBusy = uiState.busyId == bid.id,
                                     onAcceptCounter = { viewModel.acceptCounter(bid) },
                                     onRejectCounter = { viewModel.rejectCounter(bid) },
+                                    onWithdraw = { viewModel.withdraw(bid) },
                                     onFinalCounter = { price -> viewModel.finalCounter(bid, price) }
                                 )
                             }
@@ -177,6 +178,7 @@ private fun PriceDialog(
     title: String,
     initial: Double?,
     confirmText: String,
+    riderCounter: Double? = null,
     onConfirm: (Double) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -194,13 +196,19 @@ private fun PriceDialog(
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
                 ),
-                supportingText = { Text("Must be more than the $" + String.format("%.2f", AppConfig.Rideshare.calculatePlatformFee(price ?: 0.0)) + " platform fee") }
+                supportingText = {
+                    val fee = money(AppConfig.Rideshare.calculatePlatformFee(price ?: 0.0))
+                    Text(
+                        if (riderCounter != null) "Must be more than the rider's ${money(riderCounter)} counter and the $fee platform fee"
+                        else "Must be more than the $fee platform fee"
+                    )
+                }
             )
         },
         confirmButton = {
             TextButton(
                 onClick = { price?.let(onConfirm) },
-                enabled = price != null && price > AppConfig.Rideshare.calculatePlatformFee(price)
+                enabled = price != null && price > AppConfig.Rideshare.calculatePlatformFee(price) && price > (riderCounter ?: 0.0)
             ) { Text(confirmText) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
@@ -213,6 +221,7 @@ private fun MyBidCard(
     isBusy: Boolean,
     onAcceptCounter: () -> Unit,
     onRejectCounter: () -> Unit,
+    onWithdraw: () -> Unit,
     onFinalCounter: (Double) -> Unit
 ) {
     var showCounter by remember { mutableStateOf(false) }
@@ -261,6 +270,7 @@ private fun MyBidCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = DollorDriverColors.Blue
                 )
+                TextButton(onClick = onWithdraw, enabled = !isBusy) { Text("Withdraw offer") }
             }
         }
     }
@@ -269,6 +279,7 @@ private fun MyBidCard(
             title = "Final counter-offer",
             initial = bid.proposedPrice,
             confirmText = "Send",
+            riderCounter = bid.customerCounterPrice,
             onConfirm = { showCounter = false; onFinalCounter(it) },
             onDismiss = { showCounter = false }
         )

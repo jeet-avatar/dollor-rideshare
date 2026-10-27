@@ -419,6 +419,12 @@ interface DollorApiService {
         @Header("Authorization") token: String
     ): com.eatfair.shared.model.rideshare.BidActionResponse
 
+    @POST("rides/bid/{bidId}/withdraw")
+    suspend fun withdrawBid(
+        @Path("bidId") bidId: Int,
+        @Header("Authorization") token: String
+    ): com.eatfair.shared.model.rideshare.BidActionResponse
+
     @POST("rides/bid/{bidId}/driver-counter")
     suspend fun driverFinalCounter(
         @Path("bidId") bidId: Int,

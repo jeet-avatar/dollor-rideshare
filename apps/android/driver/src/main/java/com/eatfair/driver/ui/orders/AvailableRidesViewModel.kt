@@ -133,6 +133,9 @@ class AvailableRidesViewModel @Inject constructor(
     fun rejectCounter(bid: DriverOwnBid) =
         bidAction(bid, "Counter-offer declined") { repository.rejectRiderCounter(bid.id) }
 
+    fun withdraw(bid: DriverOwnBid) =
+        bidAction(bid, "Offer withdrawn") { repository.withdrawBid(bid.id) }
+
     fun finalCounter(bid: DriverOwnBid, price: Double) =
         bidAction(bid, "Final offer sent to rider") { repository.driverFinalCounter(bid.id, price) }
 

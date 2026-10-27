@@ -81,6 +81,7 @@ fun RideRequestScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val showError by viewModel.showError.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val messageTitle by viewModel.messageTitle.collectAsState()
     val selectedBid by viewModel.selectedBid.collectAsState()
     val rideTracking by viewModel.rideTracking.collectAsState()
     val platformFee by viewModel.platformFee.collectAsState()
@@ -390,7 +391,7 @@ fun RideRequestScreen(
     if (showError) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissError() },
-            title = { Text("Error") },
+            title = { Text(messageTitle) },
             text = { Text(errorMessage ?: "An error occurred") },
             confirmButton = {
                 TextButton(onClick = { viewModel.dismissError() }) {

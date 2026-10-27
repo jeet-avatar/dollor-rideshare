@@ -353,7 +353,8 @@ def serialize_ride_request(request: RideRequest, include_bids: bool = False) -> 
         "id": request.id,
         "request_id": request.request_id,
         "customer_id": request.customer_id,
-        "customer_name": request.customer_name,
+        # Drivers see the rider's first name only (the in-app privacy screens promise this).
+        "customer_name": (request.customer_name or "").split(" ")[0] or None,
         "pickup": {
             "address": request.pickup_address,
             "latitude": request.pickup_latitude,
@@ -702,8 +703,8 @@ async def get_customer_ride_requests(
 
 
 @router.get("/request/{request_id}/bids")
-async def get_bids_for_request(request_id: int, request: Request, customer: Customer = Depends(require_customer), db: Session = Depends(get_db)):
-    """Get all pending bids for a ride request. Requires customer auth + ownership."""
+async def get_bids_for_request(request_id: int, request: Request, include_countered: bool = False, customer: Customer = Depends(require_customer), db: Session = Depends(get_db)):
+    """Get pending bids for a ride request (plus the rider's countered bids when include_countered is set). Requires customer auth + ownership."""
     ride_request = db.query(RideRequest).filter(RideRequest.id == request_id).first()
     if not ride_request:
         raise HTTPException(status_code=404, detail="Ride request not found")
@@ -713,12 +714,13 @@ async def get_bids_for_request(request_id: int, request: Request, customer: Cust
         raise HTTPException(status_code=403, detail="Not authorized to view bids for this ride")
 
     # Get pending bids, sorted by price (lowest first), eager-load driver for vehicle info
+    listed_statuses = [BidStatus.PENDING, BidStatus.COUNTERED] if include_countered else [BidStatus.PENDING]
     bids = db.query(RideBid).options(
         joinedload(RideBid.driver)
     ).filter(
         and_(
             RideBid.ride_request_id == request_id,
-            RideBid.status == BidStatus.PENDING
+            RideBid.status.in_(listed_statuses)
         )
     ).order_by(RideBid.proposed_price.asc()).all()
 
@@ -727,6 +729,7 @@ async def get_bids_for_request(request_id: int, request: Request, customer: Cust
         "request_id": request_id,
         "bids": [serialize_bid(b) for b in bids],
         "total_bids": len(bids),
+        "includes_countered": include_countered,
         "bidding_open": ride_request.status == RideRequestStatus.OPEN or ride_request.status == RideRequestStatus.BIDDING,
         "bidding_ends_at": ride_request.bidding_expires_at.isoformat() if ride_request.bidding_expires_at else None
     }
@@ -1604,19 +1607,26 @@ async def submit_bid(request_id: int, data: SubmitBidInput, request: Request, dr
             detail="You have an active delivery in progress. Complete your current delivery before bidding on rides."
         )
 
-    # Check if driver already has any bid (PENDING or otherwise) using SELECT FOR UPDATE
-    # to prevent race conditions where two concurrent requests both see NULL and both INSERT.
-    existing_bid = db.execute(
+    # A driver may hold one live bid per request; a declined, withdrawn or expired bid can be replaced.
+    # SELECT FOR UPDATE prevents two concurrent requests both seeing no live bid and both inserting.
+    live_bid = db.execute(
         select(RideBid).where(
             and_(
                 RideBid.ride_request_id == request_id,
                 RideBid.driver_id == data.driver_id,
+                RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED, BidStatus.ACCEPTED]),
             )
         ).with_for_update()
     ).scalars().first()
 
-    if existing_bid:
+    if live_bid:
         raise HTTPException(status_code=400, detail="You already have a bid on this request. Update or withdraw it first.")
+
+    # One row per driver and request (uq_bid_per_driver_per_request): a new bid reuses a dead row.
+    previous_bid = db.query(RideBid).filter(
+        RideBid.ride_request_id == request_id,
+        RideBid.driver_id == data.driver_id,
+    ).first()
 
     # Check max bids limit (default 10)
     # First, auto-expire old pending bids (older than 10 minutes)
@@ -1662,20 +1672,24 @@ async def submit_bid(request_id: int, data: SubmitBidInput, request: Request, dr
     if driver.vehicle_color:
         vehicle_info += f" - {driver.vehicle_color}"
 
-    bid = RideBid(
-        bid_id=generate_bid_id(),
-        ride_request_id=request_id,
-        driver_id=data.driver_id,
-        driver_name=f"{driver.first_name} {driver.last_name}",
-        driver_rating=driver.rating,
-        driver_photo_url=driver.photo_url,
-        driver_vehicle=vehicle_info,
-        proposed_price=data.proposed_price,
-        message=data.message,
-        estimated_arrival_minutes=data.estimated_arrival_minutes,
-        status=BidStatus.PENDING,
-        expires_at=datetime.utcnow() + timedelta(minutes=10)  # Bid valid for 10 minutes
-    )
+    bid = previous_bid or RideBid(bid_id=generate_bid_id(), ride_request_id=request_id, driver_id=data.driver_id)
+    bid.driver_name = f"{driver.first_name} {driver.last_name}"
+    bid.driver_rating = driver.rating
+    bid.driver_photo_url = driver.photo_url
+    bid.driver_vehicle = vehicle_info
+    bid.proposed_price = data.proposed_price
+    bid.message = data.message
+    bid.estimated_arrival_minutes = data.estimated_arrival_minutes
+    bid.status = BidStatus.PENDING
+    bid.expires_at = datetime.utcnow() + timedelta(minutes=10)  # Bid valid for 10 minutes
+    if previous_bid:
+        bid.is_counter_offer = False
+        bid.negotiation_round = 1
+        bid.last_offer_by = "driver"
+        bid.round_counter = 0
+        bid.customer_counter_price = None
+        bid.customer_response = None
+        bid.responded_at = bid.accepted_at = bid.rejected_at = None
 
     try:
         db.add(bid)
