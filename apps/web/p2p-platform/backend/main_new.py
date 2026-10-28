@@ -10080,6 +10080,10 @@ async def track_ride(
                     )
                     eta_destination_minutes = max(1, int((dest_km / avg_speed_kmh) * 60))
 
+            # Once the trip has started the pickup ETA is stale; the generic eta_minutes is the time to the destination.
+            if ride.status and ride.status.value == "in_progress" and eta_destination_minutes is not None:
+                eta_minutes = eta_destination_minutes
+
             # iOS flat fields
             response.update({
                 "driver_name": driver_name,

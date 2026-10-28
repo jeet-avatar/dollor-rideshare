@@ -5441,6 +5441,28 @@ public struct RideChatMessage: Identifiable, Codable {
         return senderType == "driver"
     }
 
+    /// Local-time "h:mm a" for the message. The server sends naive UTC timestamps (no "Z"), so a missing zone means UTC.
+    public var timeText: String {
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.timeZone = TimeZone(identifier: "UTC")
+        parser.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        var date = parser.date(from: String(createdAt.prefix(19)))
+        let hasZone = createdAt.count > 19 && (createdAt.hasSuffix("Z") || createdAt.dropFirst(19).contains("+") || createdAt.dropFirst(19).contains("-"))
+        if hasZone {
+            let iso = ISO8601DateFormatter()
+            iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            date = iso.date(from: createdAt) ?? {
+                iso.formatOptions = [.withInternetDateTime]
+                return iso.date(from: createdAt)
+            }() ?? date
+        }
+        guard let date = date else { return "" }
+        let display = DateFormatter()
+        display.timeStyle = .short
+        return display.string(from: date)
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
         case rideRequestId = "ride_request_id"
@@ -6558,6 +6580,7 @@ public struct RideRequestForBidding: Identifiable, Codable, Equatable {
     public let already_bid: Bool?
     public let driver_arrived_at: String?
     public let driver_payout: Double?
+    public let final_price: Double?  // Agreed price once matched
     // Note: my_bid removed to avoid circular reference - fetch separately if needed
 }
 
@@ -6647,6 +6670,8 @@ public struct RideHistoryItem: Codable, Identifiable {
     public let dropoff_lat: Double?
     public let dropoff_lng: Double?
     public let date: String?
+    /// Naive UTC timestamp; `date` is the UTC calendar day and can be a day ahead of the rider's local date.
+    public let created_at: String?
     public let fare: Double?
     public let platform_fee: Double?
     public let tip: Double?

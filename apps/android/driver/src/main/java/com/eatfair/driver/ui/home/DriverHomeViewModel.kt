@@ -54,10 +54,17 @@ class DriverHomeViewModel @Inject constructor(
                 _uiState.update { it.copy(isOnline = me.isOnline) }
             }
         }
+        // Active-ride poll runs on its own short interval so a rider cancel clears the ride card within seconds,
+        // independent of the slower online-status and stats calls below.
+        viewModelScope.launch {
+            while (isActive) {
+                loadActiveRide()
+                delay(ACTIVE_RIDE_POLL_MS)
+            }
+        }
         viewModelScope.launch {
             var tick = 0
             while (isActive) {
-                loadActiveRide()
                 // The server is the source of truth for online/offline; re-check it so a stale value self-corrects.
                 if (!_uiState.value.isToggling) {
                     repository.getDriverMe().onSuccess { me ->
@@ -230,5 +237,9 @@ class DriverHomeViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         locationManager.stopLocationUpdates()
+    }
+
+    private companion object {
+        const val ACTIVE_RIDE_POLL_MS = 3000L
     }
 }

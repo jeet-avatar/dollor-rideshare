@@ -229,10 +229,16 @@ struct DriverChatView: View {
     }
 
     private func sendMessage(_ text: String) {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else { return }
 
         isSending = true
-        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Clear the field as soon as the message is on its way; a failed send restores the draft below.
+        let typedDraft = messageText
+        if text == typedDraft {
+            messageText = ""
+        }
+        isInputFocused = false
 
         P2PAPIService.shared.sendRideChatMessage(
             rideRequestId: rideRequestId,
@@ -242,11 +248,15 @@ struct DriverChatView: View {
             isSending = false
             switch result {
             case .success(let newMessage):
-                messages.append(newMessage)
-                messageText = ""
-                isInputFocused = false
+                if !messages.contains(where: { $0.id == newMessage.id }) {
+                    messages.append(newMessage)
+                }
             case .failure(let error):
                 logger.info("[DriverChatView] Failed to send message: \(error)")
+                // A decoding error means the server accepted the message; the poll will show it.
+                if !(error is DecodingError), messageText.isEmpty, text == typedDraft {
+                    messageText = typedDraft
+                }
             }
         }
     }
@@ -299,7 +309,7 @@ private struct RideChatBubbleCustomer: View {
                     .foregroundColor(isFromMe ? .white : Theme.lxText)
                     .cornerRadius(Lx.Radius.card)
 
-                Text(formatTime(message.createdAt))
+                Text(message.timeText)
                     .font(.caption2)
                     .foregroundColor(Theme.lxTextMuted)
             }
@@ -308,23 +318,4 @@ private struct RideChatBubbleCustomer: View {
         }
     }
 
-    private func formatTime(_ isoString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-        if let date = formatter.date(from: isoString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.timeStyle = .short
-            return displayFormatter.string(from: date)
-        }
-
-        formatter.formatOptions = [.withInternetDateTime]
-        if let date = formatter.date(from: isoString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.timeStyle = .short
-            return displayFormatter.string(from: date)
-        }
-
-        return ""
-    }
 }

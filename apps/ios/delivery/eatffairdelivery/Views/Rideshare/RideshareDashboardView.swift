@@ -629,7 +629,7 @@ struct ActiveRideCard: View {
     }
 
     private var finalPrice: Double {
-        bid.customer_counter_price ?? bid.proposed_price
+        request?.final_price ?? bid.customer_counter_price ?? bid.proposed_price
     }
 
     var body: some View {

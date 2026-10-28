@@ -47,6 +47,7 @@ class RideRequestViewModel: ObservableObject {
     @Published var fareEstimateReceived = false
     @Published var errorMessage: String?
     @Published var showError = false
+    @Published var infoMessage: String?
 
     // Suggested Offer Calculation (for matchmaking)
     @Published var estimatedDistance: Double = 0.0  // miles
@@ -92,6 +93,8 @@ class RideRequestViewModel: ObservableObject {
     @Published var acceptedDriver: AcceptedDriverInfo?
     @Published var driverETA: Int?  // Estimated arrival in minutes
     @Published var driverHasArrived = false  // True when driver taps "I've Arrived"
+    @Published var agreedPrice: Double?  // Server final_price once matched
+    private var isFetchingAgreedPrice = false
 
     // Payment
     @Published var paymentIntentClientSecret: String?
@@ -541,7 +544,7 @@ class RideRequestViewModel: ObservableObject {
             pickupAddress: pickup,
             dropoffAddress: dropoff,
             notes: notes.isEmpty ? nil : notes,
-            preferredPrice: initialFareOffer,
+            preferredPrice: initialFareOffer ?? (fareEstimateReceived ? estimatedFare : nil),
             accessibilityRequested: accessibilityRequested,
             accessibilityNotes: structuredAccessibilityNotes
         ) { [weak self] result in
@@ -1022,6 +1025,7 @@ class RideRequestViewModel: ObservableObject {
                 case .success(let tracking):
                     self.rideTracking = tracking
                     self.updateRideStep(from: tracking.status)
+                    self.refreshAgreedPriceIfNeeded()
                     self.trackingFailureCount = 0  // Reset on success
                     self.showConnectionWarning = false
                     // Detect driver arrived at pickup
@@ -1076,13 +1080,36 @@ class RideRequestViewModel: ObservableObject {
         }
     }
 
+    /// Reads the agreed price (server final_price) for the matched ride so the card shows what was actually agreed.
+    private func refreshAgreedPriceIfNeeded() {
+        guard agreedPrice == nil, !isFetchingAgreedPrice,
+              currentStep == .driverEnRoute || currentStep == .rideInProgress,
+              let rideId = activeRide?.rideId else { return }
+        let customerId = UserDefaults.standard.integer(forKey: "p2p_customer_id")
+        guard customerId > 0 else { return }
+        isFetchingAgreedPrice = true
+        p2pService.getCustomerRideRequests(customerId: customerId, limit: 10) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.isFetchingAgreedPrice = false
+                guard case .success(let requests) = result,
+                      let price = requests.first(where: { $0.id == rideId })?.final_price, price > 0 else { return }
+                self.agreedPrice = price
+            }
+        }
+    }
+
     private func updateRideStep(from status: String) {
         switch status.lowercased() {
         case "open", "bidding", "preparing", "waiting_for_driver":
             // The driver cancelled after matching and the ride was re-opened: drop the stale driver card.
+            if acceptedDriver != nil || currentStep == .driverEnRoute {
+                infoMessage = "Your driver cancelled. We're finding you another driver."
+            }
             acceptedDriver = nil
             driverETA = nil
             driverHasArrived = false
+            agreedPrice = nil
             currentStep = .waitingForDriver
         case "matched", "accepted", "driver_assigned", "driver_arrived", "driver_en_route":
             currentStep = .driverEnRoute
@@ -1234,6 +1261,7 @@ class RideRequestViewModel: ObservableObject {
         acceptedDriver = nil
         driverETA = nil
         driverHasArrived = false
+        agreedPrice = nil
 
         // Negotiation state
         isNegotiating = false

@@ -1615,8 +1615,10 @@ struct RideTrackingView: View {
             // ETA Overlay (top-left)
             VStack {
                 HStack {
-                    if viewModel.currentStep == .driverEnRoute || viewModel.currentStep == .rideInProgress,
+                    // Live tracking only: needs a current driver position, and no pickup ETA once the driver has arrived.
+                    if viewModel.currentStep == .driverEnRoute && !viewModel.driverHasArrived || viewModel.currentStep == .rideInProgress,
                        let tracking = viewModel.rideTracking,
+                       tracking.driverLatitude != nil,
                        let eta = tracking.currentETAMinutes ?? clientETAMinutes {
                         VStack(spacing: 2) {
                             Text("\(eta)")
@@ -1681,6 +1683,14 @@ struct RideTrackingView: View {
 
                 RideStatusCard(viewModel: viewModel)
             }
+        }
+        .alert("Ride update", isPresented: Binding(
+            get: { viewModel.infoMessage != nil },
+            set: { if !$0 { viewModel.infoMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(viewModel.infoMessage ?? "")
         }
         .alert("Emergency SOS", isPresented: $showSOSAlert) {
             Button("Call 911", role: .destructive) {
@@ -1948,7 +1958,7 @@ struct RideStatusCard: View {
                                 }
                             }
 
-                            if viewModel.driverHasArrived {
+                            if viewModel.driverHasArrived && viewModel.currentStep != .rideInProgress {
                                 HStack(spacing: 4) {
                                     Image(systemName: "mappin.circle.fill")
                                         .font(.caption)
@@ -1958,7 +1968,8 @@ struct RideStatusCard: View {
                                         .fontWeight(.semibold)
                                         .foregroundColor(Theme.lxSuccess)
                                 }
-                            } else if let eta = viewModel.driverETA {
+                            } else if viewModel.currentStep != .rideInProgress,
+                                      let eta = viewModel.rideTracking?.etaPickupMinutes ?? viewModel.driverETA {
                                 HStack(spacing: 4) {
                                     Image(systemName: "clock.fill")
                                         .font(.caption)
@@ -2058,6 +2069,28 @@ struct RideStatusCard: View {
                         .background(Theme.lxSurface2)
                         .cornerRadius(Lx.Radius.button)
                     }
+
+                    // Agreed price and route
+                    VStack(alignment: .leading, spacing: 6) {
+                        if let price = viewModel.agreedPrice {
+                            HStack {
+                                Text("Agreed price")
+                                    .font(.subheadline)
+                                    .foregroundColor(Theme.lxTextSecondary)
+                                Spacer()
+                                Text("$\(String(format: "%.2f", price))")
+                                    .font(.headline)
+                                    .foregroundColor(Theme.lxOrange)
+                            }
+                        }
+                        if let pickup = viewModel.pickupAddress, let dropoff = viewModel.dropoffAddress {
+                            Text("\(pickup.street) \u{2192} \(dropoff.street)")
+                                .font(.caption)
+                                .foregroundColor(Theme.lxTextSecondary)
+                                .lineLimit(2)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal)
             }

@@ -255,8 +255,21 @@ private fun DriverMainOrCompliance(
         }
     }
 
+    // A driver who already reached the main app must not be dropped onto the onboarding steps just because
+    // the status requests are still loading or failed (slow relaunch mid-ride): unknown is not "incomplete".
+    val onboardingPrefs = remember { context.getSharedPreferences("driver_onboarding", android.content.Context.MODE_PRIVATE) }
+    val onboardedKey = "main_app_reached_" + (loginViewModel.secureStorage.driverEmail ?: "")
+    val previouslyOnboarded = remember(onboardedKey) { onboardingPrefs.getBoolean(onboardedKey, false) }
+    val statusKnown = !documents.isLoadingStatus && !documents.statusFailed &&
+        !compliance.isLoadingStatus && !compliance.statusFailed
+
     val documentsReady = documents.licenseUploaded && documents.insuranceUploaded
-    val showMainApp = documentsReady && (compliance.isClear || compliance.isPending || complianceDone)
+    val verifiedOnboarded = documentsReady && (compliance.isClear || compliance.isPending || complianceDone)
+    val showMainApp = verifiedOnboarded || (previouslyOnboarded && !statusKnown)
+
+    LaunchedEffect(verifiedOnboarded, statusKnown) {
+        if (verifiedOnboarded && statusKnown) onboardingPrefs.edit().putBoolean(onboardedKey, true).apply()
+    }
 
     when {
         !showMainApp && (compliance.isLoadingStatus || documents.isLoadingStatus) -> {

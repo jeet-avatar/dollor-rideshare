@@ -322,17 +322,25 @@ fun RideChatSheet(
                 items(messages, key = { it.id }) { msg ->
                     val mine = msg.senderType == "driver"
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
-                        Text(
-                            msg.message,
-                            color = if (mine) Color.White else DollorDriverColors.Gray900,
-                            modifier = Modifier
-                                .background(
-                                    if (mine) DollorDriverColors.Blue else DollorDriverColors.Gray300.copy(alpha = 0.5f),
-                                    RoundedCornerShape(Lx.Radius.button)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                                .widthIn(max = 260.dp)
-                        )
+                        Column(horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
+                            Text(
+                                msg.message,
+                                color = if (mine) Color.White else DollorDriverColors.Gray900,
+                                modifier = Modifier
+                                    .background(
+                                        if (mine) DollorDriverColors.Blue else DollorDriverColors.Gray300.copy(alpha = 0.5f),
+                                        RoundedCornerShape(Lx.Radius.button)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    .widthIn(max = 260.dp)
+                            )
+                            Text(
+                                msg.timeText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = DollorDriverColors.Gray600,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
             }

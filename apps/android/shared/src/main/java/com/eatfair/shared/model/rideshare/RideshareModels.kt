@@ -252,6 +252,15 @@ data class RideChatMessage(
 ) {
     val isFromDriver: Boolean
         get() = senderType == "driver"
+
+    /** Local-time "h:mm a"; the server sends UTC without a zone suffix. Empty if unparseable. */
+    val timeText: String
+        get() = runCatching {
+            val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }
+            java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault()).format(parser.parse(createdAt.take(19))!!)
+        }.getOrDefault("")
 }
 
 /**

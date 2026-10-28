@@ -2269,7 +2269,11 @@ async def driver_cancel_ride(request_id: int, request: Request, data: DriverCanc
     cancelled_driver_id = ride_request.matched_driver_id
     ride_request.matched_driver_id = None
     ride_request.matched_at = None
+    ride_request.matched_bid_id = None
+    ride_request.final_price = None
     ride_request.driver_arrived_at = None
+    # Fresh bidding window: the original one may already have lapsed
+    ride_request.bidding_expires_at = datetime.utcnow() + timedelta(minutes=RIDE_BIDDING_EXPIRY_MINUTES)
 
     # Expire the matched bid
     matched_bid = db.query(RideBid).filter(

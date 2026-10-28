@@ -154,11 +154,24 @@ struct RideHistoryCard: View {
         ride.total ?? ((ride.fare ?? 0) + (ride.platform_fee ?? 0) + (ride.tip ?? 0))
     }
 
+    /// `date` from the server is the UTC day; the timestamp gives the rider's local date (same format as Android).
+    private var localDate: String? {
+        guard let created = ride.created_at else { return ride.date }
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.timeZone = TimeZone(identifier: "UTC")
+        parser.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        guard let utcDate = parser.date(from: String(created.prefix(19))) else { return ride.date }
+        let display = DateFormatter()
+        display.dateFormat = "MMM d, yyyy"
+        return display.string(from: utcDate)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header: Date + Status
             HStack {
-                if let date = ride.date {
+                if let date = localDate {
                     Text(date)
                         .font(.caption)
                         .foregroundColor(Theme.lxTextMuted)

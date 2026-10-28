@@ -41,6 +41,8 @@ class DriverDocumentViewModel @Inject constructor(
 
     data class UiState(
         val isLoadingStatus: Boolean = true,
+        /** True when the status request failed: the uploaded flags are unknown, not "not uploaded". */
+        val statusFailed: Boolean = false,
         val licenseUploaded: Boolean = false,
         val insuranceUploaded: Boolean = false,
         val uploadingType: String? = null,
@@ -56,14 +58,15 @@ class DriverDocumentViewModel @Inject constructor(
 
     fun refreshStatus() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingStatus = true, statusFailed = false) }
             repository.getDriverDocumentsStatus()
                 .onSuccess { response ->
                     applyStatus(response.documents)
                 }
                 .onFailure {
-                    // Treat an error as "not uploaded yet" so the driver can still proceed —
-                    // mirrors iOS DriverOnboardingViewModel.loadInitialStatus's fail-open behavior.
-                    _uiState.update { it.copy(isLoadingStatus = false) }
+                    // Unknown is not "not uploaded": the screen offers a retry instead of dropping a
+                    // verified driver onto the onboarding steps (e.g. after a slow relaunch).
+                    _uiState.update { it.copy(isLoadingStatus = false, statusFailed = true) }
                 }
         }
     }

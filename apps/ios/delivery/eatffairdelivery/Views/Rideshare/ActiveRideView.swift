@@ -81,9 +81,9 @@ struct ActiveRideView: View {
         bid.ride_request
     }
 
-    /// The settled fare from the server once the ride is completed; before that, the bid's current price.
+    /// The agreed fare from the server (final_price, set at match and settled at completion); falls back to the bid's prices only if the server has none yet.
     private var finalPrice: Double {
-        viewModel.completionData?.final_price ?? bid.customer_counter_price ?? bid.proposed_price
+        viewModel.completionData?.final_price ?? request?.final_price ?? bid.customer_counter_price ?? bid.proposed_price
     }
 
     private var driverEarnings: Double {

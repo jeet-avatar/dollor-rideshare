@@ -1261,6 +1261,7 @@ fun RideStatusSheet(
 ) {
     val context = LocalContext.current
     val driverPhone = rideTracking?.driver?.phone
+    var showSos by remember { mutableStateOf(false) }
 
     val driverArrived = rideTracking?.hasDriverArrived == true &&
         currentStep != RideRequestViewModel.RideStep.RIDE_IN_PROGRESS
@@ -1342,7 +1343,8 @@ fun RideStatusSheet(
                 }
             }
 
-            rideTracking?.etaMinutes?.takeIf { !driverArrived }?.let { eta ->
+            // Live tracking only: needs a current driver position (the server ETA comes from it).
+            rideTracking?.etaMinutes?.takeIf { !driverArrived && rideTracking.driverLocation != null }?.let { eta ->
                 Text(
                     text = "$eta min",
                     fontWeight = FontWeight.Bold,
@@ -1432,6 +1434,14 @@ fun RideStatusSheet(
                     )
                 }
 
+                IconButton(onClick = { showSos = true }) {
+                    Icon(
+                        Icons.Default.Sos,
+                        contentDescription = "SOS",
+                        tint = Lx.Error
+                    )
+                }
+
                 // Only show the Call button when we actually have the driver's phone.
                 if (!driverPhone.isNullOrBlank()) {
                     IconButton(onClick = {
@@ -1449,6 +1459,54 @@ fun RideStatusSheet(
                     }
                 }
             }
+        }
+
+        // Agreed price and route
+        val agreedPrice = rideTracking?.finalPrice ?: selectedBid?.proposedPrice
+        val pickupAddress = rideTracking?.pickup?.address
+        val dropoffAddress = rideTracking?.dropoff?.address
+        if (agreedPrice != null || !pickupAddress.isNullOrBlank()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            if (agreedPrice != null) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Agreed price", fontSize = Lx.FontSize.caption, color = Lx.TextSecondary)
+                    Text(String.format("$%.2f", agreedPrice), fontWeight = FontWeight.Bold, color = Lx.Orange)
+                }
+            }
+            if (!pickupAddress.isNullOrBlank() && !dropoffAddress.isNullOrBlank()) {
+                Text(
+                    text = "$pickupAddress \u2192 $dropoffAddress",
+                    fontSize = Lx.FontSize.caption,
+                    color = Lx.TextSecondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        if (showSos) {
+            AlertDialog(
+                onDismissRequest = { showSos = false },
+                containerColor = Lx.Surface,
+                title = { Text("Emergency SOS", color = Lx.Text) },
+                text = {
+                    Text(
+                        "This will call emergency services (911). Only use in a real emergency.",
+                        color = Lx.TextSecondary
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showSos = false
+                        context.startActivity(
+                            android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:911"))
+                        )
+                    }) { Text("Call 911", color = Lx.Error, fontWeight = FontWeight.Bold) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showSos = false }) { Text("Cancel", color = Lx.Orange) }
+                }
+            )
         }
 
         // Cancel button (only if not in progress)

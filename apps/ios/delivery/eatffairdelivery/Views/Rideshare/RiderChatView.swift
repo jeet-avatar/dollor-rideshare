@@ -324,7 +324,7 @@ private struct RideChatBubble: View {
                     .foregroundColor(isFromMe ? .white : Theme.lxText)
                     .cornerRadius(Lx.Radius.card)
 
-                Text(formatTime(message.createdAt))
+                Text(message.timeText)
                     .font(.caption2)
                     .foregroundColor(Theme.lxTextMuted)
             }
@@ -333,26 +333,6 @@ private struct RideChatBubble: View {
         }
     }
 
-    private func formatTime(_ isoString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-        if let date = formatter.date(from: isoString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.timeStyle = .short
-            return displayFormatter.string(from: date)
-        }
-
-        // Try without fractional seconds
-        formatter.formatOptions = [.withInternetDateTime]
-        if let date = formatter.date(from: isoString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.timeStyle = .short
-            return displayFormatter.string(from: date)
-        }
-
-        return ""
-    }
 }
 
 // MARK: - Preview

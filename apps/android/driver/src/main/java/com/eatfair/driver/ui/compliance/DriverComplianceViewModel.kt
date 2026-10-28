@@ -28,6 +28,8 @@ class DriverComplianceViewModel @Inject constructor(
 
     data class UiState(
         val isLoadingStatus: Boolean = true,
+        /** True when the status request failed: the background-check state is unknown. */
+        val statusFailed: Boolean = false,
         val isInitiating: Boolean = false,
         val backgroundStatus: String = "not_started",
         val isClear: Boolean = false,
@@ -46,11 +48,13 @@ class DriverComplianceViewModel @Inject constructor(
 
     fun refreshStatus() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingStatus = true, statusFailed = false) }
             repository.getBackgroundCheckStatus()
                 .onSuccess { status ->
                     _uiState.update {
                         it.copy(
                             isLoadingStatus = false,
+                            statusFailed = false,
                             backgroundStatus = status.effectiveStatus,
                             isClear = status.isClear,
                             isPending = status.isPending
@@ -58,8 +62,9 @@ class DriverComplianceViewModel @Inject constructor(
                     }
                 }
                 .onFailure {
-                    // Treat an error as "not started" so the driver can still begin.
-                    _uiState.update { it.copy(isLoadingStatus = false, error = it.error ?: null) }
+                    // A new driver can still begin; a driver who already finished onboarding is not sent back
+                    // (see DriverNavGraph.DriverMainOrCompliance, which uses statusFailed for that).
+                    _uiState.update { it.copy(isLoadingStatus = false, statusFailed = true) }
                 }
         }
     }
@@ -105,6 +110,7 @@ class DriverComplianceViewModel @Inject constructor(
                 repository.getBackgroundCheckStatus().onSuccess { status ->
                     _uiState.update {
                         it.copy(
+                            statusFailed = false,
                             backgroundStatus = status.effectiveStatus,
                             isClear = status.isClear,
                             isPending = status.isPending
