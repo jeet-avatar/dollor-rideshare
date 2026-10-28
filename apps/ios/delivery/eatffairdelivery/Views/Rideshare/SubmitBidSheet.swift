@@ -114,7 +114,6 @@ struct SubmitBidSheet: View {
                 // Dismiss sheet when bid is successfully submitted
                 if success {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        viewModel.showSuccess = false  // Reset flag to prevent re-trigger
                         dismiss()
                         onDismiss()
                     }
@@ -423,6 +422,16 @@ struct SubmitBidSheet: View {
                             .foregroundColor(Theme.lxTextSecondary)
                         Spacer()
                         Text("\(Lx.Money.text(platformFee))")
+                            .font(.caption)
+                            .foregroundColor(Theme.lxTextSecondary)
+                    }
+
+                    HStack {
+                        Text("CPUC Access for All:")
+                            .font(.caption)
+                            .foregroundColor(Theme.lxTextSecondary)
+                        Spacer()
+                        Text("\(Lx.Money.text(AppConfig.shared.rideshareDriverRegulatoryShare))")
                             .font(.caption)
                             .foregroundColor(Theme.lxTextSecondary)
                     }

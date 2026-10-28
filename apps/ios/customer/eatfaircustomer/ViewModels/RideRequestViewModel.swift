@@ -432,10 +432,16 @@ class RideRequestViewModel: ObservableObject {
         if let discount = breakdown.longDistanceDiscount, discount > 0.005 {
             lines.append(FareLine(label: "Long-distance discount", amount: -discount))
         }
+        if let adjustment = breakdown.minimumFareAdjustment, abs(adjustment) > 0.005 {
+            lines.append(FareLine(label: "Minimum fare adjustment", amount: adjustment))
+        }
+        if let adjustment = breakdown.demandAdjustment, abs(adjustment) > 0.005 {
+            lines.append(FareLine(label: "Demand adjustment", amount: adjustment))
+        }
+        // Safety net for server fields this app does not know about: keep the lines adding up to the subtotal.
         let remainder = estimate.subtotal - lines.reduce(0) { $0 + $1.amount }
         if abs(remainder) > 0.005 {
-            let isDemandPriced = (estimate.surgeMultiplier ?? 1.0) != 1.0
-            lines.append(FareLine(label: isDemandPriced ? "Demand adjustment" : "Minimum fare adjustment", amount: remainder))
+            lines.append(FareLine(label: "Pricing adjustment", amount: remainder))
         }
         return lines
     }
@@ -1025,6 +1031,7 @@ class RideRequestViewModel: ObservableObject {
                 case .success(let tracking):
                     self.rideTracking = tracking
                     self.updateRideStep(from: tracking.status)
+                    self.adoptMatchedDriver(from: tracking)
                     self.refreshAgreedPriceIfNeeded()
                     self.trackingFailureCount = 0  // Reset on success
                     self.showConnectionWarning = false
@@ -1110,10 +1117,18 @@ class RideRequestViewModel: ObservableObject {
             driverETA = nil
             driverHasArrived = false
             agreedPrice = nil
+            negotiationMessage = nil
             currentStep = .waitingForDriver
+            // The match was dropped (driver cancel): the ride is open for bids again, so resume
+            // bid polling (it was stopped at match time) and let the rider see new bids.
+            if bidPollingTimer == nil {
+                startBidPolling()
+            }
         case "matched", "accepted", "driver_assigned", "driver_arrived", "driver_en_route":
+            enterMatchedState()
             currentStep = .driverEnRoute
         case "picked_up", "in_progress":
+            enterMatchedState()
             currentStep = .rideInProgress
         case "delivered", "completed":
             currentStep = .completed
@@ -1129,6 +1144,44 @@ class RideRequestViewModel: ObservableObject {
         default:
             break
         }
+    }
+
+    /// The server matched the ride (rider accept, or the driver accepted the rider's counter):
+    /// close the bids/negotiation sheets and stop the pre-match polling and stale status line.
+    private func enterMatchedState() {
+        guard bidPollingTimer != nil || negotiationTimer != nil || showBidsSheet || showNegotiationSheet
+                || isNegotiating || negotiationMessage != nil || !incomingBids.isEmpty else { return }
+        stopBidPolling()
+        stopNegotiationPolling()
+        showBidsSheet = false
+        showNegotiationSheet = false
+        showCounterSheet = false
+        incomingBids = []
+        isNegotiating = false
+        negotiationMessage = nil
+    }
+
+    /// Builds the matched-driver card from the track response when the match happened without a
+    /// local accept (driver accepted the counter, or the app was relaunched mid-ride) so the
+    /// chat button, driver details and Arrived state are available.
+    private func adoptMatchedDriver(from tracking: RideTrackingInfo) {
+        guard acceptedDriver == nil, currentStep == .driverEnRoute || currentStep == .rideInProgress,
+              let name = tracking.driverName else { return }
+        let vehicleParts = (tracking.driverVehicle ?? "").split(separator: " ")
+        acceptedDriver = AcceptedDriverInfo(
+            id: 0,
+            name: name,
+            phone: tracking.driverPhone,
+            rating: tracking.driverRating,
+            photo_url: tracking.driverPhotoUrl,
+            vehicle_make: vehicleParts.first.map(String.init),
+            vehicle_model: vehicleParts.count >= 2 ? vehicleParts.dropFirst().joined(separator: " ") : nil,
+            vehicle_color: tracking.driverVehicleColor,
+            vehicle_year: nil,
+            license_plate: tracking.driverLicensePlate,
+            vehicle_photo_url: tracking.driverVehiclePhotoUrl
+        )
+        driverETA = tracking.currentETAMinutes
     }
 
     private func stopTracking() {

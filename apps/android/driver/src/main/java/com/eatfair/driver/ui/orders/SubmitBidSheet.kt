@@ -67,8 +67,9 @@ private object BidPresets {
 
 private fun money(value: Double) = "$" + String.format("%.2f", value)
 
-/** What the driver keeps: fare minus the flat tiered fee (same rule as iOS `calculateEarnings`). */
-private fun earnings(price: Double) = (price - AppConfig.Rideshare.calculatePlatformFee(price)).coerceAtLeast(0.0)
+/** What the driver keeps: fare minus the flat tiered fee and the CPUC Access for All driver share (same rule as iOS `calculateEarnings`). */
+private fun earnings(price: Double) =
+    (price - AppConfig.Rideshare.calculatePlatformFee(price) - AppConfig.Rideshare.accessForAllDriverShare).coerceAtLeast(0.0)
 
 /**
  * Bid sheet mirroring the iOS `SubmitBidSheet`: route summary, three price presets, custom amount,
@@ -159,7 +160,7 @@ fun SubmitBidSheet(
                         colors = sheetFieldColors()
                     )
                     Text(
-                        text = "You earn ${String.format("%.2f", earnings(price)).let { "$$it" }} after the flat fee",
+                        text = "You earn ${String.format("%.2f", earnings(price)).let { "$$it" }} after the flat fee and $${String.format("%.2f", AppConfig.Rideshare.accessForAllDriverShare)} CPUC",
                         color = Lx.TextSecondary,
                         fontSize = Lx.FontSize.footnote
                     )

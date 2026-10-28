@@ -90,6 +90,8 @@ class RideBiddingViewModel: ObservableObject {
     private let wsManager = WebSocketManager.shared
     private var refreshTimer: Timer?
     private var pollingFailureCount = 0
+    /// Bumped whenever an active ride is cleared so in-flight bid fetches cannot bring it back.
+    private var activeRideEpoch = 0
     private var maxFailuresBeforeWarning: Int { AppConfig.shared.maxPollingFailuresBeforeWarning }
 
     // MARK: - Initialization
@@ -243,6 +245,7 @@ class RideBiddingViewModel: ObservableObject {
     /// Fetches driver's submitted bids
     func fetchMyBids() {
         guard p2pService.currentDriverId != nil else { return }
+        let epoch = activeRideEpoch
 
         p2pService.fetchDriverBids { [weak self] result in
             DispatchQueue.main.async {
@@ -257,6 +260,9 @@ class RideBiddingViewModel: ObservableObject {
                     // bid.status stays "accepted" even after completion/cancellation — so we
                     // must also check ride_request.status to avoid stale rides persisting.
                     let previousActiveIds = Set(self.activeRides.map { $0.id })
+                    // A response fetched before the driver finished/cancelled a ride can still list it
+                    // as live; keep the cleared state instead of resurrecting a ghost active ride.
+                    let isStaleForActive = epoch != self.activeRideEpoch
                     let newActiveRides = bids.filter { bid in
                         guard bid.status == "accepted" else { return false }
                         let reqStatus = bid.ride_request?.status ?? ""
@@ -267,7 +273,9 @@ class RideBiddingViewModel: ObservableObject {
                     // Update state
                     self.myBids = bids
                     self.pendingCounterOffers = bids.filter { $0.status == "countered" && self.isRideStillOpen($0) }
-                    self.activeRides = newActiveRides
+                    if !isStaleForActive {
+                        self.activeRides = newActiveRides
+                    }
                     self.pollingFailureCount = 0  // Reset on success
                     self.showConnectionWarning = false
 
@@ -547,7 +555,6 @@ class RideBiddingViewModel: ObservableObject {
                 switch result {
                 case .success(let response):
                     self?.completionData = response.ride_request
-                    self?.showSuccessMessage("Ride completed! Earnings added.")
                     LocationManager.shared.stopDeliveryTracking()
                     // Do NOT refreshData here — the completion screen stays open until
                     // the driver taps "Done". clearActiveRide() is called from the view
@@ -648,7 +655,10 @@ class RideBiddingViewModel: ObservableObject {
     /// Immediately removes a bid from activeRides so the full-screen cover can dismiss.
     /// Called by the view layer when the driver explicitly completes, cancels, or no-shows.
     func clearActiveRide(_ bid: RideBid) {
+        activeRideEpoch += 1
         activeRides.removeAll { $0.id == bid.id }
+        // The previous ride's settlement must not leak into the next ride's earnings display.
+        completionData = nil
     }
 
     // MARK: - Helpers
@@ -663,9 +673,9 @@ class RideBiddingViewModel: ObservableObject {
         showSuccess = true
     }
 
-    /// Calculate driver earnings after platform fee
+    /// Calculate driver earnings after the connection fee and the CPUC Access for All driver share
     func calculateEarnings(proposedPrice: Double) -> Double {
-        return max(0, proposedPrice - platformFee(for: proposedPrice))
+        return max(0, proposedPrice - platformFee(for: proposedPrice) - AppConfig.shared.rideshareDriverRegulatoryShare)
     }
 
     /// Format distance for display

@@ -425,6 +425,10 @@ fun RideBottomSheet(
     isLoading: Boolean
 ) {
     val canRequestRide = pickupLocation != null && dropoffLocation != null
+    val fareLines by viewModel.fareLines.collectAsState()
+    val regulatoryFee by viewModel.regulatoryFee.collectAsState()
+    val estimateRideFare by viewModel.estimateRideFare.collectAsState()
+    val estimateConnectionFee by viewModel.estimateConnectionFee.collectAsState()
     val currentFare = suggestedPrice ?: estimatedFare
     val totalAmount = currentFare + selectedTip
     val driverEarnings = (currentFare - AppConfig.Rideshare.calculatePlatformFee(currentFare)).coerceAtLeast(0.0) + selectedTip // fare minus flat fee, plus 100% of tip
@@ -663,18 +667,25 @@ fun RideBottomSheet(
 
                 item { HorizontalDivider() }
 
-                // Fare Breakdown
-                item {
-                    FareLineItem("Base Fare", AppConfig.Rideshare.BASE_FARE)
+                // Fare Breakdown: server lines that add up to the ride fare, then the fees, then the total
+                if (fareLines.isNotEmpty()) {
+                    items(fareLines.size) { index ->
+                        FareLineItem(fareLines[index].label, fareLines[index].amount)
+                    }
+                    item { HorizontalDivider() }
+                    item { FareLineItem("Ride fare", estimateRideFare) }
+                } else {
+                    item {
+                        FareLineItem("Base Fare", AppConfig.Rideshare.BASE_FARE)
+                    }
+                    item {
+                        FareLineItem("Distance (${viewModel.formattedDistance})", viewModel.distanceFee)
+                    }
+                    item {
+                        FareLineItem("Time (${viewModel.formattedDuration})", viewModel.timeFee)
+                    }
+                    item { HorizontalDivider() }
                 }
-                item {
-                    FareLineItem("Distance (${viewModel.formattedDistance})", viewModel.distanceFee)
-                }
-                item {
-                    FareLineItem("Time (${viewModel.formattedDuration})", viewModel.timeFee)
-                }
-
-                item { HorizontalDivider() }
 
                 // Platform Fee with tier
                 item {
@@ -691,10 +702,29 @@ fun RideBottomSheet(
                             )
                         }
                         Text(
-                            text = "$${String.format("%.2f", platformFee)}",
+                            text = "$${String.format("%.2f", if (fareLines.isNotEmpty()) estimateConnectionFee else platformFee)}",
                             fontSize = Lx.FontSize.footnote,
                             fontWeight = FontWeight.Medium
                         )
+                    }
+                }
+                if (regulatoryFee > 0.004) {
+                    item { FareLineItem("CPUC Access for All fee", regulatoryFee) }
+                }
+                if (fareLines.isNotEmpty()) {
+                    item { HorizontalDivider() }
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Total", fontSize = Lx.FontSize.footnote, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = "$${String.format("%.2f", estimateRideFare + estimateConnectionFee + regulatoryFee)}",
+                                fontSize = Lx.FontSize.footnote,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
 
@@ -946,7 +976,10 @@ fun FareLineItem(label: String, amount: Double) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = label, fontSize = Lx.FontSize.footnote, color = Lx.TextSecondary)
-        Text(text = "$${String.format("%.2f", amount)}", fontSize = Lx.FontSize.footnote)
+        Text(
+            text = (if (amount < 0) "-$" else "$") + String.format("%.2f", kotlin.math.abs(amount)),
+            fontSize = Lx.FontSize.footnote
+        )
     }
 }
 

@@ -444,23 +444,30 @@ struct PayoutDashboardView: View {
 
     // MARK: - Helpers
 
+    /// Local readable date/time. The server sends naive UTC timestamps (no zone, microsecond
+    /// fraction), so a missing zone means UTC.
     private func formatDate(_ dateStr: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: dateStr) {
-            let df = DateFormatter()
-            df.dateStyle = .short
-            df.timeStyle = .short
-            return df.string(from: date)
+        var date: Date?
+        let hasZone = dateStr.count > 19 && (dateStr.hasSuffix("Z") || dateStr.dropFirst(19).contains("+") || dateStr.dropFirst(19).contains("-"))
+        if hasZone {
+            let iso = ISO8601DateFormatter()
+            iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            date = iso.date(from: dateStr)
+            if date == nil {
+                iso.formatOptions = [.withInternetDateTime]
+                date = iso.date(from: dateStr)
+            }
+        } else {
+            let parser = DateFormatter()
+            parser.locale = Locale(identifier: "en_US_POSIX")
+            parser.timeZone = TimeZone(identifier: "UTC")
+            parser.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+            date = parser.date(from: String(dateStr.prefix(19)))
         }
-        formatter.formatOptions = [.withInternetDateTime]
-        if let date = formatter.date(from: dateStr) {
-            let df = DateFormatter()
-            df.dateStyle = .short
-            df.timeStyle = .short
-            return df.string(from: date)
-        }
-        return dateStr
+        guard let date = date else { return dateStr }
+        let display = DateFormatter()
+        display.dateFormat = "MMM d, h:mm a"
+        return display.string(from: date)
     }
 
     private func openStripeDashboard() {

@@ -197,10 +197,14 @@ private fun PriceDialog(
                     keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
                 ),
                 supportingText = {
-                    val fee = money(AppConfig.Rideshare.calculatePlatformFee(price ?: 0.0))
+                    val feeAmount = AppConfig.Rideshare.calculatePlatformFee(price ?: 0.0)
+                    val fee = money(feeAmount)
+                    val cpuc = AppConfig.Rideshare.accessForAllDriverShare
+                    val earn = ((price ?: 0.0) - feeAmount - cpuc).coerceAtLeast(0.0)
                     Text(
-                        if (riderCounter != null) "Must be more than the rider's ${money(riderCounter)} counter and the $fee platform fee"
-                        else "Must be more than the $fee platform fee"
+                        (if (riderCounter != null) "Must be more than the rider's ${money(riderCounter)} counter and the $fee platform fee"
+                        else "Must be more than the $fee platform fee") +
+                            "\nYou earn ${money(earn)} after the $fee fee and ${money(cpuc)} CPUC"
                     )
                 }
             )

@@ -5643,6 +5643,8 @@ public struct RideFareBreakdown: Codable {
     public let timeAdjustment: Double?
     public let timeAdjustmentLabel: String?
     public let longDistanceDiscount: Double?
+    public let minimumFareAdjustment: Double?
+    public let demandAdjustment: Double?
 
     enum CodingKeys: String, CodingKey {
         case baseFare = "base_fare"
@@ -5651,6 +5653,8 @@ public struct RideFareBreakdown: Codable {
         case timeAdjustment = "time_adjustment"
         case timeAdjustmentLabel = "time_adjustment_label"
         case longDistanceDiscount = "long_distance_discount"
+        case minimumFareAdjustment = "minimum_fare_adjustment"
+        case demandAdjustment = "demand_adjustment"
     }
 }
 

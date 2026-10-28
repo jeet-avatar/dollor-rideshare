@@ -813,15 +813,26 @@ object CustomerRideshareApiService {
         @SerializedName("distance_miles") val distanceMiles: Double,
         @SerializedName("duration_minutes") val durationMinutes: Int,
         val breakdown: FareBreakdown,
+        val subtotal: Double? = null,
         val total: Double,
         @SerializedName("platform_fee") val platformFee: Double,
+        @SerializedName("access_for_all_fee") val accessForAllFee: AccessForAllFee? = null,
         val tier: Int
+    )
+
+    data class AccessForAllFee(
+        @SerializedName("customer_share") val customerShare: Double? = null
     )
 
     data class FareBreakdown(
         @SerializedName("base_fare") val baseFare: Double,
         @SerializedName("distance_cost") val distanceCost: Double,
-        @SerializedName("time_cost") val timeCost: Double
+        @SerializedName("time_cost") val timeCost: Double,
+        @SerializedName("time_adjustment") val timeAdjustment: Double? = null,
+        @SerializedName("time_adjustment_label") val timeAdjustmentLabel: String? = null,
+        @SerializedName("long_distance_discount") val longDistanceDiscount: Double? = null,
+        @SerializedName("minimum_fare_adjustment") val minimumFareAdjustment: Double? = null,
+        @SerializedName("demand_adjustment") val demandAdjustment: Double? = null
     )
 
     /**
@@ -974,7 +985,9 @@ object CustomerRideshareApiService {
 data class BidsForRideResponse(
     val bids: List<DriverBidForCustomer> = emptyList(),
     /** True when the server listed countered bids too; an older server only lists pending ones. */
-    @SerializedName("includes_countered") val includesCountered: Boolean = false
+    @SerializedName("includes_countered") val includesCountered: Boolean = false,
+    /** Server bidding deadline (UTC, no zone suffix); it is reset when a matched driver cancels. */
+    @SerializedName("bidding_ends_at") val biddingEndsAt: String? = null
 )
 
 /** GET /api/rides/customer/{customer_id}/requests */

@@ -1684,6 +1684,7 @@ struct RideTrackingView: View {
                 RideStatusCard(viewModel: viewModel)
             }
         }
+        .rideErrorAlert(viewModel)
         .alert("Ride update", isPresented: Binding(
             get: { viewModel.infoMessage != nil },
             set: { if !$0 { viewModel.infoMessage = nil } }
@@ -3108,10 +3109,26 @@ struct DriverBidsSheet: View {
         }
         .presentationDetents([.large])
         .preferredColorScheme(.dark)
+        .rideErrorAlert(viewModel)
         .sheet(isPresented: $viewModel.showCounterSheet) {
             if let bid = viewModel.selectedBidForCounter {
                 BidCounterSheet(viewModel: viewModel, bid: bid)
             }
+        }
+    }
+}
+
+extension View {
+    /// Alerts attach to the presenting layer; the ride screen is a full-screen cover and the bids
+    /// sheet sits above it, so each layer that can fail needs its own copy of the error alert.
+    func rideErrorAlert(_ viewModel: RideRequestViewModel) -> some View {
+        alert("Error", isPresented: Binding(
+            get: { viewModel.showError },
+            set: { viewModel.showError = $0 }
+        )) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(viewModel.errorMessage ?? "An error occurred")
         }
     }
 }
@@ -3237,6 +3254,7 @@ struct BidCounterSheet: View {
         }
         .presentationDetents([.large])
         .preferredColorScheme(.dark)
+        .rideErrorAlert(viewModel)
         .onAppear {
             // Pre-fill with a reasonable counter (e.g., 90% of driver's price)
             let suggestedCounter = bid.proposed_price * 0.9

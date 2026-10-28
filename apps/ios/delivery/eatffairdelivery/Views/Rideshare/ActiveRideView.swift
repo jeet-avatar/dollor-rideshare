@@ -632,7 +632,8 @@ struct ActiveRideView: View {
         let completion = viewModel.completionData
         let fare = completion?.final_price ?? finalPrice
         let fee = completion?.platform_fee ?? AppConfig.shared.calculateRidesharePlatformFee(fareAmount: fare)
-        let payout = completion?.driver_payout ?? max(0, fare - fee)
+        let regulatoryShare = AppConfig.shared.rideshareDriverRegulatoryShare
+        let payout = completion?.driver_payout ?? max(0, fare - fee - regulatoryShare)
         let tip = completion?.tip_amount ?? 0
 
         return VStack(spacing: 16) {
@@ -682,7 +683,8 @@ struct ActiveRideView: View {
             // Earnings breakdown
             VStack(spacing: 8) {
                 earningsRow(label: "Ride Fare", amount: fare)
-                earningsRow(label: "Platform Fee", amount: -fee, color: Theme.lxError)
+                earningsRow(label: "Connection fee", amount: -fee, color: Theme.lxError)
+                earningsRow(label: "CPUC Access for All", amount: -regulatoryShare, color: Theme.lxError)
                 if tip > 0 {
                     earningsRow(label: "Tip", amount: tip, color: Theme.lxSuccess)
                 }
@@ -691,7 +693,7 @@ struct ActiveRideView: View {
                     .overlay(Theme.lxHairline)
 
                 HStack {
-                    Text("Your Earnings")
+                    Text("You earn")
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxText)

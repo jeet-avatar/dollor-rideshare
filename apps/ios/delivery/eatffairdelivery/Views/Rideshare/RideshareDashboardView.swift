@@ -136,9 +136,22 @@ struct RideshareDashboardView: View {
                 }
             }
             .onChange(of: viewModel.activeRides) { _, newRides in
-                // Present when a ride appears for the first time; never close from here.
+                // The server no longer lists the ride we show (and it is not in the completion/rating
+                // step): close the screen instead of leaving a ghost active ride.
+                if let current = presentedActiveBid,
+                   !newRides.contains(where: { $0.id == current.id }),
+                   viewModel.completionData == nil {
+                    presentedActiveBid = nil
+                }
                 if presentedActiveBid == nil, let first = newRides.first {
-                    presentedActiveBid = first
+                    // Let any sheet/alert that is mid-dismissal finish: UIKit drops a presentation
+                    // requested while another one is still animating out.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        if presentedActiveBid == nil,
+                           viewModel.activeRides.contains(where: { $0.id == first.id }) {
+                            presentedActiveBid = first
+                        }
+                    }
                 }
             }
 
@@ -387,8 +400,8 @@ struct AvailableRequestsContent: View {
 
 struct MyBidsContent: View {
     @ObservedObject var viewModel: RideBiddingViewModel
+    /// Item-driven so the sheet can never be shown without its bid or get stuck "presented" with stale state.
     @State private var selectedBid: RideBid?
-    @State private var showCounterOfferSheet = false
 
     /// True when there are bids worth showing (pending or countered).
     /// Accepted bids live in the Active tab so they don't count here.
@@ -404,20 +417,24 @@ struct MyBidsContent: View {
                 emptyStateView
             }
         }
-        .sheet(isPresented: $showCounterOfferSheet) {
-            if let bid = selectedBid {
-                CounterOfferResponseSheet(bid: bid, viewModel: viewModel) {
-                    showCounterOfferSheet = false
-                }
+        .sheet(item: $selectedBid) { bid in
+            CounterOfferResponseSheet(bid: bid, viewModel: viewModel) {
+                selectedBid = nil
             }
         }
         // Wire the ViewModel's auto-detected counter-offer to the local sheet.
         // When a new counter-offer arrives mid-poll, the VM sets selectedCounterOffer
         // and flips showCounterOfferSheet — we observe that and mirror it here.
+        // The bid is no longer a live counter-offer (matched, withdrawn, expired): close its sheet so
+        // it cannot collide with the full-screen ride presentation.
+        .onChange(of: viewModel.counteredBids) { _, bids in
+            if let current = selectedBid, !bids.contains(where: { $0.id == current.id }) {
+                selectedBid = nil
+            }
+        }
         .onChange(of: viewModel.showCounterOfferSheet) { _, isShowing in
             if isShowing, let offer = viewModel.selectedCounterOffer {
                 selectedBid = offer
-                showCounterOfferSheet = true
                 viewModel.showCounterOfferSheet = false
             }
         }
@@ -474,7 +491,6 @@ struct MyBidsContent: View {
                                 viewModel: viewModel,
                                 onCounterOffer: {
                                     selectedBid = bid
-                                    showCounterOfferSheet = true
                                 }
                             )
                         }

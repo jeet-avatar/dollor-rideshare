@@ -257,6 +257,24 @@ class RideRequestViewModel @Inject constructor(
     private val _platformFee = MutableStateFlow(0.0)
     val platformFee: StateFlow<Double> = _platformFee.asStateFlow()
 
+    /** One visible line of the server fare estimate (label, signed amount). */
+    data class FareLine(val label: String, val amount: Double)
+
+    // Server fare estimate lines (base, distance, time, adjustments) that add up to the ride fare;
+    // empty when the estimate came from the local fallback.
+    private val _fareLines = MutableStateFlow<List<FareLine>>(emptyList())
+    val fareLines: StateFlow<List<FareLine>> = _fareLines.asStateFlow()
+
+    // Server CPUC Access for All customer share (0 when not provided)
+    private val _regulatoryFee = MutableStateFlow(0.0)
+    val regulatoryFee: StateFlow<Double> = _regulatoryFee.asStateFlow()
+
+    // Server estimate pieces so ride fare + connection fee + CPUC always equal the estimate total
+    private val _estimateRideFare = MutableStateFlow(0.0)
+    val estimateRideFare: StateFlow<Double> = _estimateRideFare.asStateFlow()
+    private val _estimateConnectionFee = MutableStateFlow(0.0)
+    val estimateConnectionFee: StateFlow<Double> = _estimateConnectionFee.asStateFlow()
+
     // ==========================================
     // INITIALIZATION
     // ==========================================
@@ -504,13 +522,46 @@ class RideRequestViewModel @Inject constructor(
                 _estimatedFare.value = response.estimate.total
                 _suggestedPrice.value = response.estimate.total
                 _platformFee.value = response.estimate.platformFee
+                applyServerBreakdown(response.estimate)
 
             }.onFailure { error ->
                 Log.w(TAG, "Fare estimate API failed, using local calculation: ${error.message}")
                 // Fall back to local Haversine calculation if API fails
+                _fareLines.value = emptyList()
+                _regulatoryFee.value = 0.0
                 calculateFareEstimateLocally(pickup, dropoff)
             }
         }
+    }
+
+    /**
+     * Turns the server breakdown into visible lines. The lines sum to the server subtotal; any
+     * field this app does not know about is folded into one "Pricing adjustment" line so the
+     * visible rows always add up to the total.
+     */
+    private fun applyServerBreakdown(estimate: CustomerRideshareApiService.FareEstimate) {
+        val b = estimate.breakdown
+        val lines = mutableListOf(
+            FareLine("Base fare", b.baseFare),
+            FareLine("Distance", b.distanceCost),
+            FareLine("Time", b.timeCost)
+        )
+        b.timeAdjustment?.takeIf { kotlin.math.abs(it) > 0.005 }?.let {
+            lines += FareLine(b.timeAdjustmentLabel ?: "Time adjustment", it)
+        }
+        b.longDistanceDiscount?.takeIf { it > 0.005 }?.let { lines += FareLine("Long-distance discount", -it) }
+        b.minimumFareAdjustment?.takeIf { kotlin.math.abs(it) > 0.005 }?.let { lines += FareLine("Minimum fare adjustment", it) }
+        b.demandAdjustment?.takeIf { kotlin.math.abs(it) > 0.005 }?.let { lines += FareLine("Demand adjustment", it) }
+
+        val regulatory = estimate.accessForAllFee?.customerShare ?: 0.0
+        val subtotal = estimate.subtotal ?: (estimate.total - estimate.platformFee - regulatory)
+        val remainder = subtotal - lines.sumOf { it.amount }
+        if (kotlin.math.abs(remainder) > 0.005) lines += FareLine("Pricing adjustment", remainder)
+
+        _fareLines.value = lines
+        _regulatoryFee.value = regulatory
+        _estimateRideFare.value = subtotal
+        _estimateConnectionFee.value = estimate.platformFee
     }
 
     /**
@@ -729,6 +780,12 @@ class RideRequestViewModel @Inject constructor(
         // visible until the driver answers (a driver re-counter returns it as pending).
         CustomerRideshareApiService.getBidsForRide(rideRequest.id).onSuccess { response ->
             val bids = response.bids
+            // Follow the server's deadline: a driver cancel re-opens bidding with a fresh window.
+            response.biddingEndsAt?.let { endsAt ->
+                if (endsAt != rideRequest.biddingExpiresAt) {
+                    _activeRideRequest.value = _activeRideRequest.value?.copy(biddingExpiresAt = endsAt)
+                }
+            }
             val visible = if (response.includesCountered) {
                 counteredBids.clear()
                 bids.filter { it.status.equals("countered", ignoreCase = true) }.forEach { counteredBids[it.id] = it }
@@ -796,7 +853,7 @@ class RideRequestViewModel @Inject constructor(
                     showErrorMessage(response.message)
                 }
             }.onFailure { error ->
-                showErrorMessage("Failed to accept bid: ${error.message}")
+                showErrorMessage(error.message?.takeIf { it.isNotBlank() } ?: "Failed to accept bid")
             }
         }
     }
@@ -941,6 +998,8 @@ class RideRequestViewModel @Inject constructor(
         _estimatedDistance.value = 0.0
         _estimatedDuration.value = 0
         _estimatedFare.value = 0.0
+        _fareLines.value = emptyList()
+        _regulatoryFee.value = 0.0
         _suggestedPrice.value = null
         _activeRideRequest.value = null
         _incomingBids.value = emptyList()

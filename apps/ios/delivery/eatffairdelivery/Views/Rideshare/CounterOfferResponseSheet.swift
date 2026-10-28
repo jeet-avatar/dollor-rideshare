@@ -13,6 +13,7 @@ struct CounterOfferResponseSheet: View {
     @State private var newCounterPrice: String = ""
     @FocusState private var isPriceFocused: Bool
 
+    private var regulatoryShare: Double { AppConfig.shared.rideshareDriverRegulatoryShare }
     private var platformFee: Double { AppConfig.shared.calculateRidesharePlatformFee(fareAmount: customerCounterPrice) }
 
     private var customerCounterPrice: Double {
@@ -28,7 +29,7 @@ struct CounterOfferResponseSheet: View {
     }
 
     private var driverEarningsIfAccept: Double {
-        max(0, customerCounterPrice - platformFee)
+        max(0, customerCounterPrice - platformFee - regulatoryShare)
     }
 
     private var newCounterAmount: Double {
@@ -191,7 +192,7 @@ struct CounterOfferResponseSheet: View {
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxSuccess)
-                    Text("after \(Lx.Money.text(platformFee)) fee")
+                    Text("after \(Lx.Money.text(platformFee)) fee + \(Lx.Money.text(regulatoryShare)) CPUC")
                         .font(.caption2)
                         .foregroundColor(Theme.lxTextSecondary)
                 }
@@ -347,7 +348,7 @@ struct CounterOfferResponseSheet: View {
                         .font(.subheadline)
                         .foregroundColor(Theme.lxTextSecondary)
                     Spacer()
-                    Text("$\(String(format: "%.2f", max(0, newCounterAmount - newCounterFee)))")
+                    Text("$\(String(format: "%.2f", max(0, newCounterAmount - newCounterFee - regulatoryShare)))")
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxSuccess)
@@ -370,7 +371,7 @@ struct CounterOfferResponseSheet: View {
             Image(systemName: "info.circle.fill")
                 .foregroundColor(Theme.lxSuccess)
 
-            Text("Only \(Lx.Money.text(platformFee)) connection fee deducted from your earnings")
+            Text("Deducted from your earnings: \(Lx.Money.text(platformFee)) connection fee + \(Lx.Money.text(regulatoryShare)) CPUC Access for All")
                 .font(.caption)
                 .foregroundColor(Theme.lxTextSecondary)
         }
