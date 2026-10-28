@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.eatfair.shared.data.local.SecureStorage
 import com.eatfair.shared.data.repository.DollorRepository
 import com.eatfair.shared.model.DriverGoogleAuthRequest
+import com.eatfair.shared.network.SessionEvents
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +32,26 @@ class LoginViewModel @Inject constructor(
 
     init {
         checkExistingAuth()
+        observeSessionExpiry()
+        registerPushTokenOnSignIn()
+    }
+
+    /** Register the device for push as soon as the driver is signed in (not only on app resume). */
+    private fun registerPushTokenOnSignIn() {
+        viewModelScope.launch {
+            loginState.collect { state ->
+                if (state is LoginState.LoggedIn) repository.registerCurrentPushToken()
+            }
+        }
+    }
+
+    /** A driver API call hit an unrefreshable 401 (auth already cleared): show login with a message. */
+    private fun observeSessionExpiry() {
+        viewModelScope.launch {
+            SessionEvents.expired.collect {
+                _loginState.value = LoginState.Error(SessionEvents.MESSAGE)
+            }
+        }
     }
 
     private fun checkExistingAuth() {
@@ -96,6 +117,7 @@ class LoginViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
+            repository.unregisterPushToken()
             repository.driverLogout()
             _loginState.value = LoginState.Idle
         }

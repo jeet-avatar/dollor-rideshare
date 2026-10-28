@@ -32,7 +32,7 @@ struct CounterOfferResponseSheet: View {
     }
 
     private var newCounterAmount: Double {
-        Double(newCounterPrice) ?? 0
+        newCounterPrice.parsedDecimal ?? 0
     }
 
     var body: some View {

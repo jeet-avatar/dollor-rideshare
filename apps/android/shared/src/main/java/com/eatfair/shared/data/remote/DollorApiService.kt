@@ -664,6 +664,20 @@ interface DollorApiService {
         @Header("Authorization") token: String
     ): GenericResponse
 
+    /** DELETE /api/erp/customers/{id}/fcm-token (call on logout) */
+    @DELETE("erp/customers/{customerId}/fcm-token")
+    suspend fun unregisterCustomerFcmToken(
+        @Path("customerId") customerId: Int,
+        @Header("Authorization") token: String
+    ): GenericResponse
+
+    /** DELETE /api/erp/drivers/{id}/fcm-token (call on logout) */
+    @DELETE("erp/drivers/{driverId}/fcm-token")
+    suspend fun unregisterDriverFcmToken(
+        @Path("driverId") driverId: Int,
+        @Header("Authorization") token: String
+    ): GenericResponse
+
     @POST("notifications/register-token")
     suspend fun registerPushToken(
         @Body request: RegisterPushTokenRequest,

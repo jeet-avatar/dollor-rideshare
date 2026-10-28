@@ -747,7 +747,11 @@ class RideRequestViewModel @Inject constructor(
         CustomerRideshareApiService.trackRide(rideRequest.id).onSuccess { tracking ->
             when (tracking.status.lowercase()) {
                 "matched", "accepted", "driver_en_route", "en_route" -> {
-                    _selectedBid.value = counteredBids.values.firstOrNull() ?: _selectedBid.value
+                    // The server says which driver was matched: pick that driver's bid, not just any countered one.
+                    val matchedDriverId = tracking.driver?.id
+                    val candidates = counteredBids.values + _incomingBids.value
+                    _selectedBid.value = candidates.firstOrNull { it.driverId == matchedDriverId }
+                        ?: _selectedBid.value
                     counteredBids.clear()
                     stopPollingForBids()
                     _rideTracking.value = tracking

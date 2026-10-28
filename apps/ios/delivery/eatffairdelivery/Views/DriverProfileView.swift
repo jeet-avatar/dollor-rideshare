@@ -880,7 +880,7 @@ struct EarningsPaymentSection: View {
                             Text("Weekly Hours")
                                 .font(.caption)
                                 .foregroundColor(Theme.lxTextSecondary)
-                            Text(String(format: "%.1f hrs", earningsViewModel.weekHours))
+                            Text(earningsViewModel.weekHours.map { String(format: "%.1f hrs", $0) } ?? "\u{2014}")
                                 .font(.title3)
                                 .fontWeight(.bold)
                         }

@@ -1,5 +1,6 @@
 package com.eatfair.shared.model.driver
 
+import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
 
 /**
@@ -267,9 +268,15 @@ data class DriverEarningsSummaryDto(
     val today: Double = 0.0,
     val week: Double = 0.0,
     val month: Double = 0.0,
-    val pending: Double = 0.0
+    val pending: Double = 0.0,
+    /** Optional (newer servers): null when absent so the UI can show a dash instead of $0.00. */
+    @SerializedName("available_balance") val availableBalance: JsonElement? = null,
+    /** Optional: a number for the requested period, or an object with today/week/month. */
+    @SerializedName("hours_online") val hoursOnline: JsonElement? = null
 ) {
-    fun toResponse(): DriverEarningsResponse = DriverEarningsResponse(
+    fun toResponse(period: String = "today"): DriverEarningsResponse = DriverEarningsResponse(
+        availableBalance = availableBalance.asDoubleOrNull(),
+        hoursOnline = hoursOnline.hoursFor(period),
         total = totalEarnings,
         basePay = baseEarnings + rideshareEarnings,
         tips = tips,
@@ -303,7 +310,7 @@ data class DriverEarningsResponse(
     val deliveries: Int = 0,
 
     @SerializedName("hours_online")
-    val hoursOnline: Double = 0.0,
+    val hoursOnline: Double? = null,
 
     @SerializedName("avg_per_delivery")
     val avgPerDelivery: Double = 0.0,
@@ -328,8 +335,9 @@ data class DriverEarningsResponse(
     val ratings: DriverRatings = DriverRatings(),
 
     // === Payout info ===
+    /** Null when the server does not report it; the UI shows a dash, never a made-up $0.00. */
     @SerializedName("available_balance")
-    val availableBalance: Double = 0.0,
+    val availableBalance: Double? = null,
 
     @SerializedName("pending_balance")
     val pendingBalance: Double = 0.0,
@@ -350,3 +358,26 @@ data class DriverEarningsResponse(
     @SerializedName("snapshot_time")
     val snapshotTime: String = ""
 )
+
+/** Reads a JSON number or numeric string; null for absent, null, or anything else. */
+private fun JsonElement?.asDoubleOrNull(): Double? {
+    if (this == null || !isJsonPrimitive) return null
+    return runCatching { asDouble }.getOrNull()
+}
+
+/**
+ * hours_online may be a number (for the requested period) or an object keyed by
+ * today / week / month (also this_week / this_month). Null when not reported.
+ */
+private fun JsonElement?.hoursFor(period: String): Double? {
+    if (this == null || isJsonNull) return null
+    if (isJsonPrimitive) return asDoubleOrNull()
+    if (!isJsonObject) return null
+    val keys = when (period) {
+        "week" -> listOf("week", "this_week")
+        "month" -> listOf("month", "this_month")
+        else -> listOf("today")
+    }
+    val obj = asJsonObject
+    return keys.firstNotNullOfOrNull { obj.get(it).asDoubleOrNull() }
+}

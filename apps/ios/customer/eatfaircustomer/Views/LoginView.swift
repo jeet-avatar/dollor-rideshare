@@ -11,7 +11,7 @@ private let lxHairline     = Lx.Palette.hairline   // borders / dividers
 private let lxOrange       = Lx.Palette.orange   // primary accent
 private let lxOrangeBright = Lx.Palette.orangeBright   // gradient top / highlight
 private let lxOrangeDeep   = Lx.Palette.orangeDeep   // pressed
-private let lxText         = Lx.Palette.onAccent            // primary text
+private let lxText         = Lx.Palette.text            // primary text
 private let lxTextSecondary = Lx.Palette.textSecondary  // secondary text
 private let lxTextMuted    = Lx.Palette.textMuted   // muted / placeholders
 private let lxError        = Lx.Palette.error
@@ -119,7 +119,7 @@ struct LoginView: View {
                 .foregroundColor(Lx.Palette.onSuccess)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
-                .background(Lx.Palette.onAccent)
+                .background(Lx.Palette.text)
                 .cornerRadius(Lx.Radius.button)
             }
             .disabled(authViewModel.isLoading)
@@ -130,7 +130,7 @@ struct LoginView: View {
             Button(action: { authViewModel.signInWithGoogle() }) {
                 HStack(spacing: 10) {
                     if authViewModel.isLoading {
-                        ProgressView().tint(Lx.Palette.onAccent)
+                        ProgressView().tint(Lx.Palette.text)
                     } else {
                         Text("G")
                             .font(Lx.Typography.body.weight(.bold))

@@ -205,7 +205,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.earningsContent(
             EarningsStatCard(
                 modifier = Modifier.weight(1f),
                 label = "Hours",
-                value = String.format("%.1f", data.hoursOnline),
+                value = data.hoursOnline?.let { String.format("%.1f", it) } ?: "\u2014",
                 icon = Icons.Default.AccessTime
             )
             EarningsStatCard(
@@ -248,7 +248,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.earningsContent(
     // Available balance + Payout Button
     item {
         Text(
-            text = "Available to pay out: ${money(data.availableBalance)}",
+            text = "Available to pay out: ${data.availableBalance?.let { money(it) } ?: "\u2014"}",
             style = MaterialTheme.typography.bodyMedium,
             color = DollorDriverColors.Gray600
         )

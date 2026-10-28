@@ -33,7 +33,7 @@ class DriverHomeViewModel @Inject constructor(
         val isToggling: Boolean = false,
         val todayEarnings: Double = 0.0,
         val todayRides: Int = 0,
-        val todayHours: Double = 0.0,
+        val todayHours: Double? = null,
         val activeRide: RideRequestForBidding? = null,
         val completedRide: RideRequestForBidding? = null,
         val isRideActionInProgress: Boolean = false,

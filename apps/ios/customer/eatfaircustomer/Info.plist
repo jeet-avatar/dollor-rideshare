@@ -43,7 +43,7 @@
 		<false/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Camera access allows you to scan payment cards and take profile photos.</string>
+	<string>Camera access allows you to scan payment cards.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Dollor AI Service needs your location to find nearby drivers and request rides.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -295,7 +295,7 @@ private var allFAQs: [FAQItem] { [
     FAQItem(
         id: "5",
         question: "How do I add a payment method?",
-        answer: "Go to Profile > Payment Methods > Add Card. We accept all major credit and debit cards. You can also link your bank account for ACH payments.\(AppConfig.shared.achFeeDiscountText.map { " \($0)" } ?? "")",
+        answer: "Go to Profile > Payment Methods > Add Card. We accept all major credit and debit cards.",
         category: .payments
     ),
     FAQItem(

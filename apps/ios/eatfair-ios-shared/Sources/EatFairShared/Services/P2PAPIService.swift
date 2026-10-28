@@ -58,6 +58,41 @@ public class P2PAPIService: ObservableObject {
     private init() {
         // Migrate any tokens from UserDefaults to Keychain on first access
         SecureStorage.shared.migrateFromUserDefaults()
+        NotificationCenter.default.addObserver(
+            forName: .apiUnauthorizedResponse,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            self?.handleUnauthorized(bearer: note.userInfo?["bearer"] as? String)
+        }
+    }
+
+    private var isRecoveringSession = false
+
+    /// Any call that came back 401 lands here (most call sites do not handle 401 themselves).
+    /// Try one token refresh for the token that was rejected; if that fails, tell the app the
+    /// session is over so it can sign out and show "Session expired".
+    private func handleUnauthorized(bearer: String?) {
+        guard let bearer = bearer, !isRecoveringSession else { return }
+        isRecoveringSession = true
+        let finish = { [weak self] in self?.isRecoveringSession = false }
+        if bearer == customerToken {
+            refreshCustomerToken { result in
+                if case .failure(let error) = result, !(error is URLError) {
+                    NotificationCenter.default.post(name: Notification.Name("CustomerTokenExpired"), object: nil)
+                }
+                finish()
+            }
+        } else if bearer == driverToken {
+            refreshDriverToken { result in
+                if case .failure(let error) = result, !(error is URLError) {
+                    NotificationCenter.default.post(name: Notification.Name("DriverTokenExpired"), object: nil)
+                }
+                finish()
+            }
+        } else {
+            finish()
+        }
     }
 
     // MARK: - Secure URLSession (SSL Pinning)
@@ -2278,6 +2313,68 @@ public class P2PAPIService: ObservableObject {
                 completion(.success(true))
             }
         }.resume()
+    }
+
+    /// Optional payout fields of GET /api/driver/earnings. Both are nil when the server does not
+    /// send them (older backend), so the UI shows a dash instead of a made-up $0.00 / 0.0 h.
+    public struct DriverPayoutFields {
+        public let availableBalance: Double?
+        public let hoursOnline: Double?
+    }
+
+    /// GET /api/driver/earnings?period=today|week|month. `hours_online` may be a number (for the
+    /// requested period) or an object keyed today/week/month; `available_balance` a number or string.
+    public func getDriverPayoutFields(
+        period: String,
+        completion: @escaping (Result<DriverPayoutFields, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(baseURL)/driver/earnings?period=\(period)") else {
+            completion(.failure(P2PAPIError.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = driverToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        secureSession.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                guard let data = data,
+                      (response as? HTTPURLResponse)?.statusCode == 200,
+                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                    completion(.failure(P2PAPIError.noData))
+                    return
+                }
+                completion(.success(DriverPayoutFields(
+                    availableBalance: Self.number(json["available_balance"]),
+                    hoursOnline: Self.hours(json["hours_online"], period: period)
+                )))
+            }
+        }.resume()
+    }
+
+    private static func number(_ value: Any?) -> Double? {
+        if let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() { return number.doubleValue }
+        if let text = value as? String { return Double(text) }
+        return nil
+    }
+
+    private static func hours(_ value: Any?, period: String) -> Double? {
+        if let object = value as? [String: Any] {
+            let keys: [String]
+            switch period {
+            case "week": keys = ["week", "this_week"]
+            case "month": keys = ["month", "this_month"]
+            default: keys = ["today"]
+            }
+            return keys.compactMap { number(object[$0]) }.first
+        }
+        return number(value)
     }
 
     /// Fetch driver earnings dashboard from V5 API

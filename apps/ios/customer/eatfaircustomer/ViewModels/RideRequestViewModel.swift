@@ -581,8 +581,8 @@ class RideRequestViewModel: ObservableObject {
                         self.showErrorMessage("You have open ride requests pending. Please wait or cancel them before requesting a new ride.")
                     } else if errorMsg.contains("pre-authorized") || errorMsg.contains("card could not") {
                         self.showErrorMessage("Your payment method could not be authorized. Please update your card in Settings.")
-                    } else if errorMsg.contains("http error: 401") || errorMsg.contains("invalid or expired token") {
-                        self.showErrorMessage("Your session has expired. Please log in again.")
+                    } else if errorMsg.contains("http error: 401") || errorMsg.contains("invalid or expired token") || errorMsg.contains("session expired") {
+                        self.showErrorMessage("Session expired, please sign in again.")
                     } else {
                         self.showErrorMessage("Unable to request ride. Please try again.")
                     }

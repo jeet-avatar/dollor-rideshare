@@ -61,7 +61,11 @@ class EarningsViewModel @Inject constructor(
     }
 
     fun requestPayout() {
-        val amount = _uiState.value.earnings?.availableBalance ?: 0.0
+        val amount = _uiState.value.earnings?.availableBalance
+        if (amount == null) {
+            _uiState.update { it.copy(payoutMessage = "Your payout balance isn't available yet.") }
+            return
+        }
         if (amount <= 0.0) {
             _uiState.update { it.copy(payoutMessage = "No balance available to pay out yet.") }
             return

@@ -288,7 +288,7 @@ private fun PrimaryAction(label: String, color: Color, busy: Boolean, onClick: (
         shape = RoundedCornerShape(Lx.Radius.button),
         colors = ButtonDefaults.buttonColors(containerColor = color)
     ) {
-        if (busy) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+        if (busy) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Lx.OnAccent, strokeWidth = 2.dp)
         else Text(label, fontWeight = FontWeight.Bold)
     }
 }
@@ -325,7 +325,7 @@ fun RideChatSheet(
                         Column(horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
                             Text(
                                 msg.message,
-                                color = if (mine) Color.White else DollorDriverColors.Gray900,
+                                color = if (mine) Lx.OnAccent else DollorDriverColors.Gray900,
                                 modifier = Modifier
                                     .background(
                                         if (mine) DollorDriverColors.Blue else DollorDriverColors.Gray300.copy(alpha = 0.5f),

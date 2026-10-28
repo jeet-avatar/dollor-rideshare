@@ -563,7 +563,7 @@ struct RecurringRideSetupSheet: View {
             "timezone": TimeZone.current.identifier
         ]
 
-        if let price = Double(maxPrice), price > 0 {
+        if let price = maxPrice.parsedDecimal, price > 0 {
             body["max_price"] = price
         }
 

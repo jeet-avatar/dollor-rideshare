@@ -267,7 +267,7 @@ fun DriverHomeScreen(
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.AccessTime,
-                    value = String.format("%.1fh", uiState.todayHours),
+                    value = uiState.todayHours?.let { String.format("%.1fh", it) } ?: "\u2014",
                     label = "Online",
                     color = DollorDriverColors.Orange
                 )

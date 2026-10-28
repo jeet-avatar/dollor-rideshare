@@ -20,6 +20,10 @@ class AuthManager: ObservableObject {
 
     private let p2pService = P2PAPIService.shared
     private var approvalObserver: NSObjectProtocol?
+    private var sessionExpiredObserver: NSObjectProtocol?
+
+    /// Set when the server rejected the token and it could not be refreshed; the login screen shows it once.
+    @Published var sessionExpiredMessage: String?
 
     init() {
         #if DEBUG
@@ -40,6 +44,17 @@ class AuthManager: ObservableObject {
         // Check if driver is already logged in
         checkLoginState()
 
+        // A driver API call hit an unrefreshable 401: sign out and tell the driver why.
+        sessionExpiredObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("DriverTokenExpired"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self, self.isLoggedIn else { return }
+            self.sessionExpiredMessage = "Session expired, please sign in again."
+            self.logout()
+        }
+
         // React to approval changes pushed from the backend (driverApproved/driverRejected).
         approvalObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("DriverApprovalStatusChanged"),
@@ -56,6 +71,9 @@ class AuthManager: ObservableObject {
     deinit {
         if let approvalObserver = approvalObserver {
             NotificationCenter.default.removeObserver(approvalObserver)
+        }
+        if let sessionExpiredObserver = sessionExpiredObserver {
+            NotificationCenter.default.removeObserver(sessionExpiredObserver)
         }
     }
 
@@ -122,6 +140,7 @@ class AuthManager: ObservableObject {
                     #if DEBUG
                     logger.info("[AuthManager] Session validation rejected by server — logging out")
                     #endif
+                    self.sessionExpiredMessage = "Session expired, please sign in again."
                     self.logout()
                 }
                 // Any other error: leave the optimistic logged-in state as-is.

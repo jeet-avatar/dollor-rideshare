@@ -83,8 +83,8 @@ class TokenRefreshInterceptor @Inject constructor(
 
         // Refresh not possible/failed → clear the matching auth and force re-login.
         response.close()
-        clearExpiredAuth(token)
-        throw TokenExpiredException("Authentication token expired. Please login again.")
+        if (clearExpiredAuth(token)) SessionEvents.notifyExpired()
+        throw TokenExpiredException(SessionEvents.MESSAGE)
     }
 
     /**
@@ -134,14 +134,16 @@ class TokenRefreshInterceptor @Inject constructor(
     }
 
     /** Clear expired authentication based on which token was used. */
-    private fun clearExpiredAuth(token: String?) {
-        if (token == null) return
-        synchronized(secureStorage) {
+    private fun clearExpiredAuth(token: String?): Boolean {
+        if (token == null) return false
+        return synchronized(secureStorage) {
             when (token) {
                 secureStorage.customerToken -> secureStorage.clearCustomerAuth()
                 secureStorage.driverToken -> secureStorage.clearDriverAuth()
                 secureStorage.vendorToken -> secureStorage.clearVendorAuth()
+                else -> return@synchronized false
             }
+            true
         }
     }
 }

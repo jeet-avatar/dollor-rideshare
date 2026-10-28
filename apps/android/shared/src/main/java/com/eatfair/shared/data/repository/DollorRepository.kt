@@ -1,6 +1,9 @@
 package com.eatfair.shared.data.repository
 
 import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import com.eatfair.shared.data.local.SecureStorage
 import com.eatfair.shared.data.remote.DollorApiService
 import com.eatfair.shared.model.*
@@ -761,7 +764,7 @@ class DollorRepository @Inject constructor(
         Result<com.eatfair.shared.model.driver.DriverEarningsResponse> = withContext(Dispatchers.IO) {
         val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
             ?: return@withContext Result.failure(Exception("Not authenticated"))
-        safeApiCall { apiService.getDriverEarningsSummary(period, token).toResponse() }
+        safeApiCall { apiService.getDriverEarningsSummary(period, token).toResponse(period) }
     }
 
     suspend fun getDriverAccessibility(): Result<com.eatfair.shared.model.rideshare.DriverAccessibilitySettings> =
@@ -1056,5 +1059,37 @@ class DollorRepository @Inject constructor(
                 safeApiCallWithDetail { apiService.registerDriverFcmToken(secureStorage.driverId, request, driverAuth) }
             else -> Result.failure(Exception("Not authenticated"))
         }
+    }
+
+    /** Fetches the device's current FCM token and registers it for the signed-in user. */
+    suspend fun registerCurrentPushToken() {
+        val token = runCatching { currentFcmToken() }.getOrNull() ?: return
+        registerPushToken(token)
+    }
+
+    /**
+     * Logout: tell the server to stop pushing to this device (DELETE .../fcm-token), then drop
+     * the device's FCM token so the next sign-in gets a fresh one. Call BEFORE clearing auth.
+     * Best effort: a failure never blocks logout.
+     */
+    suspend fun unregisterPushToken() = withContext(Dispatchers.IO) {
+        val customerAuth = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
+        val driverAuth = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
+        runCatching {
+            when {
+                secureStorage.isCustomerLoggedIn && customerAuth != null ->
+                    apiService.unregisterCustomerFcmToken(secureStorage.customerId, customerAuth)
+                secureStorage.isDriverLoggedIn && driverAuth != null ->
+                    apiService.unregisterDriverFcmToken(secureStorage.driverId, driverAuth)
+                else -> null
+            }
+        }.onFailure { Log.w(TAG, "FCM unregister failed: ${it.message}") }
+        runCatching { FirebaseMessaging.getInstance().deleteToken() }
+    }
+
+    private suspend fun currentFcmToken(): String? = suspendCancellableCoroutine { cont ->
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { if (cont.isActive) cont.resume(it) }
+            .addOnFailureListener { if (cont.isActive) cont.resume(null) }
     }
 }

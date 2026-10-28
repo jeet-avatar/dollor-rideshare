@@ -73,8 +73,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "2",
                 "What payment methods are accepted?",
-                "We accept all major credit/debit cards, Apple Pay, Google Pay, and ACH bank transfers." +
-                    (AppConfig.Rideshare.support.achFeeDiscountText?.let { " $it" } ?: ""),
+                "We accept all major credit and debit cards. Add one under Profile > Payment Methods.",
                 "Payments"
             ),
             FAQItem(

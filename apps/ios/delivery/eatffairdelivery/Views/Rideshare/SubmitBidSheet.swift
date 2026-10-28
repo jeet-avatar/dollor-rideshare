@@ -28,7 +28,7 @@ struct SubmitBidSheet: View {
     }
 
     private var proposedAmount: Double {
-        Double(proposedPrice) ?? 0
+        proposedPrice.parsedDecimal ?? 0
     }
 
     private var driverEarnings: Double {

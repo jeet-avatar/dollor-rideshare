@@ -30,9 +30,12 @@ class EarningsViewModel: ObservableObject {
     @Published var monthFoodDeliveries: Int = 0
     @Published var monthRideshareRides: Int = 0
 
-    @Published var todayHours: Double = 0.0
-    @Published var weekHours: Double = 0.0
-    @Published var monthHours: Double = 0.0
+    /// nil = the server did not report hours (UI shows a dash, not 0.0).
+    @Published var todayHours: Double?
+    @Published var weekHours: Double?
+    @Published var monthHours: Double?
+    /// nil = the server did not report an available balance (UI shows a dash, not $0.00).
+    @Published var availableBalance: Double?
 
     @Published var dailyEarnings: [DailyEarning] = []
     /// Computed proxy — reads from OnlineStatusManager.shared (single source of truth).
@@ -145,17 +148,17 @@ class EarningsViewModel: ObservableObject {
         // Today
         todayEarnings = dashboard.today.grossEarnings
         todayDeliveries = dashboard.today.deliveries
-        todayHours = dashboard.today.activeHours ?? 0.0
+        todayHours = dashboard.today.activeHours
 
         // Week
         weekEarnings = dashboard.thisWeek.grossEarnings
         weekDeliveries = dashboard.thisWeek.deliveries
-        weekHours = dashboard.thisWeek.activeHours ?? 0.0
+        weekHours = dashboard.thisWeek.activeHours
 
         // Month
         monthEarnings = dashboard.thisMonth.grossEarnings
         monthDeliveries = dashboard.thisMonth.deliveries
-        monthHours = dashboard.thisMonth.activeHours ?? 0.0
+        monthHours = dashboard.thisMonth.activeHours
 
         // Split counts (food vs rideshare)
         todayFoodDeliveries = dashboard.today.foodDeliveries ?? dashboard.today.deliveries
@@ -178,8 +181,27 @@ class EarningsViewModel: ObservableObject {
         weekBreakdown = createBreakdown(from: dashboard.thisWeek)
         monthBreakdown = createBreakdown(from: dashboard.thisMonth)
 
+        fetchPayoutFields()
+
         // Generate daily earnings breakdown (mock for now, can be enhanced with API)
         generateDailyBreakdown(weeklyTotal: dashboard.thisWeek.grossEarnings, deliveries: dashboard.thisWeek.deliveries)
+    }
+
+    /// Reads the optional available_balance / hours_online fields of GET /api/driver/earnings.
+    /// Fields the server does not send leave the dashboard values (or nil) untouched.
+    private func fetchPayoutFields() {
+        for period in ["today", "week", "month"] {
+            apiService.getDriverPayoutFields(period: period) { [weak self] result in
+                guard let self = self, case .success(let fields) = result else { return }
+                if let balance = fields.availableBalance { self.availableBalance = balance }
+                guard let hours = fields.hoursOnline else { return }
+                switch period {
+                case "today": self.todayHours = hours
+                case "week": self.weekHours = hours
+                default: self.monthHours = hours
+                }
+            }
+        }
     }
 
     /// Create earnings breakdown from period data - uses actual values when available

@@ -482,6 +482,10 @@ struct DriverLoginView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             loadRememberedCredentials()
+            if let message = authManager.sessionExpiredMessage {
+                errorMessage = message
+                authManager.sessionExpiredMessage = nil
+            }
         }
         .sheet(isPresented: $showTerms) {
             DriverTermsSheet(agreedToTerms: $agreedToTerms)

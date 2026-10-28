@@ -24,7 +24,7 @@ public enum Lx {
         /// Third-party brand color (Google sign-in button); not part of our palette.
         public static let googleBlue = Color(hex: "4285F4")
         /// Text/icons drawn on top of orange or other saturated fills.
-        public static let onAccent = Color.white
+        public static let onAccent = Color(hex: "0B0B0D")  // white on FF7A1A is only 2.6:1
         /// Text/icons drawn on top of green success fills.
         public static let onSuccess = Color.black
         /// Drop-shadow base color.
@@ -100,7 +100,7 @@ public struct LxPrimaryButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Lx.Typography.button)
-            .foregroundColor(isEnabled ? Lx.Palette.text : Lx.Palette.textMuted)
+            .foregroundColor(isEnabled ? Lx.Palette.onAccent : Lx.Palette.textMuted)
             .frame(maxWidth: .infinity, minHeight: Lx.Size.buttonHeight)
             .background(isEnabled ? AnyShapeStyle(Lx.Palette.buttonGradient) : AnyShapeStyle(Lx.Palette.surface2))
             .clipShape(RoundedRectangle(cornerRadius: Lx.Radius.button, style: .continuous))
@@ -172,7 +172,7 @@ public struct LxCompactButtonStyle: ButtonStyle {
         let background: AnyShapeStyle
         switch role {
         case .primary:
-            foreground = Lx.Palette.text
+            foreground = Lx.Palette.onAccent
             background = AnyShapeStyle(Lx.Palette.buttonGradient)
         case .secondary:
             foreground = Lx.Palette.orange

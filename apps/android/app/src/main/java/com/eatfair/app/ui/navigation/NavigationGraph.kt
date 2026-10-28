@@ -37,6 +37,7 @@ import com.eatfair.app.ui.auth.EmailVerificationScreen
 import com.eatfair.app.ui.auth.EmailVerificationState
 import com.eatfair.app.ui.auth.ForgotPasswordScreen
 import com.eatfair.app.ui.auth.LoginScreen
+import com.eatfair.shared.network.SessionEvents
 import com.eatfair.app.ui.auth.RegisterScreen
 import com.eatfair.app.ui.auth.ResetCodeEntryScreen
 import com.eatfair.app.ui.auth.LegalAcceptanceScreen
@@ -70,6 +71,12 @@ fun NavigationGraph(
 
     // Track previous auth state to detect login success
     var previousAuthState by remember { mutableStateOf<AuthState?>(null) }
+
+    LaunchedEffect(Unit) {
+        SessionEvents.expired.collect {
+            android.widget.Toast.makeText(context, SessionEvents.MESSAGE, android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
 
     LaunchedEffect(authState) {
         when (authState) {

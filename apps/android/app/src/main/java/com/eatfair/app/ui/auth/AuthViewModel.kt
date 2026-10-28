@@ -6,6 +6,7 @@ import com.eatfair.shared.config.AppConfig
 import com.eatfair.shared.data.local.SecureStorage
 import com.eatfair.shared.data.local.SessionManager
 import com.eatfair.shared.data.repository.DollorRepository
+import com.eatfair.shared.network.SessionEvents
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,6 +52,27 @@ class AuthViewModel @Inject constructor(
 
     init {
         observeAuthState()
+        observeSessionExpiry()
+        registerPushTokenOnSignIn()
+    }
+
+    /** Register the device for push as soon as the rider is signed in (not only on app resume). */
+    private fun registerPushTokenOnSignIn() {
+        viewModelScope.launch {
+            authState.collect { state ->
+                if (state is AuthState.Authenticated) dollorRepository.registerCurrentPushToken()
+            }
+        }
+    }
+
+    /** A rider API call hit an unrefreshable 401: drop the local session and return to login. */
+    private fun observeSessionExpiry() {
+        viewModelScope.launch {
+            SessionEvents.expired.collect {
+                sessionManager.clearSession()
+                _authState.value = AuthState.UnAuthenticated
+            }
+        }
     }
 
     /**
@@ -205,6 +227,7 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
+            dollorRepository.unregisterPushToken()
             dollorRepository.customerLogout()
             sessionManager.clearSession()
             _authState.value = AuthState.UnAuthenticated

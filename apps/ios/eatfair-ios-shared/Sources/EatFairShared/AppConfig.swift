@@ -492,11 +492,13 @@ public class AppConfig: ObservableObject {
     /// Fetches app configuration from Dollar.ai backend
     /// All data comes from P2P backend - Firebase is only for authentication
     public func fetchConfig(completion: ((Bool) -> Void)? = nil) {
-        fetchRideshareConfig()
+        // The rideshare endpoint owns support and ride pricing: it is fetched only AFTER /api/config
+        // has been applied (or has failed), so the two responses can never race on the same properties.
         guard let url = URL(string: "\(p2pAPIBaseURL)/api/config") else {
             configLogger.error("Invalid URL for config endpoint")
             // Use default values if API fails
             self.configLoaded = true
+            self.fetchRideshareConfig()
             completion?(true)
             return
         }
@@ -514,7 +516,8 @@ public class AppConfig: ObservableObject {
                 configLogger.warning("Using default configuration (P2P API not available)")
                 DispatchQueue.main.async {
                     self.configLoaded = true
-                    completion?(true)
+                    self.fetchRideshareConfig()
+            completion?(true)
                 }
                 return
             }
@@ -574,7 +577,8 @@ public class AppConfig: ObservableObject {
 
                 self.configLoaded = true
                 configLogger.info("Configuration loaded from Dollar.ai backend")
-                completion?(true)
+                self.fetchRideshareConfig()
+            completion?(true)
             }
         }.resume()
     }

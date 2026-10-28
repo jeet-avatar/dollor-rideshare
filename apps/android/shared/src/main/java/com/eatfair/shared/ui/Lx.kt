@@ -26,7 +26,8 @@ object Lx {
     val ErrorTint = Color(0xFF3A1614)
     /** Third-party brand color (Google sign-in button); not part of our palette. */
     val GoogleRed = Color(0xFFDB4437)
-    val OnAccent = Color.White
+    /** Dark label colour for text on orange/green fills (white on #FF7A1A is only 2.6:1). */
+    val OnAccent = Color(0xFF0B0B0D)
     val OnSuccess = Color.Black
     /** Route markers: origin is green, destination is orange (same on iOS). */
     val Pickup = Success

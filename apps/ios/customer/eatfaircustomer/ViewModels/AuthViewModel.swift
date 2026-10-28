@@ -27,6 +27,7 @@ class AuthViewModel: NSObject, ObservableObject {
     @Published var passwordResetMessage: String = ""
 
     private let p2pService = P2PAPIService.shared
+    private var sessionExpiredObserver: NSObjectProtocol?
 
     /// Load Google Client ID from GoogleService-Info.plist - no hardcoded credentials
     private var googleClientID: String {
@@ -48,6 +49,16 @@ class AuthViewModel: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        // A rider API call hit an unrefreshable 401: sign out and tell the rider why.
+        sessionExpiredObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("CustomerTokenExpired"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self, self.isAuthenticated else { return }
+            self.logout()
+            self.errorMessage = "Session expired, please sign in again."
+        }
         #if DEBUG
         // UITest screenshot bypass: inject pre-obtained token to skip SSL-pinned login
         if let token = ProcessInfo.processInfo.environment["UITEST_ACCESS_TOKEN"] {
@@ -74,13 +85,16 @@ class AuthViewModel: NSObject, ObservableObject {
             p2pService.validateCustomerSession { [weak self] isValid in
                 if !isValid {
                     self?.logout()
+                    self?.errorMessage = "Session expired, please sign in again."
                 }
             }
         }
     }
 
     deinit {
-        // Clean up any resources if needed
+        if let sessionExpiredObserver = sessionExpiredObserver {
+            NotificationCenter.default.removeObserver(sessionExpiredObserver)
+        }
     }
 
     /// Email/password login via P2P backend

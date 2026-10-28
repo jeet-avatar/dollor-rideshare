@@ -55,6 +55,7 @@ object CustomerRideshareApiService {
      */
     fun initialize(secureStorage: SecureStorage) {
         _secureStorage = secureStorage
+        tokenRefresher = com.eatfair.shared.network.TokenRefreshInterceptor(secureStorage)
         Log.d(TAG, "Initialized with SecureStorage")
     }
 
@@ -87,8 +88,16 @@ object CustomerRideshareApiService {
     val TIER_2_FEE get() = AppConfig.Rideshare.TIER_2_FEE
     val TIER_3_FEE get() = AppConfig.Rideshare.TIER_3_FEE
 
+    // Refreshes the customer token once on a 401; if that fails the session is cleared and
+    // SessionEvents.expired fires so the app shows "Session expired" and routes to login.
+    @Volatile
+    private var tokenRefresher: com.eatfair.shared.network.TokenRefreshInterceptor? = null
+
     private val client = OkHttpClient.Builder()
         .addInterceptor(com.eatfair.shared.network.ApiTiming)
+        .addInterceptor { chain ->
+            tokenRefresher?.intercept(chain) ?: chain.proceed(chain.request())
+        }
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)

@@ -40,7 +40,7 @@ fun LxButton(
 
     val (container, content, border) = when {
         !enabled -> Triple(Lx.Surface2, Lx.TextMuted, null)
-        role == LxButtonRole.Primary -> Triple(Color.Transparent, Lx.Text, null)
+        role == LxButtonRole.Primary -> Triple(Color.Transparent, Lx.OnAccent, null)
         role == LxButtonRole.Secondary -> Triple(Lx.Orange.copy(alpha = 0.12f), Lx.Orange, BorderStroke(1.dp, Lx.Orange.copy(alpha = 0.35f)))
         role == LxButtonRole.Success -> Triple(Lx.Success, Color.Black, null)
         else -> Triple(Lx.Error.copy(alpha = 0.12f), Lx.Error, null)

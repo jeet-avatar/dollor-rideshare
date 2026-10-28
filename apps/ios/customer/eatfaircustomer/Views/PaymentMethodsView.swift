@@ -332,7 +332,7 @@ struct StripeAddCardView: View {
                             }
                         }
                         .listRowBackground(Lx.Palette.shadow)
-                        .foregroundColor(Lx.Palette.onAccent)
+                        .foregroundColor(Lx.Palette.text)
                         .disabled(isProcessing)
                     }
 

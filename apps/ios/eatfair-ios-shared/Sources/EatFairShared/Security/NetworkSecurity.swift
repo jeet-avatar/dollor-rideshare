@@ -290,6 +290,34 @@ extension NetworkSecurity: URLSessionDelegate {
     }
 }
 
+// MARK: - Unauthorized (401) reporting
+
+public extension Notification.Name {
+    /// Posted when any request on a secure session came back 401. userInfo["bearer"] is the token that was sent.
+    static let apiUnauthorizedResponse = Notification.Name("EatFairAPIUnauthorizedResponse")
+}
+
+extension NetworkSecurity: URLSessionTaskDelegate {
+
+    public func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didFinishCollecting metrics: URLSessionTaskMetrics
+    ) {
+        guard let http = metrics.transactionMetrics.last?.response as? HTTPURLResponse,
+              http.statusCode == 401,
+              let path = task.originalRequest?.url?.path,
+              !path.contains("/auth/"),
+              let authorization = task.originalRequest?.value(forHTTPHeaderField: "Authorization"),
+              authorization.hasPrefix("Bearer ") else { return }
+        NotificationCenter.default.post(
+            name: .apiUnauthorizedResponse,
+            object: nil,
+            userInfo: ["bearer": String(authorization.dropFirst("Bearer ".count))]
+        )
+    }
+}
+
 // MARK: - Secure API Client
 
 public extension NetworkSecurity {

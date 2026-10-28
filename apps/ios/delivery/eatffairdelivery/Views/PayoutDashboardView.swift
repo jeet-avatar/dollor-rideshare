@@ -136,6 +136,9 @@ struct PayoutDashboardView: View {
     @State private var errorMessage: String?
     @State private var selectedPeriod = "week"
     @State private var expandedRideId: Int?
+    // Optional server fields: nil shows a dash, never a made-up $0.00 / 0.0 h
+    @State private var availableBalance: Double?
+    @State private var hoursOnline: Double?
 
     // Prop 22 compliance state
     @State private var prop22Periods: [Prop22Period] = []
@@ -255,6 +258,28 @@ struct PayoutDashboardView: View {
                         .font(.caption)
                         .foregroundColor(Theme.lxTextSecondary)
                 }
+                Spacer()
+                VStack(spacing: 2) {
+                    Text(hoursOnline.map { String(format: "%.1f h", $0) } ?? "\u{2014}")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(Theme.lxText)
+                    Text("Hours online")
+                        .font(.caption)
+                        .foregroundColor(Theme.lxTextSecondary)
+                }
+            }
+
+            Divider().overlay(Theme.lxHairline)
+
+            HStack {
+                Text("Available to pay out")
+                    .font(.subheadline)
+                    .foregroundColor(Theme.lxTextSecondary)
+                Spacer()
+                Text(availableBalance.map { "$\(String(format: "%.2f", $0))" } ?? "\u{2014}")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(Theme.lxText)
             }
         }
         .padding()
@@ -664,6 +689,14 @@ struct PayoutDashboardView: View {
     private func fetchPayoutHistory() {
         isLoading = true
         errorMessage = nil
+        availableBalance = nil
+        hoursOnline = nil
+        P2PAPIService.shared.getDriverPayoutFields(period: selectedPeriod) { result in
+            if case .success(let fields) = result {
+                availableBalance = fields.availableBalance
+                hoursOnline = fields.hoursOnline
+            }
+        }
 
         guard let driverId = UserDefaults.standard.value(forKey: "p2p_driver_id") as? Int else {
             errorMessage = "Driver ID not found"

@@ -812,7 +812,7 @@ struct PreRequestNegotiationSheet: View {
         if let selected = selectedQuickOffer {
             return selected
         }
-        if let custom = Double(customOffer), custom >= minFare {
+        if let custom = customOffer.parsedDecimal, custom >= minFare {
             return custom
         }
         return nil
@@ -1593,7 +1593,7 @@ struct RideTrackingView: View {
                                 .fill(Lx.Palette.shadow)
                                 .frame(width: 40, height: 40)
                             Image(systemName: "car.fill")
-                                .foregroundColor(Lx.Palette.onAccent)
+                                .foregroundColor(Lx.Palette.text)
                         }
                     }
                 }
@@ -1623,7 +1623,7 @@ struct RideTrackingView: View {
                         VStack(spacing: 2) {
                             Text("\(eta)")
                                 .font(Font.system(size: 36, weight: .bold, design: .rounded))
-                                .foregroundColor(Lx.Palette.onAccent)
+                                .foregroundColor(Lx.Palette.text)
                             Text(tracking.status == "in_progress" ? "min to arrive" : "min away")
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.9))
@@ -2739,7 +2739,7 @@ struct RideStatusCard: View {
                     }
 
                     // Submit Tip Button
-                    let tipAmount = showCustomTip ? (Double(customTipAmount) ?? 0) : selectedTipAmount
+                    let tipAmount = showCustomTip ? (customTipAmount.parsedDecimal ?? 0) : selectedTipAmount
                     if tipAmount > 0 {
                         SwipeToConfirmButton(
                             label: "Slide to Add $\(String(format: "%.2f", tipAmount)) Tip",
@@ -2766,7 +2766,7 @@ struct RideStatusCard: View {
                 .padding(.horizontal)
             } else {
                 // Finalized (tip submitted or skipped)
-                let tipAmount = showCustomTip ? (Double(customTipAmount) ?? 0) : selectedTipAmount
+                let tipAmount = showCustomTip ? (customTipAmount.parsedDecimal ?? 0) : selectedTipAmount
                 HStack(spacing: 8) {
                     Image(systemName: tipAmount > 0 ? "heart.fill" : "checkmark.circle.fill")
                         .foregroundColor(tipAmount > 0 ? Theme.lxOrange : Theme.lxSuccess)
@@ -2835,7 +2835,7 @@ struct RideStatusCard: View {
     }
 
     private func submitTip() {
-        let tipAmount = showCustomTip ? (Double(customTipAmount) ?? 0) : selectedTipAmount
+        let tipAmount = showCustomTip ? (customTipAmount.parsedDecimal ?? 0) : selectedTipAmount
         finalize(tipAmount: tipAmount)
     }
 
@@ -3021,7 +3021,7 @@ struct CustomerNegotiationSheet: View {
     }
 
     private func submitOffer() {
-        guard let amount = Double(customerOfferAmount) else { return }
+        guard let amount = customerOfferAmount.parsedDecimal else { return }
         viewModel.submitFareOffer(proposedFare: amount)
     }
 }
@@ -3245,12 +3245,12 @@ struct BidCounterSheet: View {
     }
 
     private var isValidPrice: Bool {
-        guard let price = Double(counterPrice), price > 0 else { return false }
+        guard let price = counterPrice.parsedDecimal, price > 0 else { return false }
         return price < bid.proposed_price
     }
 
     private func submitCounter() {
-        guard let price = Double(counterPrice) else { return }
+        guard let price = counterPrice.parsedDecimal else { return }
         viewModel.counterBid(bid, counterPrice: price, message: counterMessage.isEmpty ? nil : counterMessage)
         dismiss()
     }
