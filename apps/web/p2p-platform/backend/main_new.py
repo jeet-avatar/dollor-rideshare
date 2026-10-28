@@ -8,6 +8,10 @@ Version: 1.0.1
 """
 
 from pricing_config import pricing_engine, platform_fee_for, fare_tier_description
+from driver_sessions import (
+    available_balance, ensure_can_go_offline, ensure_can_go_online, ensure_open_session, hours_online,
+    new_manual_payout, pending_payouts, record_online_state,
+)
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect, Header, Body, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -2779,6 +2783,7 @@ def driver_register(http_request: Request, request: DriverRegisterRequest, db: S
 
         print(f"Driver registration successful for: {mask_email(new_user.email)}, driver_id: {new_driver.id}")
         access_token = create_access_token(data={"sub": new_user.email, "role": "driver", "driver_id": new_driver.id})
+        _enforce_single_driver_session(new_user.email, new_driver.id, access_token)
 
         # Send registration confirmation email (non-blocking)
         try:
@@ -2909,6 +2914,8 @@ def driver_google_auth(http_request: Request, request: DriverGoogleAuthRequest, 
 
     print(f"Driver Google auth successful for: {mask_email(user.email)} (status: {driver.status.value if driver else 'unknown'})")
     access_token = create_access_token(data={"sub": user.email, "role": "driver", "driver_id": driver.id if driver else None})
+    if driver:
+        _enforce_single_driver_session(user.email, driver.id, access_token)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -3023,6 +3030,8 @@ def driver_apple_auth(http_request: Request, request: DriverAppleAuthRequest, db
 
     print(f"Driver Apple auth successful for: {mask_email(user.email)} (status: {driver.status.value if driver else 'unknown'})")
     access_token = create_access_token(data={"sub": user.email, "role": "driver", "driver_id": driver.id if driver else None})
+    if driver:
+        _enforce_single_driver_session(user.email, driver.id, access_token)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -3123,6 +3132,7 @@ def set_driver_online(
 
     driver.is_online = online_status
     driver.location_updated_at = datetime.utcnow()
+    record_online_state(db, driver, online_status)
     if online_status:
         driver.went_online_at = datetime.utcnow()
         # Insurance: Period 1 START — driver is now available
@@ -3165,6 +3175,7 @@ def update_driver_location(latitude: float, longitude: float, driver: Driver = D
     driver.current_latitude = latitude
     driver.current_longitude = longitude
     driver.location_updated_at = datetime.utcnow()
+    ensure_open_session(db, driver)
     # Insurance: accumulate mileage for UBI tracking
     try:
         from insurance.events import accumulate_mileage
@@ -4753,19 +4764,16 @@ def post_driver_status(
     if driver.id != driver_id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    # TNC gate (CPUC 13-09-045): a driver may only go ONLINE if approved AND the
-    # Checkr background check has passed. Prevents this route from bypassing vetting.
+    # TNC gate (CPUC 13-09-045): a driver may only go ONLINE if approved AND the Checkr background check passed.
     if is_online:
-        from models import DriverStatus
-        status_val = driver.status.value if hasattr(driver.status, "value") else str(driver.status)
-        approved_states = (DriverStatus.APPROVED.value, DriverStatus.ACTIVE.value, DriverStatus.ONLINE.value)
-        if status_val not in approved_states:
-            raise HTTPException(status_code=403, detail="Driver not approved. Complete verification and background check before going online.")
-        if not driver.background_check:
-            raise HTTPException(status_code=403, detail="Background check not passed. You cannot go online until your background check clears.")
+        ensure_can_go_online(driver)
+
+    if not is_online:
+        ensure_can_go_offline(db, driver)
 
     driver.is_online = is_online
     driver.updated_at = datetime.utcnow()
+    record_online_state(db, driver, is_online)
 
     if is_online:
         driver.last_online_at = datetime.utcnow()
@@ -5197,6 +5205,7 @@ async def stripe_connect_webhook(
         driver = db.query(Driver).filter(Driver.stripe_account_id == account_id).first()
         if driver:
             print(f"Payout of ${amount} sent to driver {driver.id}")
+            _set_manual_payout_status(db, event_data.get("id"), "completed")
 
     elif event_type == "payout.failed":
         account_id = event_data.get("account") or event.get("account")
@@ -5204,11 +5213,29 @@ async def stripe_connect_webhook(
         driver = db.query(Driver).filter(Driver.stripe_account_id == account_id).first()
         if driver:
             print(f"Payout failed for driver {driver.id}: {event_data.get('failure_message')}")
+            _set_manual_payout_status(db, event_data.get("id"), "failed")
 
     if event_id and REDIS_AVAILABLE and redis_client:
         redis_client.setex(f"dollor:stripe:event:{event_id}", 86400, "1")
 
     return {"success": True, "event_type": event_type}
+
+
+def _set_manual_payout_status(db: Session, stripe_payout_id: Optional[str], new_status: str) -> None:
+    """Keep the manual-payout ledger in step with Stripe: a failed payout returns the money to the available balance."""
+    if not stripe_payout_id:
+        return
+    from models import DriverPayout
+    from driver_sessions import MANUAL_PAYOUT_METHOD
+    row = db.query(DriverPayout).filter(
+        DriverPayout.payment_method == MANUAL_PAYOUT_METHOD,
+        DriverPayout.payment_reference == stripe_payout_id,
+    ).first()
+    if row and row.status != new_status:
+        row.status = new_status
+        if new_status == "completed":
+            row.paid_at = datetime.utcnow()
+        db.commit()
 
 
 # ==================== STRIPE CONNECT FOR VENDORS ====================
@@ -5357,26 +5384,8 @@ def request_driver_payout(
     if not driver.stripe_account_id:
         raise HTTPException(status_code=400, detail="Driver has no Stripe account")
 
-    # F1 SECURITY: Validate available earnings before allowing payout
-    from sqlalchemy import func
-    from models import DriverPayout, RideRequest, RideRequestStatus, Order, OrderStatus
-
-    # Sum completed delivery earnings from DriverPayout table
-    delivery_earnings = db.query(func.coalesce(func.sum(DriverPayout.net_payout), 0)).filter(
-        DriverPayout.driver_id == driver_id,
-        DriverPayout.status.in_(["pending", "completed"])
-    ).scalar() or 0
-
-    # Sum completed ride earnings (driver_payout field on rides)
-    ride_earnings = db.query(func.coalesce(func.sum(RideRequest.driver_payout), 0)).filter(
-        RideRequest.matched_driver_id == driver_id,
-        RideRequest.status == RideRequestStatus.COMPLETED,
-        RideRequest.driver_payout.isnot(None)
-    ).scalar() or 0
-
-    # Sum already-paid-out amounts (check Stripe Connect balance as source of truth)
-    # For now, use Stripe's balance API which tracks available funds
-    total_available = float(delivery_earnings) + float(ride_earnings)
+    # F1 SECURITY: Validate against earnings not yet paid out (completed rides + deliveries - payouts already requested)
+    total_available = available_balance(db, driver_id)
 
     if total_available <= 0:
         raise HTTPException(status_code=400, detail="No available earnings for payout")
@@ -5389,6 +5398,11 @@ def request_driver_payout(
 
     logger.info(f"Driver payout request: driver_id={driver_id}, amount=${request.amount:.2f}, available=${total_available:.2f}")
 
+    # Record the request before calling Stripe so a second tap cannot withdraw the same money
+    ledger_row = new_manual_payout(driver_id, request.amount)
+    db.add(ledger_row)
+    db.commit()
+
     try:
         payout_method = "instant" if request.payout_type == "instant" else "standard"
         payout = stripe.Payout.create(
@@ -5398,6 +5412,11 @@ def request_driver_payout(
             metadata={"driver_id": str(driver_id), "platform": "dollor.ai"},
             stripe_account=driver.stripe_account_id,
         )
+        ledger_row.payment_reference = payout.id
+        if payout.status == "paid":
+            ledger_row.status = "completed"
+            ledger_row.paid_at = datetime.utcnow()
+        db.commit()
         return {
             "success": True,
             "payout_id": payout.id,
@@ -5407,7 +5426,9 @@ def request_driver_payout(
             "arrival_date": payout.arrival_date
         }
     except stripe.error.StripeError as e:
-        logger.error(f"API error at line 5909: {e}")
+        ledger_row.status = "failed"
+        db.commit()
+        logger.error(f"Driver payout failed for driver {driver_id}: {e}")
         raise HTTPException(status_code=400, detail="Payment processing error. Please try again or contact support.")
 
 
@@ -6830,6 +6851,12 @@ async def get_driver_earnings(
     rideshare_tips = sum(float(r.tip_amount or 0) for r in rideshare_rides)
     rideshare_count = len(rideshare_rides)
 
+    hours_by_period = {
+        "today": hours_online(db, driver, now.replace(hour=0, minute=0, second=0, microsecond=0), now),
+        "week": hours_online(db, driver, now - timedelta(days=7), now),
+        "month": hours_online(db, driver, now - timedelta(days=30), now),
+    }
+
     total = round(base_earnings + tips + rideshare_earnings + rideshare_tips + bonuses, 2)
     food_total = round(base_earnings + tips, 2)
 
@@ -6846,7 +6873,13 @@ async def get_driver_earnings(
         "rideshare_earnings": round(rideshare_earnings + rideshare_tips, 2),
         "total_earnings": total,
         "platform_fee": 0.00,  # Drivers pay $0 commission per CLAUDE.md
-        "note": "100% of your earnings go to you. Dollor.ai charges $0 commission to drivers.",
+        "note": "Each ride has a flat platform fee of $1, $2 or $3 by fare tier, plus $0.05 toward the CPUC Access for All fund.",
+        # Hours online for the requested period (a number: the iOS app decodes a Double), plus all three
+        "hours_online": hours_by_period[period] if period in hours_by_period else hours_online(db, driver, start_date, now),
+        "hours_online_periods": hours_by_period,
+        # Earnings not yet paid out to the bank, and payout requests still in flight
+        "available_balance": available_balance(db, driver.id),
+        "pending_balance": pending_payouts(db, driver.id),
         # Period totals for iOS/Android apps: always all three, whichever period was requested
         "today": _driver_period_total(db, driver.id, now.replace(hour=0, minute=0, second=0, microsecond=0)),
         "week": _driver_period_total(db, driver.id, now - timedelta(days=7)),
@@ -9456,80 +9489,29 @@ async def get_available_rides_ios_alias(
 
 @app.post("/erp/rides/{ride_id}/accept")
 async def accept_ride_ios_alias(ride_id: int, request: AssignDriverRequest, _auth: dict = Depends(require_any_auth), db: Session = Depends(get_db)):
-    """Alias for iOS Driver app - accept ride (legacy - actual flow uses bid system).
-    This sets status to MATCHED directly for backward compatibility.
-    iOS calls: POST /api/erp/rides/{rideId}/accept
-    """
-    from models import RideRequest as RR, RideRequestStatus as RRS
-    ride = db.query(RR).filter(RR.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-    if ride.status not in [RRS.OPEN, RRS.BIDDING]:
-        raise HTTPException(status_code=400, detail=f"Ride is not available (current: {ride.status.value})")
-    ride.status = RRS.MATCHED
-    ride.matched_driver_id = request.driver_id
-    ride.matched_at = datetime.utcnow()
+    """Retired. This alias matched a ride with no bid and no payment authorization; no app calls it.
+    Drivers bid (POST /api/rides/request/{id}/bid) and the rider accepts, or the driver accepts a counter."""
+    raise HTTPException(status_code=410, detail="Deprecated endpoint. Use the bid flow: POST /api/rides/request/{id}/bid.")
 
-    # Reject all other PENDING bids on this ride (match bid_routes.py:617-629 behavior)
-    from models import RideBid, BidStatus
-    other_bids = db.query(RideBid).filter(
-        RideBid.ride_request_id == ride_id,
-        RideBid.status == BidStatus.PENDING
-    ).all()
-    for other_bid in other_bids:
-        other_bid.status = BidStatus.REJECTED
-        other_bid.rejected_at = datetime.utcnow()
-        other_bid.customer_response = "Ride accepted via legacy endpoint"
 
-    db.commit()
+async def _start_matched_ride(ride_id: int, request: Request, driver: Driver, db: Session, message: str) -> dict:
+    """Legacy start/picked-up aliases run the canonical start logic (driver auth, matched driver only, MATCHED only)."""
+    from bid_routes import start_ride
+    await start_ride(ride_id, request, driver, db)
+    return {"success": True, "message": message, "ride_id": ride_id, "status": "in_progress"}
 
-    # Broadcast ride_request_closed via WebSocket
-    try:
-        from websocket_server import broadcast_ride_status
-        import asyncio
-        asyncio.ensure_future(broadcast_ride_status(
-            str(ride.id), "matched",
-            {"ride_id": ride.id, "driver_id": request.driver_id, "reason": "legacy_accept"}
-        ))
-    except Exception as ws_err:
-        logger.warning(f"Failed to broadcast ride matched for legacy accept: {ws_err}")
-
-    return {"success": True, "message": "Ride accepted", "ride_id": ride.id, "status": "matched"}
 
 @app.post("/erp/rides/{ride_id}/picked-up")
-async def ride_picked_up_ios_alias(ride_id: int, _auth: dict = Depends(require_any_auth), db: Session = Depends(get_db)):
-    """Alias for iOS Driver app - mark ride picked up (transitions to IN_PROGRESS).
-    iOS calls: POST /api/erp/rides/{rideId}/picked-up
-    """
-    # Inline the start logic — calling bid_routes.start_ride as a function
-    # fails because its `request: Request, auth_driver: Driver = Depends(...)`
-    # parameters are FastAPI Depends and don't resolve outside a route handler.
-    from models import RideRequest as RR, RideRequestStatus as RRS
-    ride = db.query(RR).filter(RR.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-    if ride.status not in [RRS.MATCHED, RRS.IN_PROGRESS]:
-        raise HTTPException(status_code=400, detail=f"Ride must be matched (current: {ride.status.value})")
-    ride.status = RRS.IN_PROGRESS
-    db.commit()
-    return {"success": True, "message": "Ride picked up", "ride_id": ride.id, "status": "in_progress"}
+async def ride_picked_up_ios_alias(ride_id: int, request: Request, driver: Driver = Depends(require_driver), db: Session = Depends(get_db)):
+    """Alias for the iOS Driver app - mark ride picked up (transitions to IN_PROGRESS)."""
+    return await _start_matched_ride(ride_id, request, driver, db, "Ride picked up")
+
 
 @app.post("/erp/rides/{ride_id}/start")
 @app.post("/api/erp/rides/{ride_id}/start")
-async def start_ride_alias(ride_id: int, _auth: dict = Depends(require_any_auth), db: Session = Depends(get_db)):
-    """Start ride alias for Android/iOS driver apps.
-    Android calls: POST /api/erp/rides/{rideId}/start
-    Accepts MATCHED or IN_PROGRESS status (picked-up may have already set IN_PROGRESS).
-    """
-    from models import RideRequest as RR, RideRequestStatus as RRS
-    ride = db.query(RR).filter(RR.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-    if ride.status not in [RRS.MATCHED, RRS.IN_PROGRESS]:
-        raise HTTPException(status_code=400, detail=f"Ride must be matched or in progress (current: {ride.status.value})")
-    ride.status = RRS.IN_PROGRESS
-    db.commit()
-    return {"success": True, "message": "Ride started", "ride_id": ride.id, "status": "in_progress"}
+async def start_ride_alias(ride_id: int, request: Request, driver: Driver = Depends(require_driver), db: Session = Depends(get_db)):
+    """Start ride alias for the driver apps."""
+    return await _start_matched_ride(ride_id, request, driver, db, "Ride started")
 
 @app.get("/erp/rides/{ride_id}/track")
 @app.get("/api/erp/rides/{ride_id}/track")
@@ -13023,6 +13005,8 @@ def update_driver_location_android(request: dict, db: Session = Depends(get_db),
 
     driver.current_latitude = latitude
     driver.current_longitude = longitude
+    driver.location_updated_at = datetime.utcnow()
+    ensure_open_session(db, driver)
     db.commit()
 
     if latitude is not None and longitude is not None:

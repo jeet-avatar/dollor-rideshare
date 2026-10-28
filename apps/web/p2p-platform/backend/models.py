@@ -884,6 +884,16 @@ class DriverPayout(Base):
     driver = relationship("Driver", back_populates="payouts")
 
 
+class DriverOnlineSession(Base):
+    """One continuous online stretch for a driver; ended_at is NULL while the session is open."""
+    __tablename__ = "driver_online_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    driver_id = Column(Integer, ForeignKey("drivers.id"), nullable=False, index=True)
+    started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    ended_at = Column(DateTime, nullable=True)
+
+
 class JournalEntry(Base):
     """Double-entry accounting journal entries for all transactions"""
     __tablename__ = "journal_entries"

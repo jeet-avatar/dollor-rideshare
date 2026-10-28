@@ -546,7 +546,12 @@ async def get_vehicle_inspection_status(
     db: Session = Depends(get_db),
     _auth: dict = Depends(require_any_auth),
 ):
-    """TNC-09: Check vehicle inspection compliance for a driver."""
+    """TNC-09: Check vehicle inspection compliance for a driver. The driver themself or an admin only."""
+    caller_driver_id = _auth.get("driver_id")
+    is_self = caller_driver_id is not None and int(caller_driver_id) == driver_id
+    if not (is_self or _auth.get("role") == "admin"):
+        raise HTTPException(status_code=403, detail="Access denied")
+
     driver = db.query(Driver).filter(Driver.id == driver_id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")

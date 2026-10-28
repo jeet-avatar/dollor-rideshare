@@ -105,6 +105,7 @@ class FareEstimate:
     suggested_bids: List[SuggestedBid]
     tier: int
     tier_label: str
+    minimum_fare_adjustment: float = 0.0
 
 
 class DollorPricingEngine:
@@ -141,58 +142,53 @@ class DollorPricingEngine:
         pickup_time = pickup_time or datetime.now()
         distance_miles = self.km_to_miles(distance_km)
 
-        # Base calculations
-        base_fare = self.config.BASE_FARE
-        distance_cost = distance_miles * self.config.PER_MILE_RATE
-        time_cost = duration_minutes * self.config.PER_MINUTE_RATE
-
+        # Every line is rounded to cents first so the breakdown lines add up to the subtotal exactly.
+        base_fare = round(self.config.BASE_FARE, 2)
+        distance_cost = round(distance_miles * self.config.PER_MILE_RATE, 2)
+        time_cost = round(duration_minutes * self.config.PER_MINUTE_RATE, 2)
         raw_subtotal = base_fare + distance_cost + time_cost
 
-        # Time-of-day adjustment
         time_mult, time_label = self._get_time_adjustment(pickup_time)
-        time_adjustment = raw_subtotal * (time_mult - 1)
+        time_adjustment = round(raw_subtotal * (time_mult - 1), 2)
+        long_distance_discount = round(self._get_distance_discount(distance_miles), 2)
 
-        # Long-distance discount
-        long_distance_discount = self._get_distance_discount(distance_miles)
+        computed = round(raw_subtotal + time_adjustment - long_distance_discount, 2)
+        minimum_fare_adjustment = round(max(0.0, self.config.MINIMUM_FARE - computed), 2)
+        subtotal = round(computed + minimum_fare_adjustment, 2)
 
-        # Calculate subtotal
-        subtotal = raw_subtotal + time_adjustment - long_distance_discount
-        subtotal = max(subtotal, self.config.MINIMUM_FARE)
-
-        # Platform fee
-        platform_fee = self._get_platform_fee(subtotal)
+        charge = ride_charge_breakdown(subtotal)
+        platform_fee = charge["platform_fee"]
         tier = self._get_tier(subtotal)
         tier_label = self._get_tier_label(subtotal)
 
-        # Total and driver earnings (iOS model: both customer AND driver pay tier fee)
-        total = subtotal + platform_fee  # Customer pays fare + platform_fee
-        driver_earnings = subtotal - platform_fee  # Driver pays platform_fee too
+        total = charge["customer_total"]  # fare + platform fee + rider Access-for-All share
+        driver_earnings = charge["driver_payout"]  # fare - platform fee - driver Access-for-All share
         driver_per_mile = driver_earnings / distance_miles if distance_miles > 0 else 0
         driver_per_hour = (driver_earnings / duration_minutes) * 60 if duration_minutes > 0 else 0
         driver_percentage = (driver_earnings / total) * 100 if total > 0 else 0
 
-        # Generate suggested bids
         suggested_bids = self._generate_bid_suggestions(subtotal, distance_miles)
 
         return FareEstimate(
             distance_miles=round(distance_miles, 2),
             duration_minutes=duration_minutes,
-            base_fare=round(base_fare, 2),
-            distance_cost=round(distance_cost, 2),
-            time_cost=round(time_cost, 2),
-            time_adjustment=round(time_adjustment, 2),
+            base_fare=base_fare,
+            distance_cost=distance_cost,
+            time_cost=time_cost,
+            time_adjustment=time_adjustment,
             time_adjustment_label=time_label,
-            long_distance_discount=round(long_distance_discount, 2),
-            subtotal=round(subtotal, 2),
-            platform_fee=round(platform_fee, 2),
-            total=round(total, 2),
-            driver_earnings=round(driver_earnings, 2),
+            long_distance_discount=long_distance_discount,
+            subtotal=subtotal,
+            platform_fee=platform_fee,
+            total=total,
+            driver_earnings=driver_earnings,
             driver_earnings_per_mile=round(driver_per_mile, 2),
             driver_earnings_per_hour=round(driver_per_hour, 2),
             driver_percentage=round(driver_percentage, 1),
             suggested_bids=suggested_bids,
             tier=tier,
-            tier_label=tier_label
+            tier_label=tier_label,
+            minimum_fare_adjustment=minimum_fare_adjustment
         )
 
     def _get_time_adjustment(self, pickup_time: datetime) -> Tuple[float, str]:
@@ -270,39 +266,25 @@ class DollorPricingEngine:
     ) -> List[SuggestedBid]:
         """Generate three suggested bid levels for drivers"""
 
-        quick_accept_price = subtotal * self.config.BID_QUICK_ACCEPT_FACTOR
-        fair_price = subtotal
-        premium_price = subtotal * self.config.BID_PREMIUM_FACTOR
-
-        return [
-            SuggestedBid(
-                label="Quick Accept",
-                emoji="⚡",
-                price=round(quick_accept_price, 2),
-                driver_earnings=round(quick_accept_price - self._get_platform_fee(quick_accept_price), 2),
-                acceptance_hint="90% acceptance rate",
-                per_mile=round((quick_accept_price - self._get_platform_fee(quick_accept_price)) / distance_miles, 2) if distance_miles > 0 else 0,
-                is_recommended=False
-            ),
-            SuggestedBid(
-                label="Fair Price",
-                emoji="✓",
-                price=round(fair_price, 2),
-                driver_earnings=round(fair_price - self._get_platform_fee(fair_price), 2),
-                acceptance_hint="75% acceptance rate",
-                per_mile=round((fair_price - self._get_platform_fee(fair_price)) / distance_miles, 2) if distance_miles > 0 else 0,
-                is_recommended=True
-            ),
-            SuggestedBid(
-                label="Premium",
-                emoji="💎",
-                price=round(premium_price, 2),
-                driver_earnings=round(premium_price - self._get_platform_fee(premium_price), 2),
-                acceptance_hint="50% acceptance rate",
-                per_mile=round((premium_price - self._get_platform_fee(premium_price)) / distance_miles, 2) if distance_miles > 0 else 0,
-                is_recommended=False
-            )
-        ]
+        prices = (
+            ("Quick Accept", "⚡", subtotal * self.config.BID_QUICK_ACCEPT_FACTOR, "90% acceptance rate", False),
+            ("Fair Price", "✓", subtotal, "75% acceptance rate", True),
+            ("Premium", "💎", subtotal * self.config.BID_PREMIUM_FACTOR, "50% acceptance rate", False),
+        )
+        bids = []
+        for label, emoji, raw_price, hint, recommended in prices:
+            price = round(raw_price, 2)
+            earnings = ride_charge_breakdown(price)["driver_payout"]
+            bids.append(SuggestedBid(
+                label=label,
+                emoji=emoji,
+                price=price,
+                driver_earnings=earnings,
+                acceptance_hint=hint,
+                per_mile=round(earnings / distance_miles, 2) if distance_miles > 0 else 0,
+                is_recommended=recommended,
+            ))
+        return bids
 
     def get_bid_comparison_label(self, bid_price: float, fare_estimate: float) -> Tuple[str, str, str]:
         """
@@ -366,6 +348,28 @@ class DollorPricingEngine:
 pricing_engine = DollorPricingEngine()
 
 
+def ride_charge_breakdown(agreed_price: float) -> dict:
+    """Single source of truth for what a ride at `agreed_price` costs the rider and pays the driver.
+
+    The rider is charged price + platform fee + rider Access-for-All share. The driver receives
+    price - platform fee - driver Access-for-All share. Used by the estimate, the pre-authorization at
+    accept, the payment intent, completion payout and receipts so they can never drift apart.
+    """
+    cfg = pricing_engine.config
+    price = round(float(agreed_price), 2)
+    fee = round(platform_fee_for(price), 2)
+    rider_share = round(cfg.ACCESS_FOR_ALL_RIDER_SHARE, 2)
+    driver_share = round(cfg.ACCESS_FOR_ALL_DRIVER_SHARE, 2)
+    return {
+        "price": price,
+        "platform_fee": fee,
+        "rider_a4a_share": rider_share,
+        "driver_a4a_share": driver_share,
+        "customer_total": round(price + fee + rider_share, 2),
+        "driver_payout": round(price - fee - driver_share, 2),
+    }
+
+
 def platform_fee_for(fare: float) -> float:
     """Flat platform fee for a fare. The only place the fee tiers are applied."""
     return pricing_engine._get_platform_fee(fare)
@@ -394,6 +398,7 @@ def get_fare_estimate(
         duration_minutes=duration_minutes,
         pickup_time=pickup_time
     )
+    cfg = pricing_engine.config
 
     return {
         "distance_miles": estimate.distance_miles,
@@ -404,25 +409,26 @@ def get_fare_estimate(
             "time_cost": estimate.time_cost,
             "time_adjustment": estimate.time_adjustment,
             "time_adjustment_label": estimate.time_adjustment_label,
-            "long_distance_discount": estimate.long_distance_discount
+            "long_distance_discount": estimate.long_distance_discount,
+            "minimum_fare_adjustment": estimate.minimum_fare_adjustment
         },
         "subtotal": estimate.subtotal,
         "platform_fee": estimate.platform_fee,
         "access_for_all_fee": {
-            "total": 0.10,
-            "customer_share": 0.05,
-            "driver_share": 0.05,
+            "total": cfg.ACCESS_FOR_ALL_FEE,
+            "customer_share": cfg.ACCESS_FOR_ALL_RIDER_SHARE,
+            "driver_share": cfg.ACCESS_FOR_ALL_DRIVER_SHARE,
             "description": "CPUC Access for All Fund"
         },
-        "total": round(estimate.total + 0.05, 2),  # Customer total includes A4A share
+        "total": estimate.total,  # subtotal + platform fee + rider Access-for-All share
         "tier": estimate.tier,
         "tier_label": estimate.tier_label,
         "driver_info": {
-            "earnings": round(estimate.driver_earnings - 0.05, 2),  # Driver A4A share deducted
+            "earnings": estimate.driver_earnings,  # subtotal - platform fee - driver A4A share
             "per_mile": estimate.driver_earnings_per_mile,
             "per_hour": estimate.driver_earnings_per_hour,
             "percentage": estimate.driver_percentage,
-            "a4a_deduction": 0.05
+            "a4a_deduction": cfg.ACCESS_FOR_ALL_DRIVER_SHARE
         },
         "suggested_bids": [
             {
@@ -430,6 +436,7 @@ def get_fare_estimate(
                 "emoji": bid.emoji,
                 "price": bid.price,
                 "driver_earnings": bid.driver_earnings,
+                "customer_total": ride_charge_breakdown(bid.price)["customer_total"],
                 "acceptance_hint": bid.acceptance_hint,
                 "per_mile": bid.per_mile,
                 "is_recommended": bid.is_recommended
@@ -445,6 +452,37 @@ def get_fare_estimate(
             )
         }
     }
+
+
+def apply_fare_multiplier(estimate: dict, multiplier: float) -> dict:
+    """Scale an estimate dict (ride type / demand) and keep every line reconciled.
+
+    The extra amount appears as breakdown["demand_adjustment"]; fee, total, driver earnings and the
+    suggested bids are recomputed from the new fares via ride_charge_breakdown.
+    """
+    estimate["breakdown"]["demand_adjustment"] = 0.0
+    if multiplier == 1.0:
+        return estimate
+    old_subtotal = estimate["subtotal"]
+    subtotal = round(old_subtotal * multiplier, 2)
+    charge = ride_charge_breakdown(subtotal)
+    estimate["breakdown"]["demand_adjustment"] = round(subtotal - old_subtotal, 2)
+    estimate["subtotal"] = subtotal
+    estimate["platform_fee"] = charge["platform_fee"]
+    estimate["total"] = charge["customer_total"]
+    estimate["driver_info"]["earnings"] = charge["driver_payout"]
+    miles = estimate["distance_miles"]
+    minutes = estimate["duration_minutes"]
+    estimate["driver_info"]["per_mile"] = round(charge["driver_payout"] / miles, 2) if miles > 0 else 0
+    estimate["driver_info"]["per_hour"] = round(charge["driver_payout"] / minutes * 60, 2) if minutes > 0 else 0
+    estimate["driver_info"]["percentage"] = round(charge["driver_payout"] / charge["customer_total"] * 100, 1)
+    for bid in estimate["suggested_bids"]:
+        bid_charge = ride_charge_breakdown(round(bid["price"] * multiplier, 2))
+        bid["price"] = bid_charge["price"]
+        bid["driver_earnings"] = bid_charge["driver_payout"]
+        bid["customer_total"] = bid_charge["customer_total"]
+        bid["per_mile"] = round(bid_charge["driver_payout"] / miles, 2) if miles > 0 else 0
+    return estimate
 
 
 def get_bid_label(bid_price: float, fare_estimate: float) -> dict:

@@ -938,3 +938,40 @@ class TestOrderLifecycleEmailsReturnBoolean:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestFeeCopyMatchesPricingModel:
+    """Fee copy must describe the real model: tiered $1/$2/$3 fee plus $0.05 CPUC share, no flat-$1 or keep-100%-of-fare claims."""
+
+    @staticmethod
+    def _sent_bodies(mock_send_email):
+        args = mock_send_email.call_args[0]
+        return args[2], args[3]
+
+    @patch('email_service.send_email')
+    def test_driver_application_email_states_tiered_fee(self, mock_send_email):
+        mock_send_email.return_value = True
+        email_service.send_driver_registration_confirmation("d@example.com", "Jane Driver", "DRV-1")
+        for body in self._sent_bodies(mock_send_email):
+            assert "100% of every fare" not in body
+            assert "flat $1 —" not in body and "Riders pay a flat $1." not in body
+            assert "$1, $2 or $3" in body
+            assert "$0.05" in body
+            assert "Jane Driver" in body and "DRV-1" in body  # placeholders still filled
+
+    @patch('email_service.send_email')
+    def test_driver_approval_email_states_tiered_fee(self, mock_send_email):
+        mock_send_email.return_value = True
+        email_service.send_driver_approval_email("d@example.com", "Jane Driver", "DRV-1")
+        html, text = self._sent_bodies(mock_send_email)
+        assert "$1, $2 or $3" in html and "$1, $2 or $3" in text
+        assert "keep the negotiated rate, plus 100% of tips" not in html
+
+    @patch('email_service.send_email')
+    def test_customer_welcome_email_states_tiered_fee(self, mock_send_email):
+        mock_send_email.return_value = True
+        email_service.send_customer_welcome_email("c@example.com", "Sam Rider", "CUS-1")
+        for body in self._sent_bodies(mock_send_email):
+            assert "$1 flat, always" not in body
+            assert "flat $1 —" not in body
+            assert "$1, $2 or $3" in body

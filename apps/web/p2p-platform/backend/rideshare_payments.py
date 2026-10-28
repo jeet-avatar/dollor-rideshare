@@ -20,7 +20,7 @@ import os
 import logging
 
 from database import get_db
-from pricing_config import platform_fee_for
+from pricing_config import platform_fee_for, ride_charge_breakdown
 from models import RideRequest, RideRequestStatus, Driver, Customer
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")  # SECURITY: No hardcoded fallback
@@ -83,27 +83,29 @@ async def create_payment_intent(http_request: Request, data: CreatePaymentIntent
     # Idempotency: if payment already exists, return existing data
     if ride.stripe_payment_intent_id and ride.stripe_payment_intent_id != "demo_pi_appstore_review":
         fare = ride.final_price or ride.suggested_price
-        tier_fee = get_tier_fee(fare)
+        existing = ride_charge_breakdown(fare)
+        tier_fee = existing["platform_fee"]
         return PaymentResponse(
             success=True,
             fare=fare,
             tier_fee=tier_fee,
             access_for_all_fee=0.10,
-            customer_pays=fare + tier_fee + 0.05,
-            driver_receives=fare - tier_fee - 0.05,
+            customer_pays=existing["customer_total"],
+            driver_receives=existing["driver_payout"],
             platform_earns=tier_fee * 2,
             payment_intent_id=ride.stripe_payment_intent_id,
             client_secret=None  # Cannot retrieve secret after creation
         )
 
     fare = ride.final_price or ride.suggested_price
-    tier_fee = get_tier_fee(fare)
+    charge = ride_charge_breakdown(fare)
+    tier_fee = charge["platform_fee"]
     # TNC-13: Access for All fee — $0.10/trip split: $0.05 customer + $0.05 driver
     access_for_all_fee = 0.10
-    customer_a4a_share = 0.05
-    driver_a4a_share = 0.05
-    customer_pays = fare + tier_fee + customer_a4a_share
-    driver_receives = fare - tier_fee - driver_a4a_share
+    customer_a4a_share = charge["rider_a4a_share"]
+    driver_a4a_share = charge["driver_a4a_share"]
+    customer_pays = charge["customer_total"]
+    driver_receives = charge["driver_payout"]
     platform_earns = tier_fee * 2  # Platform fee unchanged; A4A is pass-through to CPUC
 
     # Check for demo account - bypass Stripe for App Store review

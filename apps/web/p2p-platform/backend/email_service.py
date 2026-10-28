@@ -794,7 +794,7 @@ def send_driver_approval_email(
 
 <p style="font-weight:700;color:#0a0a0f;margin:24px 0 10px">What you're approved for:</p>
 <ul class="perks">
-  <li><span class="check">✅</span> <span><strong>Rideshare services</strong> — set your own fares, keep the negotiated rate, plus 100% of tips</span></li>
+  <li><span class="check">✅</span> <span><strong>Rideshare services</strong> — set your own fares and keep the negotiated rate minus a flat platform fee ($1, $2 or $3 by fare), plus 100% of tips</span></li>
   <li><span class="check">✅</span> <span><strong>Flexible schedule</strong> — go online and offline whenever you choose</span></li>
   <li><span class="check">✅</span> <span><strong>Instant payouts</strong> — earnings deposited via Stripe Connect after each ride</span></li>
 </ul>
@@ -808,7 +808,7 @@ def send_driver_approval_email(
     <li><strong>Vehicle &amp; Insurance</strong> — you must maintain valid vehicle registration and TNC/commercial auto insurance as required by California law.</li>
     <li><strong>Background Check Consent</strong> — you consent to periodic background and MVR checks as required by law and CPUC regulations.</li>
     <li><strong>Service Standards</strong> — maintain a 4.5+ star rating; follow all traffic laws; no discrimination of any kind.</li>
-    <li><strong>Payment Terms</strong> — weekly automatic payouts via Stripe Connect. You keep 100% of tips. A flat platform fee applies per ride.</li>
+    <li><strong>Payment Terms</strong> — weekly automatic payouts via Stripe Connect. You keep 100% of tips. A flat platform fee of $1, $2 or $3 (by fare tier) applies per ride, plus a $0.05 CPUC Access for All share.</li>
     <li><strong>Deactivation Policy</strong> — your account may be deactivated for rating below 4.5 stars, safety violations, fraud, or Terms of Service violations.</li>
   </ul>
   <p style="font-size:12px;color:#9ca3af;margin:14px 0 0">
@@ -847,7 +847,7 @@ By activating, you agree to the Independent Contractor Agreement:
 3. Vehicle & Insurance — maintain valid CA registration and TNC insurance.
 4. Background Check Consent — you consent to periodic Checkr checks.
 5. Service Standards — maintain 4.5+ stars, follow traffic laws, no discrimination.
-6. Payment Terms — Stripe Connect payouts, 100% of tips kept by you.
+6. Payment Terms — Stripe Connect payouts, 100% of tips kept by you. Flat platform fee of $1, $2 or $3 per ride (by fare tier), plus a $0.05 CPUC Access for All share.
 7. Deactivation Policy — violations may result in permanent deactivation.
 
 Full legal docs:
@@ -893,7 +893,7 @@ def send_driver_registration_confirmation(
   <li><span class="check">1.</span> <span><strong>Document review</strong> — we verify your California license and vehicle details</span></li>
   <li><span class="check">2.</span> <span><strong>Background check</strong> — standard safety verification via Checkr</span></li>
   <li><span class="check">3.</span> <span><strong>Activation</strong> — you'll get an email to accept terms and go live</span></li>
-  <li><span class="check">4.</span> <span><strong>Start earning</strong> — set your price, accept rides, keep the fare</span></li>
+  <li><span class="check">4.</span> <span><strong>Start earning</strong> — set your price, accept rides, keep the fare minus a flat $1-$3 platform fee</span></li>
 </ul>
 
 <div class="alert">
@@ -902,7 +902,7 @@ def send_driver_registration_confirmation(
 </div>
 
 <p style="font-size:13px;color:#9ca3af;text-align:center;margin-top:24px">
-  With Dollor, you keep 100% of every fare. We charge riders a flat $1 — nothing more, never.
+  With Dollor, there is no commission. Each ride has a flat platform fee of $1, $2 or $3 by fare tier, plus a $0.05 CPUC Access for All share for rider and driver each.
 </p>
 """
     html_body = _dollor_email("🚗", "Application Received", "We'll be in touch within 1–3 business days.", body)
@@ -921,11 +921,11 @@ WHAT HAPPENS NEXT:
 1. Document review — California license and vehicle check
 2. Background check — via Checkr
 3. Activation email — accept terms and go live
-4. Start earning — set your price, keep the fare
+4. Start earning — set your price, keep the fare minus a flat $1-$3 platform fee
 
 Questions? Email support@dollor.ai with your Application ID.
 
-With Dollor, you keep 100% of every fare. Riders pay a flat $1.
+With Dollor, there is no commission. Each ride has a flat platform fee of $1, $2 or $3 by fare tier, plus a $0.05 CPUC Access for All share for rider and driver each.
 
 © 2026 Zietra Technologies Inc. · dollor.ai
 """
@@ -946,11 +946,11 @@ def send_customer_welcome_email(
     code_line = f'<div class="row"><span class="row-lbl">Your rider code</span><span class="row-val" style="font-family:monospace;color:#ff6b00">{customer_code}</span></div>' if customer_code else ''
     body = f"""
 <p>Hi <strong>{customer_name}</strong>,</p>
-<p>You're in. Dollor is California's rideshare platform where riders pay a flat $1 — and drivers keep everything else. No surge pricing. No percentage cuts. Just fair.</p>
+<p>You're in. Dollor is California's rideshare platform where riders pay a flat platform fee of $1, $2 or $3 by fare — and drivers keep the rest. No percentage cuts. Just fair.</p>
 
 <div class="box">
   {code_line}
-  <div class="row"><span class="row-lbl">Platform fee</span><span class="row-val">$1 flat, always</span></div>
+  <div class="row"><span class="row-lbl">Platform fee</span><span class="row-val">$1, $2 or $3 flat by fare (plus $0.05 CPUC fee)</span></div>
   <div class="row"><span class="row-lbl">Surge pricing</span><span class="row-val">Never</span></div>
   <div class="row"><span class="row-lbl">Tips</span><span class="row-val">100% go to your driver</span></div>
 </div>
@@ -961,7 +961,7 @@ def send_customer_welcome_email(
   <li><span class="check">✓</span> <span><strong>Set your own route</strong> — pick up and drop off anywhere</span></li>
   <li><span class="check">✓</span> <span><strong>Choose your driver</strong> — review bids before you accept</span></li>
   <li><span class="check">✓</span> <span><strong>Track your ride live</strong> — real-time GPS in the app</span></li>
-  <li><span class="check">✓</span> <span><strong>Pay $1 platform fee</strong> — driver keeps the rest</span></li>
+  <li><span class="check">✓</span> <span><strong>Flat $1-$3 platform fee</strong> — driver keeps the rest</span></li>
 </ul>
 
 <p style="font-size:13px;color:#9ca3af;text-align:center;margin-top:20px">
@@ -972,9 +972,9 @@ def send_customer_welcome_email(
 
     text_body = f"""Welcome to Dollor, {customer_name}!
 
-You're in. Dollor is California's rideshare platform where riders pay a flat $1 — and drivers keep everything else.
+You're in. Dollor is California's rideshare platform where riders pay a flat platform fee of $1, $2 or $3 by fare — and drivers keep the rest.
 
-Platform fee: $1 flat, always
+Platform fee: $1, $2 or $3 flat by fare (plus $0.05 CPUC fee)
 Surge pricing: Never
 Tips: 100% go to your driver
 {"Rider code: " + customer_code if customer_code else ""}
@@ -985,7 +985,7 @@ WHAT MAKES DOLLOR DIFFERENT:
 - Set your own route
 - Choose your driver from bids
 - Track your ride live
-- Pay $1 platform fee — driver keeps the rest
+- Flat $1-$3 platform fee — driver keeps the rest
 
 CPUC Licensed · Background Checked Drivers · Zero Tolerance Safety Policy
 

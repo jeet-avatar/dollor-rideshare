@@ -30,11 +30,14 @@ def test_checkr_status_forbidden_for_other_driver(client, test_driver, db_sessio
     assert client.get(f"/api/checkr/background-check/{other.id}/status", headers=headers_for(test_driver)).status_code == 403
 
 
-def test_vehicle_inspection_status_404_for_unknown_driver_and_200_for_own(client, test_driver):
+def test_vehicle_inspection_status_404_for_unknown_driver_and_200_for_own(client, test_driver, test_admin):
     h = headers_for(test_driver)
-    missing = client.get("/api/tnc/vehicle-inspection/999999/status", headers=h)
+    admin_h = {"Authorization": "Bearer " + create_access_token(data={"sub": test_admin.email, "role": "admin"})}
+    missing = client.get("/api/tnc/vehicle-inspection/999999/status", headers=admin_h)
     assert missing.status_code == 404
     assert missing.json()["detail"] == "Driver not found"
+    # a driver asking about an id that is not theirs learns nothing, not even whether it exists
+    assert client.get("/api/tnc/vehicle-inspection/999999/status", headers=h).status_code == 403
 
     own = client.get(f"/api/tnc/vehicle-inspection/{test_driver.id}/status", headers=h)
     assert own.status_code == 200
@@ -70,3 +73,18 @@ def test_prop22_period_rides_404_for_unknown_or_foreign_period_and_lists_own_rid
     resp = client.get(f"/api/driver/prop22/periods/{own.id}/rides", headers=h)
     assert resp.status_code == 200, resp.text
     assert [r["ride_id"] for r in resp.json()] == [ride.id]
+
+
+def test_vehicle_inspection_status_is_private_to_the_driver_and_admins(client, db_session, test_driver, test_customer, test_admin):
+    from tests.unit.test_ios_negotiation_and_location import make_driver
+    other = make_driver(db_session)
+    url = f"/api/tnc/vehicle-inspection/{test_driver.id}/status"
+    customer_h = {"Authorization": "Bearer " + create_access_token(
+        data={"sub": test_customer.email, "role": "customer", "customer_id": test_customer.id})}
+    admin_h = {"Authorization": "Bearer " + create_access_token(data={"sub": test_admin.email, "role": "admin"})}
+
+    assert client.get(url, headers=customer_h).status_code == 403
+    assert client.get(url, headers=headers_for(other)).status_code == 403
+    assert client.get(url).status_code == 401
+    assert client.get(url, headers=headers_for(test_driver)).status_code == 200
+    assert client.get(url, headers=admin_h).status_code == 200

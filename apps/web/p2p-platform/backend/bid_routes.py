@@ -28,7 +28,7 @@ from websocket_server import (
     broadcast_bid_update, broadcast_bid_withdrawn, broadcast_counter_offer_response,
     broadcast_ride_status
 )
-from pricing_config import pricing_engine, get_fare_estimate, get_bid_label, platform_fee_for
+from pricing_config import pricing_engine, get_fare_estimate, get_bid_label, platform_fee_for, ride_charge_breakdown, apply_fare_multiplier
 from email_service import (
     send_ride_request_confirmation_email,
     send_ride_bid_received_email,
@@ -796,7 +796,9 @@ def _authorize_ride_payment(db: Session, ride_request: RideRequest, bid: RideBid
                             param="payment_method", code="no_payment_method"
                         )
 
-                final_price_cents = int(round(float(amount) * 100))
+                # Charge exactly what the estimate showed: agreed fare + platform fee + rider A4A share
+                charge = ride_charge_breakdown(amount)
+                final_price_cents = int(round(charge["customer_total"] * 100))
                 if final_price_cents > 0:
                     payment_intent = stripe.PaymentIntent.create(
                         amount=final_price_cents,
@@ -810,7 +812,10 @@ def _authorize_ride_payment(db: Session, ride_request: RideRequest, bid: RideBid
                             "ride_request_id": str(ride_request.id),
                             "request_id": ride_request.request_id,
                             "driver_id": str(bid.driver_id),
-                            "type": "rideshare"
+                            "type": "rideshare",
+                            "fare": str(charge["price"]),
+                            "platform_fee": str(charge["platform_fee"]),
+                            "rider_a4a_share": str(charge["rider_a4a_share"])
                         },
                         capture_method="manual",
                         idempotency_key=f"ride-pi-{ride_request.id}-{bid.id}-{final_price_cents}"
@@ -822,7 +827,7 @@ def _authorize_ride_payment(db: Session, ride_request: RideRequest, bid: RideBid
                         )
                     ride_request.stripe_payment_intent_id = payment_intent.id
                     db.commit()
-                    logger.info(f"Ride {ride_request.id} PaymentIntent {payment_intent.id} confirmed, status={payment_intent.status} (${amount:.2f})")
+                    logger.info(f"Ride {ride_request.id} PaymentIntent {payment_intent.id} confirmed, status={payment_intent.status} (fare ${amount:.2f}, charged ${charge['customer_total']:.2f})")
     except stripe.error.StripeError as stripe_err:
         # Blocking failure: card declined / Stripe error — auto-cancel the ride
         logger.error(f"Ride {ride_request.id} Stripe pre-auth FAILED ({type(stripe_err).__name__}): {stripe_err} — auto-cancelling")
@@ -2746,10 +2751,9 @@ async def complete_ride(request_id: int, request: Request, auth_driver: Driver =
 
     # Calculate and persist platform fee + driver payout (fare-tiered Model A)
     final_price = float(ride_request.final_price or ride_request.suggested_price or 0)
-    platform_fee = platform_fee_for(final_price)
-    ride_request.platform_fee = platform_fee
-    driver_a4a_share = pricing_engine.config.ACCESS_FOR_ALL_DRIVER_SHARE  # TNC-13
-    ride_request.driver_payout = round(final_price - platform_fee - driver_a4a_share, 2)
+    charge = ride_charge_breakdown(final_price)
+    ride_request.platform_fee = charge["platform_fee"]
+    ride_request.driver_payout = charge["driver_payout"]
 
     # Prop 22: compute per-ride floor data (non-blocking — failure must not block ride completion)
     try:
@@ -3030,13 +3034,7 @@ async def get_fare_estimate_endpoint(request: Request, data: FareEstimateInput, 
     # Combine ride type and surge multipliers
     combined_multiplier = multiplier * surge_multiplier
 
-    if combined_multiplier != 1.0:
-        estimate["subtotal"] = round(estimate["subtotal"] * combined_multiplier, 2)
-        estimate["total"] = round(estimate["total"] * combined_multiplier, 2)
-        estimate["driver_info"]["earnings"] = round(estimate["driver_info"]["earnings"] * combined_multiplier, 2)
-        for bid in estimate["suggested_bids"]:
-            bid["price"] = round(bid["price"] * combined_multiplier, 2)
-            bid["driver_earnings"] = round(bid["driver_earnings"] * combined_multiplier, 2)
+    apply_fare_multiplier(estimate, combined_multiplier)
 
     estimate["ride_type"] = data.ride_type
     estimate["distance_km"] = round(distance_km, 2)

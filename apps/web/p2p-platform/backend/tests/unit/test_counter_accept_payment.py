@@ -64,7 +64,8 @@ def test_accepting_a_counter_authorizes_the_countered_fare(client, db_session, m
     assert response.status_code == 200, response.text
     create.assert_called_once()
     kwargs = create.call_args.kwargs
-    assert kwargs["amount"] == int(COUNTER_PRICE * 100)
+    # agreed fare + $1 platform fee (tier 1) + $0.05 rider Access-for-All share
+    assert kwargs["amount"] == int(round((COUNTER_PRICE + 1.00 + 0.05) * 100))
     assert kwargs["capture_method"] == "manual"
     ride = db_session.query(RideRequest).get(countered_bid.ride_id)
     assert ride.stripe_payment_intent_id == "pi_test"

@@ -33,6 +33,7 @@ import requests
 
 from database import get_db, SessionLocal
 from email_service import send_order_delivered_with_receipt_email, send_delivery_completed_driver_email, send_delivery_completed_vendor_email, send_email
+from driver_sessions import ensure_can_go_offline, ensure_can_go_online, ensure_open_session, record_online_state
 from google_maps_service import get_traffic_eta, ETAResult
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -633,70 +634,29 @@ async def accept_ride(
     driver: Driver = Depends(require_driver),
 ):
     """
-    Driver accepts a P2P ride
+    Retired: matched a ride with no bid and no payment authorization. No app calls it.
+    Drivers bid (POST /api/rides/request/{id}/bid) and the rider accepts, or the driver accepts a counter.
     """
-    ai_employee = AI_EMPLOYEES["DELIVERY_DISPATCHER"]
-
-    ride = db.query(RideRequestModel).filter(RideRequestModel.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-
-    if ride.matched_driver_id:
-        raise HTTPException(status_code=400, detail="Ride already accepted by another driver")
-
-    # IDOR: driver can only assign themselves
-    if request.driver_id != driver.id:
-        raise HTTPException(status_code=403, detail="Not authorized for this resource")
-
-    if driver.status not in [DriverStatus.ACTIVE, DriverStatus.APPROVED, DriverStatus.ONLINE]:
-        raise HTTPException(status_code=400, detail="Driver is not active")
-
-    ride.matched_driver_id = driver.id
-    ride.status = RideRequestStatus.MATCHED
-    ride.matched_at = datetime.now()
-
-    db.commit()
-
-    return {
-        "success": True,
-        "ride_id": ride.id,
-        "ride_number": ride.request_id,
-        "driver_id": driver.id,
-        "driver_name": f"{driver.first_name} {driver.last_name}",
-        "status": "matched",
-        "processed_by": ai_employee["name"]
-    }
+    raise HTTPException(status_code=410, detail="Deprecated endpoint. Use the bid flow: POST /api/rides/request/{id}/bid.")
 
 
 @router.post("/rides/{ride_id}/picked-up")
 async def ride_picked_up(
     ride_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     driver: Driver = Depends(require_driver),
 ):
     """
-    Driver picked up customer
+    Driver picked up customer. Runs the canonical start logic (matched driver only, MATCHED rides only).
     """
-    ride = db.query(RideRequestModel).filter(RideRequestModel.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-
-    # IDOR: verify driver is assigned to this ride
-    if ride.matched_driver_id != driver.id:
-        raise HTTPException(status_code=403, detail="Not authorized for this ride")
-
-    # Mark as in progress
-    ride.status = RideRequestStatus.IN_PROGRESS
-    picked_up_at = datetime.now()
-
-    db.commit()
-
+    from bid_routes import start_ride
+    await start_ride(ride_id, request, driver, db)
     return {
         "success": True,
-        "ride_id": ride.id,
-        "ride_number": ride.request_id,
+        "ride_id": ride_id,
         "status": "in_progress",
-        "picked_up_at": picked_up_at.isoformat()
+        "picked_up_at": datetime.now().isoformat()
     }
 
 
@@ -1983,6 +1943,7 @@ async def update_driver_current_location(
     driver.current_latitude = location.latitude
     driver.current_longitude = location.longitude
     driver.location_updated_at = datetime.now()
+    ensure_open_session(db, driver)
 
     db.commit()
 
@@ -2007,7 +1968,13 @@ async def update_driver_status(
     if int(driver_id) != driver.id:
         raise HTTPException(status_code=403, detail="Not authorized for this resource")
 
+    if is_online:
+        ensure_can_go_online(driver)
+    else:
+        ensure_can_go_offline(db, driver)
+
     driver.is_online = is_online
+    record_online_state(db, driver, is_online)
     if is_online:
         driver.went_online_at = datetime.now()
     else:
