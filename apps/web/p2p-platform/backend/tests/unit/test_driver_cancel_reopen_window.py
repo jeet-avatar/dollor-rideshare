@@ -54,3 +54,40 @@ def test_driver_cancel_resets_expired_bidding_window(client, db_session, monkeyp
     assert row.status == RideRequestStatus.OPEN
     assert row.matched_driver_id is None
     assert row.bidding_expires_at > datetime.utcnow() + timedelta(minutes=4)
+
+
+def test_rider_can_accept_a_rebid_after_a_driver_cancel(client, db_session, monkeypatch, test_customer, test_driver):
+    """Production returned 500 when the rider accepted the same driver's new bid after that driver cancelled."""
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_unit")
+    test_driver.is_online = True
+    test_driver.documents_verified = True
+    test_driver.current_latitude, test_driver.current_longitude = PICKUP
+    db_session.commit()
+    customer_h = _headers(test_customer.email, "customer", customer_id=test_customer.id)
+    driver_h = _headers(test_driver.email, "driver", driver_id=test_driver.id)
+    stripe_customer = SimpleNamespace(invoice_settings=SimpleNamespace(default_payment_method="pm_test"))
+
+    with patch("bid_routes.send_push_notification"), patch("bid_routes.send_ride_request_confirmation_email"), \
+            patch("bid_routes.asyncio.create_task"), patch("bid_routes._bg_email"), \
+            patch("stripe.Customer.create", return_value=SimpleNamespace(id="cus_test")), \
+            patch("stripe.Customer.retrieve", return_value=stripe_customer), \
+            patch("stripe.PaymentIntent.create", return_value=SimpleNamespace(id="pi_test", status="requires_capture")), \
+            patch("stripe.PaymentIntent.cancel"):
+        ride = client.post("/api/rides/request", json={
+            "customer_id": test_customer.id, "pickup_address": "Union Square",
+            "pickup_latitude": PICKUP[0], "pickup_longitude": PICKUP[1],
+            "dropoff_address": "Ferry Building", "dropoff_latitude": 37.7955, "dropoff_longitude": -122.3937,
+            "ride_type": "standard", "bidding_duration_minutes": 5,
+        }, headers=customer_h).json()["ride_request"]
+        bid = client.post(f"/api/rides/request/{ride['id']}/bid", json={
+            "driver_id": test_driver.id, "proposed_price": 10.0, "estimated_arrival_minutes": 5,
+        }, headers=driver_h).json()["bid"]
+        assert client.post(f"/api/rides/bid/{bid['id']}/respond", json={"action": "accept"}, headers=customer_h).status_code == 200
+        assert client.post(f"/api/rides/request/{ride['id']}/driver-cancel", json={"reason": "test"}, headers=driver_h).status_code == 200
+
+        rebid = client.post(f"/api/rides/request/{ride['id']}/bid", json={
+            "driver_id": test_driver.id, "proposed_price": 11.0, "estimated_arrival_minutes": 5,
+        }, headers=driver_h)
+        assert rebid.status_code == 200, rebid.text
+        accepted = client.post(f"/api/rides/bid/{rebid.json()['bid']['id']}/respond", json={"action": "accept"}, headers=customer_h)
+        assert accepted.status_code == 200, accepted.text

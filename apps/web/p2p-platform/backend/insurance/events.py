@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from cache import redis_client, REDIS_AVAILABLE
@@ -255,8 +256,18 @@ def log_insurance_event(
             segment_duration_seconds=segment_duration_seconds,
             metadata_json=metadata,
         )
-        db.add(event)
-        db.flush()  # Assign PK without committing (caller owns transaction)
+        # A savepoint keeps a duplicate-event violation (e.g. the same driver re-matching a ride after cancelling)
+        # from poisoning the caller's transaction: without it the caller's next commit raises PendingRollbackError.
+        try:
+            with db.begin_nested():
+                db.add(event)
+                db.flush()  # Assign PK without committing (caller owns transaction)
+        except IntegrityError:
+            logger.info(
+                f"log_insurance_event: duplicate event ignored (trip_type={trip_type}, trip_id={trip_id}, "
+                f"period={period}, event_type={event_type})"
+            )
+            return None
 
         # ── Dispatch webhooks (non-blocking, failures are silent) ──────────────
         try:
