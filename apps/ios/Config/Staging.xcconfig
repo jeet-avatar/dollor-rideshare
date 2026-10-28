@@ -3,7 +3,7 @@
 
 // Environment
 ENVIRONMENT = Staging
-API_BASE_URL = https:/$()/d34u5ixl0bulv4.cloudfront.net
+API_BASE_URL = https:/$()/api.dollor.ai
 ENABLE_DEBUG_LOGGING = YES
 ENABLE_MOCK_DATA = NO
 
@@ -35,5 +35,5 @@ GCC_OPTIMIZATION_LEVEL = s
 ENABLE_TESTABILITY = NO
 
 // Server URLs (Using CloudFront - staging-ws.dollor.ai DNS not configured)
-WEBSOCKET_URL = wss:/$()/d34u5ixl0bulv4.cloudfront.net
-CDN_URL = https:/$()/d34u5ixl0bulv4.cloudfront.net
+WEBSOCKET_URL = wss:/$()/ws.dollor.ai
+CDN_URL = https:/$()/cdn.dollor.ai

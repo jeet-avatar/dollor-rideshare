@@ -3,6 +3,6 @@
 
 // Staging environment
 ENVIRONMENT = Staging
-API_BASE_URL = https:/$()/d34u5ixl0bulv4.cloudfront.net
-WEBSOCKET_URL = wss:/$()/d34u5ixl0bulv4.cloudfront.net
-CDN_URL = https:/$()/d34u5ixl0bulv4.cloudfront.net
+API_BASE_URL = https:/$()/api.dollor.ai
+WEBSOCKET_URL = wss:/$()/ws.dollor.ai
+CDN_URL = https:/$()/cdn.dollor.ai

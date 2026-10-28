@@ -70,7 +70,7 @@ android {
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
             buildConfigField("Boolean", "IS_PRODUCTION", "false")
-            buildConfigField("String", "API_BASE_URL", "\"https://d34u5ixl0bulv4.cloudfront.net/api\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://api.dollor.ai/api\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"107524350806-5kauv5lbp58hvsob7tsuuvrin99ql2bj.apps.googleusercontent.com\"")
             resValue("string", "app_name", "Dollor Driver Staging")
         }

@@ -3,7 +3,7 @@
 
 // Environment
 ENVIRONMENT = Development
-API_BASE_URL = https:/$()/dev-api.dollor.ai
+API_BASE_URL = https:/$()/api.dollor.ai
 ENABLE_DEBUG_LOGGING = YES
 ENABLE_MOCK_DATA = YES
 
@@ -35,5 +35,5 @@ GCC_OPTIMIZATION_LEVEL = 0
 ENABLE_TESTABILITY = YES
 
 // Server URLs
-WEBSOCKET_URL = wss:/$()/dev-ws.dollor.ai
-CDN_URL = https:/$()/dev-cdn.dollor.ai
+WEBSOCKET_URL = wss:/$()/ws.dollor.ai
+CDN_URL = https:/$()/cdn.dollor.ai
