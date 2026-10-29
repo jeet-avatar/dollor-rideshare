@@ -180,7 +180,7 @@ struct HelpSupportView: View {
                 .font(.headline)
                 .foregroundColor(Theme.lxText)
 
-            Text("Our support team is available 24/7 to assist you with any questions or concerns.")
+            Text("Our support team can help with any questions or concerns.")
                 .font(.subheadline)
                 .foregroundColor(Theme.lxTextSecondary)
                 .multilineTextAlignment(.center)
@@ -322,12 +322,6 @@ private var allFAQs: [FAQItem] { [
         answer: "Ride times can vary due to traffic, weather, or high demand. You can track your driver in real-time and contact them through the app if needed.",
         category: .delivery
     ),
-    FAQItem(
-        id: "10",
-        question: "How does the referral program work?",
-        answer: "Share your unique referral code with friends. When they take their first ride, you both get $5 credit! Go to Profile > Refer & Earn to get your code.",
-        category: .account
-    )
 ] }
 
 // MARK: - Contact Option Card

@@ -145,9 +145,6 @@ fun NavigationGraph(
                 onNotificationsClick = {
                     navController.navigate(Screen.Notifications.route)
                 },
-                onFoundingMemberClick = {
-                    navController.navigate(Screen.FoundingMember.route)
-                },
                 onReferAndEarnClick = {
                     navController.navigate(Screen.ReferAndEarn.route)
                 },
@@ -571,14 +568,7 @@ fun NavGraphBuilder.profileGraph(
                         onError = { /* Error already shown in ProfileScreen */ }
                     )
                 },
-                onFoundingMemberClick = { navController.navigate(Screen.FoundingMember.route) },
                 onLogoutClick = { authViewModel.logout() }
-            )
-        }
-
-        composable(route = Screen.FoundingMember.route) {
-            com.eatfair.app.ui.founding.FoundingMemberScreen(
-                onBackClick = { navController.navigateUp() }
             )
         }
 

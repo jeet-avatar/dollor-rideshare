@@ -708,40 +708,4 @@ interface DollorApiService {
         @Path("driverId") driverId: Int,
         @Header("Authorization") token: String
     ): CheckrStatusResponse
-
-    // ==========================================
-    // FOUNDING MEMBERSHIP (Customer)
-    // ==========================================
-
-    /** GET /api/founding/status */
-    @GET("founding/status")
-    suspend fun getFoundingStatus(
-        @Query("state") state: String,
-        @Header("Authorization") token: String
-    ): FoundingStatusResponse
-
-    /** POST /api/founding/join */
-    @POST("founding/join")
-    suspend fun joinFounding(
-        @Body request: FoundingJoinRequest,
-        @Header("Authorization") token: String
-    ): FoundingJoinResponse
-
-    // ==========================================
-    // FOUNDING MEMBERSHIP (Driver)
-    // ==========================================
-
-    /** GET /api/founding/driver/status */
-    @GET("founding/driver/status")
-    suspend fun getDriverFoundingStatus(
-        @Query("state") state: String,
-        @Header("Authorization") token: String
-    ): FoundingStatusResponse
-
-    /** POST /api/founding/driver/join */
-    @POST("founding/driver/join")
-    suspend fun joinDriverFounding(
-        @Body request: FoundingJoinRequest,
-        @Header("Authorization") token: String
-    ): FoundingJoinResponse
 }

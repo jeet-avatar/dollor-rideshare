@@ -4556,127 +4556,6 @@ public class P2PAPIService: ObservableObject {
         }.resume()
     }
 
-    // MARK: - Founding Membership APIs
-
-    /// Fetch founding-member eligibility/status for the signed-in user.
-    /// Customer: GET /api/founding/status · Driver: GET /api/founding/driver/status
-    public func getFoundingStatus(
-        isDriver: Bool,
-        state: String? = nil,
-        completion: @escaping (Result<FoundingStatus, Error>) -> Void
-    ) {
-        let path = isDriver ? "/founding/driver/status" : "/founding/status"
-        var urlString = "\(baseURL)\(path)"
-        if let state = state, !state.isEmpty {
-            urlString += "?state=\(state)"
-        }
-        guard let url = URL(string: urlString) else {
-            completion(.failure(P2PAPIError.invalidURL))
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let token = isDriver ? driverToken : customerToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        secureSession.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-
-                guard let data = data else {
-                    completion(.failure(P2PAPIError.noData))
-                    return
-                }
-
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                if statusCode >= 400 {
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let detail = json["detail"] as? String {
-                        completion(.failure(P2PAPIError.serverError(detail)))
-                    } else {
-                        completion(.failure(P2PAPIError.serverError("HTTP \(statusCode)")))
-                    }
-                    return
-                }
-
-                do {
-                    let status = try JSONDecoder().decode(FoundingStatus.self, from: data)
-                    completion(.success(status))
-                } catch {
-                    completion(.failure(error))
-                }
-            }
-        }.resume()
-    }
-
-    /// Join the founding-member program ($100 lifetime fee lock).
-    /// Customer: POST /api/founding/join · Driver: POST /api/founding/driver/join
-    /// `paymentMethodId` is the Stripe PaymentMethod id collected via the app's existing
-    /// Stripe mechanism. Demo accounts bypass the charge server-side (id may be nil).
-    public func joinFounding(
-        isDriver: Bool,
-        state: String,
-        paymentMethodId: String?,
-        completion: @escaping (Result<FoundingJoinResult, Error>) -> Void
-    ) {
-        let path = isDriver ? "/founding/driver/join" : "/founding/join"
-        guard let url = URL(string: "\(baseURL)\(path)") else {
-            completion(.failure(P2PAPIError.invalidURL))
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let token = isDriver ? driverToken : customerToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        var body: [String: Any] = ["state": state]
-        if let paymentMethodId = paymentMethodId {
-            body["payment_method_id"] = paymentMethodId
-        }
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-
-        secureSession.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-
-                guard let data = data else {
-                    completion(.failure(P2PAPIError.noData))
-                    return
-                }
-
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                if statusCode >= 400 {
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let detail = json["detail"] as? String {
-                        completion(.failure(P2PAPIError.serverError(detail)))
-                    } else {
-                        completion(.failure(P2PAPIError.serverError("HTTP \(statusCode)")))
-                    }
-                    return
-                }
-
-                do {
-                    let result = try JSONDecoder().decode(FoundingJoinResult.self, from: data)
-                    completion(.success(result))
-                } catch {
-                    completion(.failure(error))
-                }
-            }
-        }.resume()
-    }
-
     // MARK: - Stripe Customer Card Management APIs
 
     /// Fetch saved cards for a customer from Stripe
@@ -6857,7 +6736,7 @@ public struct AcceptedRideLocation: Codable {
     public let longitude: Double?
 }
 
-// MARK: - Checkr / Founding Membership Models
+// MARK: - Checkr Models
 
 /// Checkr-hosted background-check invitation returned by POST /api/checkr/background-check/initiate
 public struct CheckrInvitation: Decodable {
@@ -6869,76 +6748,6 @@ public struct CheckrInvitation: Decodable {
         case invitationUrl = "invitation_url"
         case status
         case message
-    }
-}
-
-/// Founding-member eligibility/status. Decoded leniently to tolerate backend field variations.
-public struct FoundingStatus: Decodable {
-    public let eligible: Bool
-    public let isMember: Bool
-    public let slotsRemaining: Int?
-    public let slotsTotal: Int?
-    public let state: String?
-    public let feeAmount: Double
-    public let benefitDescription: String?
-    public let demo: Bool
-    public let publishableKey: String?
-
-    enum CodingKeys: String, CodingKey {
-        case eligible
-        case isMember = "is_member"
-        case isFoundingMember = "is_founding_member"
-        case slotsRemaining = "slots_remaining"
-        case slotsTotal = "slots_total"
-        case state
-        case feeAmount = "fee_amount"
-        case fee
-        case benefit
-        case benefitDescription = "benefit_description"
-        case demo
-        case publishableKey = "publishable_key"
-    }
-
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        eligible = (try? c.decodeIfPresent(Bool.self, forKey: .eligible)).flatMap { $0 } ?? true
-        let member1 = (try? c.decodeIfPresent(Bool.self, forKey: .isMember)).flatMap { $0 }
-        let member2 = (try? c.decodeIfPresent(Bool.self, forKey: .isFoundingMember)).flatMap { $0 }
-        isMember = member1 ?? member2 ?? false
-        slotsRemaining = (try? c.decodeIfPresent(Int.self, forKey: .slotsRemaining)).flatMap { $0 }
-        slotsTotal = (try? c.decodeIfPresent(Int.self, forKey: .slotsTotal)).flatMap { $0 }
-        state = (try? c.decodeIfPresent(String.self, forKey: .state)).flatMap { $0 }
-        let fee1 = (try? c.decodeIfPresent(Double.self, forKey: .feeAmount)).flatMap { $0 }
-        let fee2 = (try? c.decodeIfPresent(Double.self, forKey: .fee)).flatMap { $0 }
-        feeAmount = fee1 ?? fee2 ?? 100.0
-        let b1 = (try? c.decodeIfPresent(String.self, forKey: .benefit)).flatMap { $0 }
-        let b2 = (try? c.decodeIfPresent(String.self, forKey: .benefitDescription)).flatMap { $0 }
-        benefitDescription = b1 ?? b2
-        demo = (try? c.decodeIfPresent(Bool.self, forKey: .demo)).flatMap { $0 } ?? false
-        publishableKey = (try? c.decodeIfPresent(String.self, forKey: .publishableKey)).flatMap { $0 }
-    }
-}
-
-/// Result of POST /api/founding/join (or /api/founding/driver/join)
-public struct FoundingJoinResult: Decodable {
-    public let success: Bool
-    public let message: String?
-    public let isMember: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case success
-        case message
-        case isMember = "is_member"
-        case isFoundingMember = "is_founding_member"
-    }
-
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        success = (try? c.decodeIfPresent(Bool.self, forKey: .success)).flatMap { $0 } ?? true
-        message = (try? c.decodeIfPresent(String.self, forKey: .message)).flatMap { $0 }
-        let member1 = (try? c.decodeIfPresent(Bool.self, forKey: .isMember)).flatMap { $0 }
-        let member2 = (try? c.decodeIfPresent(Bool.self, forKey: .isFoundingMember)).flatMap { $0 }
-        isMember = member1 ?? member2 ?? true
     }
 }
 

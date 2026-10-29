@@ -121,14 +121,6 @@ final class DriverAppStoreScreenshotTests: XCTestCase {
             snap("08_profile_settings")
         }
 
-        // 09 — Founding Member (from profile)
-        let foundingBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'founding' OR label CONTAINS[c] 'member'")).firstMatch
-        if foundingBtn.waitForExistence(timeout: 3) {
-            foundingBtn.tap(); sleep(2)
-            snap("09_founding_member")
-            app.navigationBars.buttons.firstMatch.tap(); sleep(1)
-        }
-
         // 10 — Back to rideshare with Available segment (clean hero shot)
         goToTab(0)
         let availBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'available'")).firstMatch

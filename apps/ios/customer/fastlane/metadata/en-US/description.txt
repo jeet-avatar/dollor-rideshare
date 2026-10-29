@@ -1,46 +1,37 @@
-Dollor is California's first open-bidding rideshare platform — where YOU negotiate the fare. Browse competing bids from nearby independent drivers, counter-offer, and choose the price that works for you.
+Dollor is a ride marketplace where independent drivers bid on your trip. Enter your pickup and destination, see an estimated fare, and choose from the offers nearby drivers send you.
 
 HOW IT WORKS
+1. Enter your pickup and destination.
+2. See an estimated fare with the fee breakdown before you request.
+3. Nearby drivers can bid on your ride during a 5-minute bidding window.
+4. Accept a bid, make a counter-offer, or decline.
+5. Follow your driver on the map, message them in the app, and rate the trip when you arrive.
 
-Open Bidding Marketplace:
-- Enter your pickup and dropoff location
-- Nearby drivers submit fare bids in real time
-- Accept a bid, make a counter-offer, or wait for a better price
-- See the full fare breakdown before confirming — no surprises
+PRICING YOU CAN SEE
+- Each ride has a flat connection fee based on the fare: $1 for fares up to $35, $2 for fares from $35 to $70, and $3 above $70.
+- A $0.05 charge for the California Public Utilities Commission Access for All program is added to each ride.
+- The fare estimate can vary with time of day and demand, and you see the amount before you confirm.
+- Tips are optional, and 100% of a tip goes to your driver.
 
-Transparent Pricing:
-- All fees shown upfront before you book
-- Every fare shows its breakdown before you confirm
-- Tips are 100% optional and go directly to your driver
+FEATURES
+- Fare estimate and fee breakdown before you request
+- Driver bids with driver rating and vehicle details
+- Counter-offers on any bid
+- Live trip tracking on a map
+- In-app chat with your driver
+- Share your trip status with someone you trust
+- Emergency button during a trip that calls 911 from your phone
+- Report a safety concern from the trip screen
+- Saved addresses and ride history with receipts
+- Pay with a card or Apple Pay, processed by Stripe
+- Optional accessibility request when you book
+- Two-way ratings after every trip
 
-CALIFORNIA-LICENSED TNC
+ACCOUNT AND PRIVACY
+- Sign in with Apple, Google, or your email address.
+- You can delete your account at any time from Profile in the app.
+- Your phone number and exact destination are shared with your matched driver only for your trip.
 
-Dollor operates as a licensed California Transportation Network Company (TNC) under CPUC regulations:
-- All drivers pass criminal background checks (California DOJ + FBI) and annual DMV record checks
-- $1,000,000 primary insurance active from the moment your driver accepts your trip (through dropoff)
-- Zero tolerance policy for drug and alcohol use — violations reported immediately to CPUC
-- In-app emergency SOS button connects directly to 911
+Dollor is a peer-to-peer matchmaking platform. Drivers are independent contractors, not employees of Dollor. Service area: California.
 
-SAFETY BUILT IN
-
-- Real-time trip tracking you can share with trusted contacts
-- Two-way rating system keeps drivers and riders accountable
-- Driver's photo, name, vehicle make, color, and license plate shown before pickup
-- 24/7 in-app incident reporting
-
-DRIVER-PARTNERS YOU CAN TRUST
-
-All Dollor drivers are independent contractors under California Proposition 22:
-- Verified identity, valid CA driver's license, and vehicle inspection
-- Freedom to set their own schedule and accept only rides they want
-- Guaranteed earnings protection per Proposition 22
-
-FOUNDING MEMBER PROGRAM
-
-Early access members get priority ride matching and locked-in platform fees. One-time fee grants access to Dollor's real-world transportation platform (exempt from Apple In-App Purchase requirements per App Store Review Guideline 3.1.3a).
-
-ABOUT DOLLOR
-
-Dollor is based in Rancho Santa Margarita, California. We believe riders deserve transparent pricing and drivers deserve fair pay.
-
-Questions? Contact us at support@dollor.ai
+Questions? Contact support@dollor.ai

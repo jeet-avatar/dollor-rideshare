@@ -124,14 +124,6 @@ final class AppStoreScreenshotTests: XCTestCase {
             app.navigationBars.buttons.firstMatch.tap(); sleep(1)
         }
 
-        // 08 — Founding Member
-        let foundingBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'founding' OR label CONTAINS[c] 'member'")).firstMatch
-        if foundingBtn.waitForExistence(timeout: 3) {
-            foundingBtn.tap(); sleep(2)
-            snap("08_founding_member")
-            app.navigationBars.buttons.firstMatch.tap(); sleep(1)
-        }
-
         // 09 — Settings
         let settingsBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'settings' OR label CONTAINS[c] 'setting'")).firstMatch
         if settingsBtn.waitForExistence(timeout: 3) {

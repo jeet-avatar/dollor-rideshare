@@ -209,10 +209,10 @@ abstract class DollorFirebaseMessagingService : FirebaseMessagingService() {
             val channels = listOf(
                 NotificationChannel(
                     CHANNEL_ORDERS,
-                    "Order Updates",
+                    "Booking Updates",
                     NotificationManager.IMPORTANCE_HIGH
                 ).apply {
-                    description = "Updates about your food orders"
+                    description = "Updates about your bookings"
                 },
                 NotificationChannel(
                     CHANNEL_RIDES,
@@ -223,17 +223,17 @@ abstract class DollorFirebaseMessagingService : FirebaseMessagingService() {
                 },
                 NotificationChannel(
                     CHANNEL_DELIVERIES,
-                    "Delivery Notifications",
+                    "Ride Requests",
                     NotificationManager.IMPORTANCE_HIGH
                 ).apply {
-                    description = "New delivery and ride requests for drivers"
+                    description = "New ride requests for drivers"
                 },
                 NotificationChannel(
                     CHANNEL_PROMOTIONS,
                     "Promotions",
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply {
-                    description = "Deals and promotions"
+                    description = "Announcements and offers"
                 },
                 NotificationChannel(
                     CHANNEL_GENERAL,

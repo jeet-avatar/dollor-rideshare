@@ -236,7 +236,7 @@ fun AddAddressDetailsScreen(
 
             // Delivery Instructions (UNIFIED: was Directions)
             Text(
-                text = "DELIVERY INSTRUCTIONS (OPTIONAL)",
+                text = "NOTES FOR DRIVER (OPTIONAL)",
                 fontSize = Lx.FontSize.caption,
                 fontWeight = FontWeight.Medium,
                 color = Lx.TextSecondary,

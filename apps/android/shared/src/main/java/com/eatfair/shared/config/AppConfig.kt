@@ -514,11 +514,9 @@ object AppConfig {
     // Production URLs for Dollor.ai by Vibing World Inc
     object Legal {
         // Production legal pages
-        const val TERMS_OF_SERVICE_URL = "https://dollor.ai/terms"
-        const val PRIVACY_POLICY_URL = "https://dollor.ai/privacy"
-        const val DRIVER_TERMS_URL = "https://dollor.ai/driver-terms"
-        const val RESTAURANT_TERMS_URL = "https://dollor.ai/restaurant-terms"
-        const val SUPPORT_URL = "https://dollor.ai/support"
+        const val TERMS_OF_SERVICE_URL = "https://www.dollor.ai/terms"
+        const val PRIVACY_POLICY_URL = "https://www.dollor.ai/privacy"
+        const val SUPPORT_URL = "https://www.dollor.ai/support"
         const val CONTACT_EMAIL = "support@dollor.ai"
         const val COMPANY_NAME = "Vibing World Inc"
     }

@@ -55,7 +55,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // API Keys from local.properties
-        buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"${localProperties.getProperty("STRIPE_PUBLISHABLE_KEY", "")}\"")
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = localProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
 
         // App name
@@ -151,9 +150,6 @@ dependencies {
 
     // Google Sign-In
     implementation(libs.play.services.auth)
-
-    // Stripe (Founding Member payment - reuses the customer app's PaymentSheet flow)
-    implementation(libs.stripe.android)
 
     // Networking for rideshare API
     implementation(libs.okhttp)

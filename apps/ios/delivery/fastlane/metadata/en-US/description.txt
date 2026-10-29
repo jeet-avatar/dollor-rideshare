@@ -1,46 +1,39 @@
-Drive with Dollor — California's open-bid rideshare platform where you set your price. Submit bids to riders, negotiate fares, and earn more per mile than any other rideshare platform.
+Dollor Driver is the driver app for the Dollor ride marketplace. Go online, see ride requests near you, and bid the fare you want to drive for. The rider can accept your bid, counter it, or decline.
 
 HOW IT WORKS
+1. Sign up and submit your driver's license and vehicle insurance.
+2. Complete the background check requested during setup (run by our screening partner, Checkr).
+3. Once you are approved, go online whenever you want to drive.
+4. Review ride requests near you, with pickup, destination, distance and the estimated fare.
+5. Submit a bid or answer a counter-offer. Riders choose during a 5-minute bidding window.
+6. Navigate to the pickup, complete the trip, and rate your rider.
 
-You're in Control:
-- Go online when you want, go offline when you don't
-- Browse open ride requests near you
-- Submit your own fare bid — no algorithm-forced pricing
-- Counter-offer if a rider negotiates — you decide what's worth your time
+WHAT YOU PAY AND WHAT YOU KEEP
+- You keep the fare you agree on, minus a flat connection fee: $1 for fares up to $35, $2 for fares from $35 to $70, and $3 above $70.
+- A $0.05 California Public Utilities Commission Access for All charge is also deducted per ride.
+- There is no percentage commission.
+- 100% of rider tips go to you.
+- The bid screen shows your estimated earnings after fees before you submit.
 
-Keep More of What You Earn:
-- You keep the full fare you negotiate
-- 100% of tips go directly to you
-- Platform fee is a small flat amount, not a percentage of your earnings
-- Weekly payouts directly to your bank account
+FEATURES
+- Online and offline switch: you choose when to drive
+- Nearby ride requests with fare estimate and distance
+- Bid, counter-offer, accept or decline
+- Directions through Google Maps
+- In-app chat with your rider, with voice dictation for hands-free messages
+- Earnings summary and payout history
+- Payouts through Stripe to your bank account (instant payout is available for a fee)
+- Accessibility setting to receive requests that need extra space for a mobility device
 
-CALIFORNIA PROPOSITION 22 PROTECTIONS
+REQUIREMENTS
+- 18 years or older
+- Valid driver's license
+- Vehicle with valid personal auto insurance
+- iPhone with GPS
+- Background check completed through Checkr and approval before you can go online
 
-As a Dollor Driver-Partner, you are an independent contractor under California Proposition 22 with guaranteed protections:
-- Earnings guarantee: 120% of California minimum wage for engaged time
-- Quarterly healthcare stipend (for 15+ hours/week average)
-- Occupational accident insurance while the app is active
-- Freedom to work for other platforms simultaneously
+Location: the app uses your location, including in the background while you are online, to show you nearby requests and to share your position with your rider during a trip.
 
-SAFETY BUILT IN
+You are an independent contractor, not an employee of Dollor. You are responsible for your own taxes, insurance and vehicle expenses, and you may use other platforms at the same time. Service area: California.
 
-- In-app navigation powered by Google Maps
-- Voice assistant for hands-free operation while driving
-- Two-way rating system — only verified riders book trips
-- 24/7 support from the Dollor driver team
-- Zero tolerance for harassment — all incidents reviewed within 24 hours
-
-REQUIREMENTS TO DRIVE
-
-To become a Dollor Driver-Partner in California you must:
-- Be at least 25 years of age
-- Hold a valid California driver's license
-- Pass a criminal background check (CA DOJ + FBI) and DMV record check
-- Have a 4-door vehicle from the last 10 model years
-- Carry TNC-eligible auto insurance
-
-ABOUT DOLLOR
-
-Dollor is a California-licensed Transportation Network Company (TNC) operating under CPUC regulations, based in Rancho Santa Margarita, CA.
-
-Questions? Email drivers@dollor.ai or visit api.dollor.ai/terms
+Questions? Email support@dollor.ai

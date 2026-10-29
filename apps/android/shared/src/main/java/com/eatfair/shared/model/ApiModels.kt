@@ -784,41 +784,6 @@ data class CheckrStatusResponse(
     val isPending: Boolean get() = effectiveStatus == "pending" || effectiveStatus == "in_progress"
 }
 
-// ==========================================
-// FOUNDING MEMBERSHIP MODELS (Customer + Driver)
-// $100 lifetime fee-lock membership.
-// Backend: GET /api/founding(/driver)/status, POST /api/founding(/driver)/join
-// ==========================================
-
-data class FoundingStatusResponse(
-    @SerializedName("is_founder") val isFounder: Boolean = false,
-    @SerializedName("founder_state") val founderState: String? = null,
-    @SerializedName("eligible_to_join") val eligibleToJoin: Boolean = false,
-    @SerializedName("rides_taken") val ridesTaken: Int = 0,
-    @SerializedName("claim_window_rides") val claimWindowRides: Int = 3,
-    @SerializedName("deposit_usd") val depositUsd: Double = 100.0,
-    @SerializedName("cap_per_state") val capPerState: Int? = null,
-    @SerializedName("slots_remaining") val slotsRemaining: Int? = null,
-    @SerializedName("state") val state: String? = null,
-    @SerializedName("benefit") val benefit: String? = null,
-    @SerializedName("is_demo") val isDemo: Boolean = false,
-    @SerializedName("publishable_key") val publishableKey: String? = null
-)
-
-/** POST /api/founding(/driver)/join — backend charges the $100 itself with payment_method_id. */
-data class FoundingJoinRequest(
-    @SerializedName("state") val state: String,
-    @SerializedName("payment_method_id") val paymentMethodId: String? = null
-)
-
-data class FoundingJoinResponse(
-    val success: Boolean = false,
-    @SerializedName("is_founder") val isFounder: Boolean = false,
-    val state: String? = null,
-    val benefit: String? = null
-)
-
-
 data class FcmTokenRequest(
     @SerializedName("fcm_token") val fcmToken: String,
     @SerializedName("platform") val platform: String = "android"

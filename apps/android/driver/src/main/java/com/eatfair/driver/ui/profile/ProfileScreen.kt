@@ -234,12 +234,6 @@ fun ProfileScreen(
                         subtitle = "View detailed earnings",
                         onClick = { navController.navigate("earnings") }
                     )
-                    ProfileMenuItem(
-                        icon = Icons.Outlined.WorkspacePremium,
-                        title = "Founding Member",
-                        subtitle = "Lock in your rate for life - $100",
-                        onClick = { navController.navigate("founding") }
-                    )
                 }
             }
         }

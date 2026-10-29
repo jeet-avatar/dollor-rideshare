@@ -789,7 +789,7 @@ fun IndependentContractorAgreementScreen(
                     ContractorBenefit(Icons.Default.Schedule, "Set Your Own Hours", "Work when you want. No minimum hours required.")
                     ContractorBenefit(Icons.Default.Route, "Choose Your Requests", "Accept or decline any request.")
                     ContractorBenefit(Icons.Default.Apps, "Use Multiple Platforms", "Work with other services simultaneously.")
-                    ContractorBenefit(Icons.Default.AttachMoney, "Flat Connection Fee", "Only a $1-$3 fee per ride. Keep the rest of the fare plus 100% of tips.")
+                    ContractorBenefit(Icons.Default.AttachMoney, "Flat Connection Fee", "A flat $1-$3 fee per ride plus a $0.05 CPUC charge. Keep the rest of the fare plus 100% of tips.")
                 }
             }
 

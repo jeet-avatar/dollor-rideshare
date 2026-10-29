@@ -347,7 +347,7 @@ struct StripeAddCardView: View {
                 }
 
                 Section("Card Details") {
-                    FoundingCardField(params: $cardParams)
+                    StripeCardField(params: $cardParams)
                         .frame(height: 44)
                 }
                 .listRowBackground(Theme.lxSurface)
@@ -513,6 +513,28 @@ struct StripeAddCardView: View {
                     }
                 }
             }
+        }
+    }
+}
+
+struct StripeCardField: UIViewRepresentable {
+    @Binding var params: STPPaymentMethodParams?
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> STPPaymentCardTextField {
+        let field = STPPaymentCardTextField()
+        field.delegate = context.coordinator
+        return field
+    }
+
+    func updateUIView(_ uiView: STPPaymentCardTextField, context: Context) {}
+
+    final class Coordinator: NSObject, STPPaymentCardTextFieldDelegate {
+        let parent: StripeCardField
+        init(_ parent: StripeCardField) { self.parent = parent }
+        func paymentCardTextFieldDidChange(_ textField: STPPaymentCardTextField) {
+            parent.params = textField.isValid ? textField.paymentMethodParams : nil
         }
     }
 }

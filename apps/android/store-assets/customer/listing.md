@@ -1,89 +1,74 @@
-# Dollor.ai - Play Store Listing (Customer App)
+# Dollor.ai - Play Store Listing (Rider App, ai.dollor.customer)
 
-## App Title
-Dollor.ai - Food & Rides
+Rideshare marketplace. Every statement below is backed by the shipped code.
+Screenshots and feature graphic in this folder (01-home ... 05-login, feature-graphic) are OLD food-delivery web captures: do not upload them. Capture new phone screenshots from the release build (ride request, fare estimate, bids, active ride, profile).
+
+## App Title (30 chars max)
+Dollor - Bid Your Ride
 
 ## Short Description (80 chars max)
-Order food delivery or book rides. Drivers bid for your trip - you pick the best!
+Request a ride, compare driver bids, and pick the fare that works for you.
 
 ## Full Description (4000 chars max)
 
-**Dollor.ai** is a revolutionary peer-to-peer marketplace that puts YOU in control. Order food from your favorite local restaurants or book a ride - and let independent drivers compete for your business.
+Dollor is a ride marketplace where independent drivers bid on your trip. Enter where you are going, see an estimated fare, and choose from the offers nearby drivers send you.
 
-**WHY DOLLOR.AI IS DIFFERENT**
+HOW IT WORKS
+1. Enter your pickup and destination.
+2. See an estimated fare with the fee breakdown before you request.
+3. Nearby drivers can bid on your ride during a 5-minute bidding window.
+4. Accept a bid, make a counter-offer, or decline.
+5. Follow your driver on the map, message them in the app, and rate the trip when you arrive.
 
-Unlike traditional delivery apps that take huge commissions from restaurants and drivers, Dollor.ai is a true P2P platform with flat $1 fees. This means:
-- Restaurants keep more of their earnings
-- Drivers keep 100% of their delivery fees and tips
-- You get better service and competitive pricing
+PRICING YOU CAN SEE
+- Each ride has a flat connection fee based on the fare: $1 for fares up to $35, $2 for fares from $35 to $70, and $3 above $70.
+- A $0.05 charge for the California Public Utilities Commission Access for All program is added to each ride.
+- The fare estimate can vary with time of day and demand, and you always see the amount before you confirm.
+- Tips are optional, and 100% of a tip goes to your driver.
 
-**FOOD DELIVERY**
-- Browse menus from local restaurants
-- Order from multiple restaurants in one order
-- Track your delivery in real-time
-- Chat directly with your driver
-- Rate and tip your driver - they get 100%
+FEATURES
+- Fare estimate and fee breakdown before you request
+- Driver bids with driver rating and vehicle details
+- Counter-offers on any bid
+- Live trip tracking on a map
+- In-app chat with your driver
+- Saved addresses and ride history with receipts
+- Card payments processed by Stripe (cards are stored by Stripe, not by Dollor)
+- Optional accessibility request when you book
+- Rate your driver after every trip
+- Help and support inside the app
 
-**RIDESHARE - A NEW WAY TO TRAVEL**
-- Enter your pickup and destination
-- Drivers bid on your ride
-- Compare prices and driver ratings
-- Accept the bid that works for you
-- Track your ride in real-time
+ACCOUNT AND PRIVACY
+- Sign up with your email address and a password.
+- You can delete your account at any time from Profile in the app.
+- Your phone number and exact destination are shared with your matched driver only for your trip.
 
-**HOW DRIVER BIDDING WORKS**
-1. Request a delivery or ride
-2. Nearby drivers see your request and submit bids
-3. View all bids with driver ratings and prices
-4. Choose the driver YOU want
-5. Track and complete your trip
+Dollor is a peer-to-peer matchmaking platform. Drivers are independent contractors, not employees of Dollor. Service area: California.
 
-**TRANSPARENT PRICING**
-- Food Delivery: Flat $1 platform fee per order
-- Rideshare: $1-$3 fee based on fare value
-- No hidden fees, no surge pricing surprises
-- Drivers set their own prices through bidding
-
-**FEATURES**
-- Real-time GPS tracking
-- In-app messaging with drivers
-- Multiple payment options
-- Order history and favorites
-- Deals and promotions
-- 24/7 customer support
-
-**SAFETY FIRST**
-- All drivers are background-checked
-- Real-time trip sharing
-- In-app emergency button
-- Photo verification for drivers
-
-Download Dollor.ai today and experience the future of food delivery and rideshare - where you're in control and everyone wins!
-
----
-Dollor.ai is a peer-to-peer matchmaking platform. Restaurants and drivers are independent businesses, not employees of Dollor.ai.
-
-## Keywords
-food delivery, rideshare, ride booking, delivery app, food ordering, driver bidding, local restaurants, taxi alternative, peer to peer delivery, P2P marketplace
+## Keywords / tags (not a Play field; for reference)
+rideshare, ride booking, driver bidding, fare estimate, transportation, trip tracking
 
 ## Category
-Food & Drink
+Maps & Navigation   (alternative: Travel & Local). NOT Food & Drink.
 
 ## Content Rating
-Everyone
+Everyone (complete the IARC questionnaire: no violence, no user-generated public content, in-app chat between matched users only)
 
 ## Contact Email
 support@dollor.ai
 
+## Website
+https://www.dollor.ai
+
 ## Privacy Policy URL
-https://dollor.ai/privacy
+https://api.dollor.ai/privacy   (static HTML page, HTTP 200; https://www.dollor.ai/privacy is also a route in the web app)
 
-## Release Notes (v1.0.1)
-What's new in Dollor.ai:
-- Improved order tracking with real-time updates
-- Enhanced driver bidding interface
-- Bug fixes and performance improvements
-- Better notification handling
-- UI/UX refinements based on user feedback
+## Account deletion (Play Console "Data deletion" section)
+In-app: Profile > Delete Account (also Settings > Delete Account).
+Web URL: NONE EXISTS YET. https://www.dollor.ai/delete-account returns the web app shell, not a deletion page. Play requires a web link for account deletion: publish a page (or point to https://www.dollor.ai/support with deletion instructions) before submitting.
 
-Thank you for choosing Dollor.ai!
+## Release Notes (v1.1.0)
+- Rideshare marketplace: request a ride, receive driver bids, accept or counter.
+- Fare estimate with fee breakdown before you request.
+- Live trip tracking, in-app chat with your driver, receipts and ride history.
+- Bug fixes and performance improvements.

@@ -1064,23 +1064,7 @@ struct SettingsSection: View {
             NavigationLink(destination: ComplianceView(driverId: UserDefaults.standard.integer(forKey: "p2p_driver_id"))) {
                 ProfileCard(title: "Compliance & Safety", icon: "shield.checkered") {
                     HStack {
-                        Text("Background check, vehicle inspection, accessibility")
-                            .font(.caption)
-                            .foregroundColor(Theme.lxTextSecondary)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(Theme.lxTextSecondary)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-
-            // Founding Member ($100 lifetime fee lock)
-            NavigationLink(destination: FoundingMemberView()) {
-                ProfileCard(title: "Founding Member", icon: "star.circle.fill") {
-                    HStack {
-                        Text("Join for $100 and lock your fees for life")
+                        Text("Background check and accessibility")
                             .font(.caption)
                             .foregroundColor(Theme.lxTextSecondary)
                         Spacer()

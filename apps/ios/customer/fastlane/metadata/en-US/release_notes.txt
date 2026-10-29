@@ -1,9 +1,5 @@
-Version 1.1 — California Rideshare Launch
-
-- Open bidding: receive competing driver bids and negotiate your fare in real-time
-- Improved Find Driver flow with inline fare estimation
-- Fixed bid back-and-forth between riders and drivers
-- Payment method required before booking (for your protection)
-- California CPUC TNC compliance updates
-- Updated Terms of Service and Privacy Policy (California law)
-- Performance and stability improvements
+Version 1.1
+- Request a ride and receive bids from nearby drivers; accept, counter or decline
+- Fare estimate with fee breakdown before you request
+- Live trip tracking, in-app chat with your driver, receipts and ride history
+- Bug fixes and performance improvements

@@ -105,7 +105,6 @@ public class AppConfig: ObservableObject {
 
     // RIDESHARE - TIERED FARE-BASED PRICING. Must match the backend charge logic
     // (rideshare_payments.py get_tier_fee: <=$35 -> $1, <=$70 -> $2, else $3) and Android AppConfig.
-    // NOTE: backend founding_members.ride_fee_tier still uses 25/50 — flagged for the backend team.
     // Fare tier thresholds (in dollars)
     @Published public var rideshareTier1MaxFare: Double = 35.00   // Fares up to $35
     @Published public var rideshareTier2MaxFare: Double = 70.00   // Fares $35.01 to $70
@@ -728,8 +727,6 @@ public struct AppConstants {
     // PRODUCTION ENVIRONMENT - api.dollor.ai
     public static let termsOfServiceURL = "https://api.dollor.ai/terms"
     public static let privacyPolicyURL = "https://api.dollor.ai/privacy"
-    public static let driverTermsURL = "https://dollor.ai/driver-terms"
-    public static let restaurantTermsURL = "https://dollor.ai/restaurant-terms"
     public static let driverApplicationURL = "https://dollor.ai/driver-application"
     public static let adminPanelURL = "https://www.dollor.ai/admin"
     public static let vendorDocumentsURL = "https://www.dollor.ai/vendor/documents"

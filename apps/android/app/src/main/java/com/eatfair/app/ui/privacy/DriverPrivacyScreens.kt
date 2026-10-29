@@ -113,8 +113,8 @@ fun WhatDriversSeePage(
                     ),
                     PrivacyItem(
                         icon = Icons.Default.Phone,
-                        title = "Masked phone number",
-                        description = "Calls go through our secure relay system"
+                        title = "Phone number",
+                        description = "Shared with your matched driver for calls during an active ride"
                     ),
                     PrivacyItem(
                         icon = Icons.Default.LocationOn,
@@ -149,8 +149,8 @@ fun WhatDriversSeePage(
                     ),
                     PrivacyItem(
                         icon = Icons.Default.Phone,
-                        title = "Your real phone number",
-                        description = "All calls are anonymized"
+                        title = "Your phone number",
+                        description = "Not shown to drivers before a ride is matched"
                     ),
                     PrivacyItem(
                         icon = Icons.Default.Email,
@@ -262,7 +262,7 @@ fun YourPrivacyPage(
             )
 
             Text(
-                text = "Industry-leading privacy and security measures",
+                text = "How your information is handled",
                 fontSize = Lx.FontSize.footnote,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
@@ -273,18 +273,9 @@ fun YourPrivacyPage(
 
             // Privacy Protection Features
             ProtectionCard(
-                icon = Icons.Default.PhoneAndroid,
-                title = "Anonymous Phone Relay",
-                description = "When drivers call, your real number stays hidden. All communication goes through our secure relay system that masks your actual phone number.",
-                color = PrimaryGreen
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            ProtectionCard(
                 icon = Icons.Default.LocationOff,
                 title = "Address Protection",
-                description = "Your destination is only visible to drivers during an active ride. Once complete, it's automatically removed from their view.",
+                description = "Your destination is only shown to drivers for an active ride.",
                 color = SafetyBlue
             )
 
@@ -293,7 +284,7 @@ fun YourPrivacyPage(
             ProtectionCard(
                 icon = Icons.Default.Star,
                 title = "Anonymous Ratings",
-                description = "Drivers cannot see who rated them or left feedback. Your ratings and comments remain completely anonymous.",
+                description = "Drivers see ratings and feedback without your name.",
                 color = Lx.Warning
             )
 
@@ -420,13 +411,12 @@ fun SafetyFeaturesPage(
             // Safety Features
             SafetyFeatureCard(
                 icon = Icons.Default.VerifiedUser,
-                title = "Verified Drivers",
-                description = "All drivers undergo background checks and identity verification before they can accept deliveries or rides.",
+                title = "Approved Drivers",
+                description = "Drivers must submit their license and insurance and complete a background check (through Checkr) before they can go online.",
                 features = listOf(
-                    "Background check required",
-                    "ID verification",
-                    "Vehicle inspection (rideshare)",
-                    "Continuous monitoring"
+                    "Driver license and insurance submitted",
+                    "Background check through Checkr",
+                    "Approval required before going online"
                 )
             )
 

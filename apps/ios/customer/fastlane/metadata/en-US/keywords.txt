@@ -1,1 +1,1 @@
-rideshare,ride,California,TNC,bid,fare,driver,taxi,transportation,carpool,trip,safe ride,booking
+rideshare,ride,bid,fare,driver,transportation,trip,booking,California,fare estimate,ride request

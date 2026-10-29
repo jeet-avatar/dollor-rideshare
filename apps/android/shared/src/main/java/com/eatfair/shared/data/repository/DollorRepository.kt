@@ -992,46 +992,6 @@ class DollorRepository @Inject constructor(
         }
 
     // ==========================================
-    // FOUNDING MEMBERSHIP ($100 lifetime fee-lock)
-    // ==========================================
-
-    suspend fun getFoundingStatus(state: String): Result<FoundingStatusResponse> =
-        withContext(Dispatchers.IO) {
-            val token = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
-                ?: return@withContext Result.failure(Exception("Not authenticated"))
-            safeApiCall { apiService.getFoundingStatus(state, token) }
-        }
-
-    suspend fun joinFounding(
-        state: String,
-        paymentMethodId: String? = null
-    ): Result<FoundingJoinResponse> = withContext(Dispatchers.IO) {
-        val token = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
-            ?: return@withContext Result.failure(Exception("Not authenticated"))
-        safeApiCallWithDetail {
-            apiService.joinFounding(FoundingJoinRequest(state, paymentMethodId), token)
-        }
-    }
-
-    suspend fun getDriverFoundingStatus(state: String): Result<FoundingStatusResponse> =
-        withContext(Dispatchers.IO) {
-            val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
-                ?: return@withContext Result.failure(Exception("Not authenticated"))
-            safeApiCall { apiService.getDriverFoundingStatus(state, token) }
-        }
-
-    suspend fun joinDriverFounding(
-        state: String,
-        paymentMethodId: String? = null
-    ): Result<FoundingJoinResponse> = withContext(Dispatchers.IO) {
-        val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
-            ?: return@withContext Result.failure(Exception("Not authenticated"))
-        safeApiCallWithDetail {
-            apiService.joinDriverFounding(FoundingJoinRequest(state, paymentMethodId), token)
-        }
-    }
-
-    // ==========================================
     // PUSH NOTIFICATIONS
     // ==========================================
 

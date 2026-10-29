@@ -15,7 +15,6 @@ sealed class Screen(val route: String) {
     object Search: Screen("search")
     object Profile: Screen("profile")
     object EditProfile: Screen("edit_profile")
-    object FoundingMember: Screen("founding_member")
     object ReferAndEarn: Screen("refer_and_earn")
     object Notifications: Screen("notification")
     object PaymentMethods: Screen("payment_methods")

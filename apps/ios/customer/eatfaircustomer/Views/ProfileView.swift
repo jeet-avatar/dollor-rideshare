@@ -108,10 +108,6 @@ struct ProfileView: View {
                                 NavigationLink(destination: PaymentMethodsView()) {
                                     ProfileOptionRow(icon: "creditcard.fill", title: "Payment Methods")
                                 }
-                                Divider().overlay(Theme.lxHairline)
-                                NavigationLink(destination: FoundingMemberView()) {
-                                    ProfileOptionRow(icon: "star.circle.fill", title: "Founding Member")
-                                }
                             }
                             .background(Theme.lxSurface)
                             .cornerRadius(Lx.Radius.button)

@@ -279,12 +279,6 @@ class VoiceAssistantManager: NSObject, ObservableObject {
         speak("You have \(messages.count) messages. \(combinedText)")
     }
 
-    // MARK: - Announce Delivery Info
-    func announceDelivery(restaurant: String, customer: String, distance: String, earnings: String) {
-        let announcement = "New delivery from \(restaurant) to \(customer). Distance: \(distance). Earnings: \(earnings). Say accept order or decline order."
-        speak(announcement)
-    }
-
     // MARK: - Navigation Announcement
     func announceNavigation(to destination: String, eta: String) {
         speak("Navigating to \(destination). Estimated arrival: \(eta)")

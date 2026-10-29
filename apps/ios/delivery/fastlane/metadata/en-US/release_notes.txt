@@ -1,10 +1,5 @@
-Version 1.1 — California Launch
-
-- Open bidding: submit your own fare bids to riders and negotiate in real time
-- Improved bid tracking — never miss a counter-offer from a rider
-- Real-time WebSocket updates for ride requests and bid responses
-- Voice assistant improvements for hands-free operation
-- Background location accuracy improvements
-- California CPUC TNC compliance updates
-- Updated Terms of Service and Privacy Policy (California law, Proposition 22)
-- Performance and stability improvements
+Version 1.1
+- Bid on nearby ride requests and answer counter-offers
+- Estimated earnings after fees shown before you submit a bid
+- In-app chat with riders, earnings summary and payout history
+- Bug fixes and performance improvements

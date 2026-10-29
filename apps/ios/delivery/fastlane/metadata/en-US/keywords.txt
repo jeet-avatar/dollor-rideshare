@@ -1,1 +1,1 @@
-rideshare driver,earn,driving,gig,income,California,TNC,Prop 22,fare,transportation,delivery,flexible
+rideshare driver,driver bidding,ride requests,driving,fare,transportation,California,driver app,earnings

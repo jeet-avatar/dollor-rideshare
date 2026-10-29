@@ -876,10 +876,10 @@ struct DriverTermsSheet: View {
                         Text("You must be at least 18 years old, possess a valid driver's license, and have access to a reliable vehicle. You are responsible for maintaining accurate account information.")
 
                         sectionHeader("3. Document Verification")
-                        Text("All submitted documents (driver's license, insurance, etc.) will be verified by our AI-powered verification system. Approval is automatic upon successful verification. Falsified documents will result in immediate account termination.")
+                        Text("All submitted documents (driver's license, insurance, etc.) will be reviewed as part of approval. You can go online once you are approved. Falsified documents will result in immediate account termination.")
 
                         sectionHeader("4. Earnings & Payments")
-                        Text("You will receive payment for completed rides as per the agreed rates. Payments are processed weekly via direct deposit or your preferred payment method.")
+                        Text("You will receive payment for completed rides as per the agreed rates. Payouts are made through Stripe to your connected payout account.")
 
                         sectionHeader("5. Code of Conduct")
                         Text("You agree to provide professional, courteous service. Any violations of our code of conduct may result in account suspension or termination.")

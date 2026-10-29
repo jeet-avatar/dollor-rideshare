@@ -1,200 +1,83 @@
-# Dollor.ai - Google Play Data Safety Declaration
+# Dollor.ai - Google Play Data Safety Declaration (rider + driver apps)
 
-This document provides the information needed to complete the Google Play Console Data Safety form for all three Dollor.ai apps.
+Derived from the code of the two shipped Android apps (rider `ai.dollor.customer`, driver `ai.dollor.driver`). The restaurant/partner app is not part of this launch and is not covered here.
 
----
+Sources checked: both `AndroidManifest.xml` files (permissions), `shared/build.gradle.kts` (Firebase Auth, Firestore, Storage, Messaging, Analytics; Stripe in the rider app only), register/profile/ride/chat/compliance screens, `DollorApiService.kt`.
 
-## Customer App (ai.dollor.customer)
+## Form answers common to both apps
 
-### Data Collection Summary
+| Question | Answer |
+|---|---|
+| Does the app collect or share required user data types? | Yes |
+| Is all data encrypted in transit? | Yes (HTTPS only) |
+| Can users request deletion? | Yes. In app: Profile > Delete Account. Web link: none exists yet (see "Console actions") |
+| Ads / advertising ID | No ads, no ad SDKs, no advertising ID use |
+| Data sold | No |
+| Independent security review | No |
+| Families Policy | Not designed for children |
+| Account creation methods | Email and password (rider); email and password or Google sign-in (driver) |
 
-| Data Type | Collected | Shared | Required | Purpose |
-|-----------|-----------|--------|----------|---------|
-| Name | Yes | Yes (drivers/restaurants) | Yes | Account, delivery |
-| Email | Yes | No | Yes | Account, communications |
-| Phone | Yes | Yes (drivers) | Yes | Delivery coordination |
-| Address | Yes | Yes (drivers) | Yes | Delivery location |
-| Payment info | Yes | No (Stripe handles) | Yes | Process transactions |
-| Location | Yes | Yes (drivers) | Yes | Delivery/pickup tracking |
-| Order history | Yes | No | No | Personalization |
-| Device ID | Yes | No | No | Analytics, security |
+## Rider app (ai.dollor.customer)
 
-### Data Sharing Details
+Permissions in manifest: INTERNET, ACCESS_NETWORK_STATE, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, CAMERA (optional, profile photo; photo stays on the device), POST_NOTIFICATIONS, VIBRATE.
 
-**With whom is data shared?**
-- **Restaurants**: Name, order details (for food preparation)
-- **Drivers**: Name, phone, delivery address (for delivery)
-- **Payment processor (Stripe)**: Payment details (for transaction processing)
+| Play data type | Collected | Shared | Optional | Purpose | Source in code |
+|---|---|---|---|---|---|
+| Personal info > Name | Yes | Yes, first name to matched driver | Required | App functionality, account management | RegisterScreen.kt |
+| Personal info > Email address | Yes | No | Required | Account management, communications | RegisterScreen.kt |
+| Personal info > Phone number | Yes | Yes, to matched driver for the trip | Required | App functionality | RegisterScreen.kt |
+| Personal info > Address (ZIP code, saved addresses) | Yes | Pickup and destination shared with matched driver | Saved addresses optional | App functionality | RegisterScreen.kt, SavedAddressesScreen.kt |
+| Location > Precise location | Yes, only while the app is open | Yes, pickup point to drivers who see the request | Required to request a ride | App functionality | RideRequestScreen.kt (ACCESS_FINE_LOCATION) |
+| Financial info > Payment info (card) | Entered into Stripe's card form; Dollor stores only Stripe tokens and the card brand/last 4 | Yes, with Stripe (payment processor) | Required to book | App functionality (payments) | PaymentMethodsScreen.kt |
+| Financial info > Purchase history (ride receipts) | Yes | No | Required | App functionality | TripsScreen.kt |
+| Health and fitness > Health info (optional accessibility request) | Yes, only if the rider turns it on | Yes, to the matched driver | Optional | App functionality | RideRequestViewModel.kt (accessibility options and notes) |
+| Messages > Other in-app messages (chat with driver and with support) | Yes | Yes, chat with driver is visible to that driver | Optional | App functionality | DriverChatScreen.kt, SupportChatScreen.kt |
+| App activity > App interactions | Yes (Firebase Analytics default events) | No | Required | Analytics | `firebase-analytics-ktx` dependency |
+| Device or other IDs (FCM token, Firebase installation ID) | Yes | No | Required | App functionality (push), Analytics | DollorFirebaseMessagingService.kt |
+| Photos and videos | No. The profile photo is chosen/taken on the device and stored locally only (ProfileViewModel.onProfileImageChange saves a URI) | - | - | - | ProfileScreen.kt |
+| Contacts, calendar, audio, files, web history, crash logs/diagnostics | Not collected (no Crashlytics, no Sentry) | - | - | - | - |
 
-**Why is data shared?**
-- To facilitate peer-to-peer transactions between customers, restaurants, and drivers
-- Payment processing requires sharing with Stripe
+Sharing statement for "Shared": data given to the matched driver is part of the ride and is disclosed in-app (Profile > What Drivers See). Data given to Stripe is processing on Dollor's behalf (service provider). Google Maps and Firebase act as service providers.
 
-### Security Practices
-- [x] Data encrypted in transit (TLS 1.2+)
-- [x] Data encrypted at rest
-- [x] Users can request data deletion
-- [x] Committed to Play Families Policy (if applicable): No
+## Driver app (ai.dollor.driver)
 
-### Account Deletion
-- Users can delete their account via: Settings > Account > Delete Account
-- Data deletion timeline: Within 90 days
-- Data retained for legal purposes: Transaction records (7 years for tax compliance)
+Permissions in manifest: INTERNET, ACCESS_NETWORK_STATE, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, CAMERA (document photos), POST_NOTIFICATIONS, VIBRATE. There is NO background location permission and no foreground-service location permission.
 
----
+| Play data type | Collected | Shared | Optional | Purpose | Source in code |
+|---|---|---|---|---|---|
+| Personal info > Name | Yes | Yes, to matched rider | Required | App functionality, account management | driver login/registration |
+| Personal info > Email address | Yes | No | Required | Account management, communications | driver login/registration |
+| Personal info > Phone number | Yes | Yes, to matched rider for the trip | Required | App functionality | driver profile |
+| Personal info > Other info (driver's license, insurance card, vehicle make/model/plate) | Yes | No (vehicle and plate are shown to the matched rider) | Required to drive | App functionality, fraud prevention and safety (verification) | DriverDocumentCaptureScreen.kt, DriverDocumentViewModel.kt |
+| Photos and videos (photos of license and insurance card) | Yes | No | Required to drive | App functionality (verification) | DriverDocumentCaptureScreen.kt |
+| Location > Precise location | Yes, only while the driver is online and the app is open | Yes, live position to the matched rider during a trip | Required to go online | App functionality | DriverHomeViewModel.kt |
+| Financial info > Other financial info (earnings, payout history; bank details are entered on Stripe's hosted onboarding page and are not stored by the app) | Yes | Yes, with Stripe for payouts | Required to be paid | App functionality | EarningsViewModel.kt |
+| Messages > Other in-app messages | Yes | Chat is visible to the rider | Optional | App functionality | driver ride chat |
+| Health and fitness > Health info (optional accessibility setting: extra trunk space for mobility aids) | Yes | No | Optional | App functionality | Profile > Accessibility |
+| App activity > App interactions | Yes (Firebase Analytics default events) | No | Required | Analytics | `firebase-analytics-ktx` dependency |
+| Device or other IDs (FCM token, Firebase installation ID) | Yes | No | Required | App functionality (push), Analytics | DriverFirebaseMessagingService.kt |
+| Background check (name, date of birth, SSN, license number) | Entered on the Checkr-hosted page opened from the app; Dollor receives only the result/status | Checkr is the service provider | Required to drive | Fraud prevention, safety and compliance | DriverNavGraph.kt (opens Checkr URL) |
 
-## Driver App (ai.dollor.driver)
+## Third parties used by the apps
 
-### Data Collection Summary
+| Service | Purpose | Data |
+|---|---|---|
+| Stripe | Rider card payments; driver payouts | Card details (rider, entered in Stripe's form), bank details (driver, Stripe-hosted) |
+| Google Maps / Places / Location | Maps, address search, location | Location, search text |
+| Firebase (Auth, Firestore, Storage, Cloud Messaging, Analytics) | Push notifications, analytics | Device tokens, installation ID, app interactions |
+| Checkr | Driver background check | Identity data entered on Checkr's page |
 
-| Data Type | Collected | Shared | Required | Purpose |
-|-----------|-----------|--------|----------|---------|
-| Name | Yes | Yes (customers) | Yes | Identification |
-| Email | Yes | No | Yes | Account, communications |
-| Phone | Yes | Yes (customers) | Yes | Delivery coordination |
-| Profile photo | Yes | Yes (customers) | Yes | Identification |
-| Driver's license | Yes | No | Yes | Verification |
-| Vehicle info | Yes | No | Yes | Service eligibility |
-| Location | Yes | Yes (customers) | Yes | Real-time tracking |
-| Background location | Yes | No | Yes | Active delivery tracking |
-| Earnings data | Yes | No | No | Payment processing |
-| Device ID | Yes | No | No | Analytics, security |
+## Account deletion (Play Console)
 
-### Data Sharing Details
+- Rider: Profile > Delete Account (also Settings > Delete Account). Driver: Profile > Delete Account.
+- Retention to state in the console: transaction and ride records may be kept where required for tax, legal or CPUC compliance. Confirm the retention period with the backend owner before filling the form (the previous draft said 90 days deletion and 7 years for tax records; neither number was verified in code).
+- Web URL for deletion requests: none exists yet. `https://www.dollor.ai/delete-account` serves the web-app shell, not a deletion page.
 
-**With whom is data shared?**
-- **Customers**: Name, photo, vehicle info, real-time location (for tracking)
-- **Restaurants**: Name (for pickup coordination)
-- **Background check provider**: Personal info (for verification)
+## Console actions needed (cannot be done from the repo)
 
-**Why is data shared?**
-- Customer needs to track and identify driver
-- Safety verification requirements
+1. Fill the Data safety form from the tables above (rider and driver separately).
+2. Provide a web page for account deletion requests (required by Play) and enter its URL.
+3. Set the privacy policy URL to https://api.dollor.ai/privacy (static page, HTTP 200). Its text must stay consistent with this form.
+4. Confirm that the privacy policy covers: Firebase Analytics, optional accessibility information, chat messages, driver documents.
 
-### Background Location Use
-- **Purpose**: Track driver location during active deliveries only
-- **When collected**: Only while delivery/ride is in progress
-- **Not collected**: When app is closed or driver is offline
-
-### Security Practices
-- [x] Data encrypted in transit (TLS 1.2+)
-- [x] Data encrypted at rest
-- [x] Users can request data deletion
-- [x] Committed to Play Families Policy (if applicable): No
-
-### Account Deletion
-- Drivers can delete their account via: Settings > Account > Delete Account
-- Data deletion timeline: Within 90 days
-- Data retained: Tax documents (7 years), trip records for legal disputes
-
----
-
-## Partner/Restaurant App (ai.dollor.partner)
-
-### Data Collection Summary
-
-| Data Type | Collected | Shared | Required | Purpose |
-|-----------|-----------|--------|----------|---------|
-| Business name | Yes | Yes (customers) | Yes | Business listing |
-| Business address | Yes | Yes (customers) | Yes | Restaurant location |
-| Contact email | Yes | No | Yes | Communications |
-| Contact phone | Yes | No | Yes | Support |
-| Business license | Yes | No | Yes | Verification |
-| Health permit | Yes | No | Yes | Compliance |
-| Menu data | Yes | Yes (customers) | Yes | Order placement |
-| Financial data | Yes | No | Yes | Payouts |
-| Device ID | Yes | No | No | Analytics |
-
-### Data Sharing Details
-
-**With whom is data shared?**
-- **Customers**: Business name, address, menu, ratings
-- **Drivers**: Restaurant name, pickup location
-
-**Why is data shared?**
-- Customers need restaurant info to place orders
-- Drivers need pickup location for delivery
-
-### Security Practices
-- [x] Data encrypted in transit (TLS 1.2+)
-- [x] Data encrypted at rest
-- [x] Users can request data deletion
-- [x] Committed to Play Families Policy (if applicable): No
-
-### Account Deletion
-- Partners can delete their account by contacting: partners@dollor.ai
-- Data deletion timeline: Within 90 days
-- Data retained: Transaction records (7 years for tax/legal compliance)
-
----
-
-## Common Responses for All Apps
-
-### Data Collection Practices
-
-**Is data collected?** Yes
-
-**Is data encrypted in transit?** Yes (TLS 1.2+)
-
-**Can users request data deletion?** Yes
-
-**Do you collect any sensitive data types?**
-- Financial info: Yes (payment processing via Stripe)
-- Location: Yes (delivery/ride functionality)
-- Personal identifiers: Yes (name, email, phone)
-
-### Third-Party Services
-
-| Service | Purpose | Data Shared |
-|---------|---------|-------------|
-| Stripe | Payment processing | Payment info |
-| Google Maps | Navigation, location | Location data |
-| Firebase | Push notifications, analytics | Device tokens, usage data |
-| Persona/Onfido | Identity verification (drivers) | ID documents |
-
-### Privacy Policy URL
-https://dollor.ai/privacy
-
-### Contact for Privacy Inquiries
-privacy@dollor.ai
-
----
-
-## Play Console Form Quick Reference
-
-When completing the Data Safety form in Google Play Console:
-
-1. **Does your app collect or share any of the required user data types?** Yes
-
-2. **Is all user data encrypted in transit?** Yes
-
-3. **Do you provide a way for users to request that their data be deleted?** Yes
-
-4. **Location data** (Customer & Driver apps):
-   - Collected: Yes
-   - Shared: Yes (with other platform users for service delivery)
-   - Purpose: App functionality (delivery tracking)
-   - Required: Yes
-
-5. **Financial info** (All apps):
-   - Collected: Yes
-   - Shared: With payment processor only
-   - Purpose: Process transactions
-   - Required: Yes
-
-6. **Personal identifiers** (All apps):
-   - Collected: Yes
-   - Shared: With relevant parties for P2P transactions
-   - Purpose: Account management, service delivery
-   - Required: Yes
-
----
-
-## Compliance Notes
-
-1. **CCPA**: California users can opt-out of data sale (we don't sell data)
-2. **GDPR**: EU users have right to access, rectify, and delete data
-3. **Children**: Apps not directed at children under 13
-4. **Background location**: Only Driver app; justified for delivery tracking
-
-Last Updated: January 2026
+Last reviewed: 2026-10-29 (from code at origin/main 4754f72e3 plus the store cleanup changes).

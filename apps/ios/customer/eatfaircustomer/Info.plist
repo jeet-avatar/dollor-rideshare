@@ -43,11 +43,9 @@
 		<false/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Camera access allows you to scan payment cards.</string>
+	<string>Camera access lets you scan a payment card when adding it as a payment method.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Dollor AI Service needs your location to find nearby drivers and request rides.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Photo library access allows you to upload profile photos.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

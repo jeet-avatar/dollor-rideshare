@@ -7,7 +7,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Dollor Driver</string>
 	<key>CFBundleName</key>
-	<string>Dollor Driver - Earn More</string>
+	<string>Dollor Driver</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleURLTypes</key>
@@ -39,7 +39,7 @@
 		<false/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Camera access allows you to take profile photos and scan documents for driver verification.</string>
+	<string>Camera access lets you photograph your driver's license and insurance card for driver verification.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Dollor AI Service needs your location to track rides in real-time and provide accurate updates to riders even when the app is in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -47,7 +47,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access lets you dictate chat messages hands-free while driving.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Photo library access allows you to upload profile photos and driver documentation.</string>
+	<string>Photo library access lets you choose a profile photo and driver documents to upload.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Speech recognition lets you dictate chat messages hands-free while driving.</string>
 	<key>UIBackgroundModes</key>

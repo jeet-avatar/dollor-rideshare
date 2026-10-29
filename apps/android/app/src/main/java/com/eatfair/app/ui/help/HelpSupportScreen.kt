@@ -79,7 +79,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "3",
                 "How do I cancel my ride?",
-                "Rides can be cancelled before a driver is matched. Go to Rides → Select Ride → Cancel. Full refunds are issued for eligible cancellations.",
+                "You can cancel from your active ride on the Ride screen. Cancellation fees may apply depending on the ride status.",
                 "Rides"
             ),
             FAQItem(
@@ -97,7 +97,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "6",
                 "How do I contact my driver?",
-                "Once your ride is matched, you can call or message your driver through the ride tracking screen. Your phone number is masked for privacy.",
+                "Once your ride is matched, you can call or message your driver through the ride tracking screen.",
                 "Drivers"
             ),
             FAQItem(
@@ -109,7 +109,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "8",
                 "How do I delete my account?",
-                "Go to Profile → Settings → Delete Account. This permanently removes all your data. Per Apple/Google requirements, you can delete your account at any time.",
+                "Go to Profile → Settings → Delete Account. This permanently deletes your account. You can delete your account at any time.",
                 "Account"
             ),
             FAQItem(

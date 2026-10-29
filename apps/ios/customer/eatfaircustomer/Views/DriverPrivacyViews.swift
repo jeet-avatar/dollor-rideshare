@@ -59,8 +59,8 @@ struct WhatDriversSeePage: View {
                             Rectangle().fill(Theme.lxHairline).frame(height: 1).padding(.leading, 60)
                             PrivacyInfoRow(
                                 icon: "phone.fill",
-                                title: "Masked Phone Number",
-                                subtitle: "Calls route through anonymous relay",
+                                title: "Phone Number",
+                                subtitle: "Shared only for calls during an active ride",
                                 iconColor: Theme.lxOrange
                             )
                             Rectangle().fill(Theme.lxHairline).frame(height: 1).padding(.leading, 60)
@@ -114,8 +114,8 @@ struct WhatDriversSeePage: View {
                             Rectangle().fill(Theme.lxHairline).frame(height: 1).padding(.leading, 60)
                             PrivacyInfoRow(
                                 icon: "phone.badge.plus",
-                                title: "Real Phone Number",
-                                subtitle: "Always masked for safety",
+                                title: "Phone Number",
+                                subtitle: "Shared only during an active ride",
                                 iconColor: Theme.lxError
                             )
                             Rectangle().fill(Theme.lxHairline).frame(height: 1).padding(.leading, 60)
@@ -205,13 +205,7 @@ struct YourPrivacyPage: View {
                             .padding(.bottom, 10)
 
                         VStack(spacing: 0) {
-                            PrivacyFeatureRow(
-                                icon: "phone.arrow.right.fill",
-                                title: "Anonymous Phone Relay",
-                                description: "Your real number is never shared. All calls go through a secure relay system."
-                            )
-                            Rectangle().fill(Theme.lxHairline).frame(height: 1).padding(.leading, 60)
-                            PrivacyFeatureRow(
+                                                        PrivacyFeatureRow(
                                 icon: "location.slash.fill",
                                 title: "Address Protection",
                                 description: "Drivers only see your address during active rides. It's hidden before and after."
@@ -362,7 +356,7 @@ struct SafetyFeaturesPage: View {
                             SafetyFeatureRow(
                                 icon: "person.badge.shield.checkmark.fill",
                                 title: "Verified Drivers",
-                                description: "All drivers undergo background checks and identity verification.",
+                                description: "Drivers must submit their license and insurance and complete a background check (through Checkr) before they can go online.",
                                 iconColor: Theme.lxOrange
                             )
                             Rectangle().fill(Theme.lxHairline).frame(height: 1).padding(.leading, 60)
@@ -409,8 +403,8 @@ struct SafetyFeaturesPage: View {
                         VStack(spacing: 0) {
                             SafetyFeatureRow(
                                 icon: "phone.fill",
-                                title: "24/7 Support Line",
-                                description: "Our support team is available around the clock.",
+                                title: "Support",
+                                description: "Contact our support team from Help & Support.",
                                 iconColor: Theme.lxOrange
                             )
                             Rectangle().fill(Theme.lxHairline).frame(height: 1).padding(.leading, 60)

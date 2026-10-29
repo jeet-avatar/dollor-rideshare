@@ -233,7 +233,7 @@ struct PlatformFeeCard: View {
                 FeeRow(
                     title: "Your Tips",
                     amount: "100%",
-                    description: "Tips are 100% yours"
+                    description: "Tips go to you in full"
                 )
             }
 
@@ -243,7 +243,7 @@ struct PlatformFeeCard: View {
                     Image(systemName: "star.fill")
                         .foregroundColor(Theme.lxOrange)
 
-                    Text("Keep 100% of what you earn")
+                    Text("Keep the fare minus one flat fee")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(Theme.lxText)
@@ -471,9 +471,9 @@ struct DriverRightsSection: View {
                 RightItem(text: "Set your own prices for rideshare trips")
                 RightItem(text: "Negotiate directly with your riders")
                 RightItem(text: "Use multiple platforms - no exclusivity required")
-                RightItem(text: "Keep 100% of your earnings (no percentage cuts)")
+                RightItem(text: "Keep the fare minus a flat per-ride fee (no percentage commission)")
                 RightItem(text: "Operate your own independent business")
-                RightItem(text: "24/7 platform support")
+                RightItem(text: "Contact platform support from the app")
             }
             .padding()
             .background(Theme.lxSurface)
@@ -540,7 +540,7 @@ struct DirectOrderSection: View {
                         .cornerRadius(Lx.Radius.chip)
                         .overlay(RoundedRectangle(cornerRadius: Lx.Radius.chip).stroke(Theme.lxHairline, lineWidth: 1))
 
-                    Text("You have the freedom to accept direct ride requests and earn more!")
+                    Text("You have the freedom to accept direct ride requests and set your own bids.")
                         .font(.caption)
                         .foregroundColor(Theme.lxSuccess)
                 }
@@ -674,9 +674,10 @@ struct FullTermsView: View {
                             Dollor AI Service operates on a transparent, flat-fee model for our MATCHMAKING service:
 
                             PLATFORM FEES (for use of our matching platform):
-                            • Rider Connection Fee: $1.00 per connection
+                            • Rider Connection Fee (per ride):
+                               - \(AppConfig.shared.rideshareFeeSummary), plus a $0.05 CPUC Access for All charge
                             • Driver Platform Fee (per ride):
-                               - \(AppConfig.shared.rideshareFeeSummary)
+                               - \(AppConfig.shared.rideshareFeeSummary), plus a $0.05 CPUC Access for All charge
 
                             As an INDEPENDENT DRIVER, you retain 100% of:
                             - Fares negotiated directly with riders (less the per-ride platform fee above)
@@ -770,7 +771,7 @@ struct FullTermsView: View {
 
                             Payment Schedule:
                             • Earnings are calculated in real-time
-                            • Weekly automatic deposits to your linked bank account
+                            • Payouts are made through Stripe to your linked bank account
                             • Instant cashout available for a small fee
                             • Detailed earnings reports available in the app
                             """)

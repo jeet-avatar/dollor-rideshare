@@ -375,11 +375,6 @@ private fun DriverMainApp(
                     navController = navController
                 )
             }
-            composable("founding") {
-                com.eatfair.driver.ui.founding.FoundingMemberScreen(
-                    onBackClick = { navController.navigateUp() }
-                )
-            }
         }
     }
 }
