@@ -271,7 +271,9 @@ class TestRideshareDriverFlow:
         db_session.commit()
         db_session.refresh(ride)
 
-        # Step 2: Driver bids
+        # Step 2: Driver goes online (bids from offline drivers are refused), then bids
+        e2e_driver.is_online = True
+        db_session.commit()
         resp = client.post(
             f"/api/rides/request/{ride.id}/bid",
             json={

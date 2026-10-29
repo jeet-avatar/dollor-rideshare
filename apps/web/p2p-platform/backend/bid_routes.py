@@ -317,6 +317,89 @@ def estimate_duration_minutes(distance_km: float) -> int:
     return max(5, int(distance_km * 2))  # ~30 km/h = 2 min per km
 
 
+def _bid_floor_error(price: float) -> Optional[str]:
+    """Message when a fare would leave the driver nothing after the platform fee and driver Access-for-All share."""
+    breakdown = ride_charge_breakdown(price)
+    if breakdown["driver_payout"] <= 0:
+        minimum = breakdown["platform_fee"] + breakdown["driver_a4a_share"]
+        return f"Bid must be more than the platform fee and Access-for-All share (${minimum:.2f})"
+    return None
+
+
+def _bidding_window_closed(ride_request: RideRequest, now: Optional[datetime] = None) -> bool:
+    """True once the ride's bidding window has lapsed, even if the cleanup job has not marked it expired yet."""
+    now = now or datetime.utcnow()
+    return bool(ride_request.bidding_expires_at and now > ride_request.bidding_expires_at)
+
+
+def _require_ride_open_for_negotiation(ride_request: RideRequest) -> None:
+    """Counters and bid changes only make sense while the ride is open and its window has not lapsed."""
+    if ride_request.status not in (RideRequestStatus.OPEN, RideRequestStatus.BIDDING):
+        raise HTTPException(status_code=409, detail="This ride is no longer available")
+    if _bidding_window_closed(ride_request):
+        raise HTTPException(status_code=409, detail="Bidding window has closed")
+
+
+def _driver_has_active_ride(db: Session, driver_id: int) -> bool:
+    return db.query(RideRequest.id).filter(
+        RideRequest.matched_driver_id == driver_id,
+        RideRequest.status.in_([RideRequestStatus.MATCHED, RideRequestStatus.IN_PROGRESS]),
+    ).first() is not None
+
+
+def _claim_ride_for_match(db: Session, ride_request: RideRequest) -> None:
+    """Atomically move the ride from open to matched; 409 if another accept already won.
+
+    A single conditional UPDATE decides the winner in the database, so two accepts that both read the ride as
+    open (rider accepts a bid while a driver accepts a counter) can never both match it.
+    """
+    claimed = db.query(RideRequest).filter(
+        RideRequest.id == ride_request.id,
+        RideRequest.status.in_([RideRequestStatus.OPEN, RideRequestStatus.BIDDING]),
+    ).update({RideRequest.status: RideRequestStatus.MATCHED}, synchronize_session=False)
+    if claimed != 1:
+        raise HTTPException(status_code=409, detail="This ride is no longer available")
+
+
+def _drop_bid_of_unavailable_driver(db: Session, bid: RideBid, reason: str) -> None:
+    bid.status = BidStatus.WITHDRAWN
+    bid.customer_response = reason
+    bid.updated_at = datetime.utcnow()
+    db.commit()
+
+
+def _dispatch_pool(db: Session) -> List[Driver]:
+    """Online drivers who could actually take a ride: located, approved, verified and not already on a ride.
+
+    Dispatch ranks only these, so drivers who cannot bid never use up one of the nearest-ten slots.
+    """
+    online = db.query(Driver).filter(
+        Driver.is_online == True,  # noqa: E712
+        Driver.current_latitude.isnot(None),
+        Driver.current_longitude.isnot(None),
+    ).all()
+    busy_ids = {
+        driver_id for (driver_id,) in db.query(RideRequest.matched_driver_id).filter(
+            RideRequest.status.in_([RideRequestStatus.MATCHED, RideRequestStatus.IN_PROGRESS]),
+            RideRequest.matched_driver_id.isnot(None),
+        ).all()
+    }
+    return [
+        d for d in online
+        if d.id not in busy_ids
+        and str(getattr(d.status, "value", d.status)) in ("approved", "active")
+        and (getattr(d, "verification_status", None) in ("verified", "passed") or getattr(d, "documents_verified", False))
+    ]
+
+
+def _dispatch_points(pool: List[Driver], wav_only: bool, exclude_id: Optional[int] = None) -> list:
+    """(id, lat, lon) of the pool drivers eligible for a request (WAV requests only count WAV-capable drivers)."""
+    return [
+        (d.id, d.current_latitude, d.current_longitude) for d in pool
+        if d.id != exclude_id and (d.accessibility_capable or not wav_only)
+    ]
+
+
 async def _send_push_batch(drivers_to_notify, ride_req, dist_miles, price):
     """Send push notifications concurrently to nearby drivers."""
     async def _send_one(drv):
@@ -569,30 +652,18 @@ async def create_ride_request(data: CreateRideRequestInput, request: Request, cu
 
     distance_miles = round(distance_km * 0.621371, 1)
 
-    # Send push notification to nearby online drivers with FCM tokens (geo-filtered)
+    # Push the same drivers the feed will show at t=0: the nearest few around the pickup (ride_dispatch.py)
     try:
-        NOTIFY_RADIUS_KM = 25  # ~15 miles + buffer
-        pickup_lat = data.pickup_latitude
-        pickup_lon = data.pickup_longitude
-        lat_delta = NOTIFY_RADIUS_KM / 111.0
-        lon_delta = NOTIFY_RADIUS_KM / (111.0 * max(math.cos(math.radians(pickup_lat)), 0.01))
-
-        online_drivers = db.query(Driver).filter(
-            Driver.is_online == True,
-            Driver.fcm_token.isnot(None),
-            Driver.current_latitude.isnot(None),
-            Driver.current_longitude.isnot(None),
-            Driver.current_latitude.between(pickup_lat - lat_delta, pickup_lat + lat_delta),
-            Driver.current_longitude.between(pickup_lon - lon_delta, pickup_lon + lon_delta)
-        ).all()
-
-        # Haversine post-filter for precision (bounding box is a rough rectangle)
-        online_drivers = [
-            d for d in online_drivers
-            if calculate_distance_km(pickup_lat, pickup_lon, d.current_latitude, d.current_longitude) <= NOTIFY_RADIUS_KM
-        ]
-
+        pool = _dispatch_pool(db)
+        notified_ids = ride_dispatch.select_notified_driver_ids(
+            data.pickup_latitude, data.pickup_longitude,
+            _dispatch_points(pool, bool(ride_request.accessibility_requested)),
+            age_seconds=0,
+        )
+        by_id = {d.id: d for d in pool}
+        online_drivers = [by_id[i] for i in notified_ids if by_id[i].fcm_token]
         ride_request.drivers_notified = len(online_drivers)
+        db.commit()
 
         # Send push notifications concurrently via background task
         asyncio.create_task(_send_push_batch(online_drivers, ride_request, distance_miles, suggested_price))
@@ -715,12 +786,15 @@ async def get_bids_for_request(request_id: int, request: Request, include_counte
 
     # Get pending bids, sorted by price (lowest first), eager-load driver for vehicle info
     listed_statuses = [BidStatus.PENDING, BidStatus.COUNTERED] if include_countered else [BidStatus.PENDING]
+    now = datetime.utcnow()
     bids = db.query(RideBid).options(
         joinedload(RideBid.driver)
     ).filter(
         and_(
             RideBid.ride_request_id == request_id,
-            RideBid.status.in_(listed_statuses)
+            RideBid.status.in_(listed_statuses),
+            # A pending bid past its 10 minutes is dead even if the cleanup job has not marked it yet
+            or_(RideBid.status != BidStatus.PENDING, RideBid.expires_at.is_(None), RideBid.expires_at > now),
         )
     ).order_by(RideBid.proposed_price.asc()).all()
 
@@ -730,7 +804,10 @@ async def get_bids_for_request(request_id: int, request: Request, include_counte
         "bids": [serialize_bid(b) for b in bids],
         "total_bids": len(bids),
         "includes_countered": include_countered,
-        "bidding_open": ride_request.status == RideRequestStatus.OPEN or ride_request.status == RideRequestStatus.BIDDING,
+        "bidding_open": (
+            ride_request.status in (RideRequestStatus.OPEN, RideRequestStatus.BIDDING)
+            and not _bidding_window_closed(ride_request, now)
+        ),
         "bidding_ends_at": ride_request.bidding_expires_at.isoformat() if ride_request.bidding_expires_at else None
     }
 
@@ -905,9 +982,26 @@ async def respond_to_bid(bid_id: int, data: RespondToBidInput, request: Request,
     if ride_request.status == RideRequestStatus.MATCHED:
         raise HTTPException(status_code=400, detail="Ride already matched with a driver")
 
+    _require_ride_open_for_negotiation(ride_request)
+
     now = datetime.utcnow()
 
+    if bid.status == BidStatus.PENDING and bid.expires_at and bid.expires_at < now:
+        bid.status = BidStatus.EXPIRED
+        bid.customer_response = "Bid expired (no response within 10 minutes)"
+        db.commit()
+        raise HTTPException(status_code=400, detail="This bid has expired")
+
     if data.action == "accept":
+        if _driver_has_active_ride(db, bid.driver_id):
+            _drop_bid_of_unavailable_driver(db, bid, "Driver took another ride")
+            raise HTTPException(status_code=409, detail="That driver just took another ride. Please choose another bid.")
+        bidder = db.query(Driver).filter(Driver.id == bid.driver_id).first()
+        if bidder is not None and not bidder.is_online:
+            _drop_bid_of_unavailable_driver(db, bid, "Driver went offline")
+            raise HTTPException(status_code=409, detail="That driver is no longer online. Please choose another bid.")
+        _claim_ride_for_match(db, ride_request)
+
         # Accept this bid - match the ride
         bid.status = BidStatus.ACCEPTED
         bid.accepted_at = now
@@ -1298,11 +1392,11 @@ async def cancel_ride_request(request_id: int, request: Request, customer: Custo
         except Exception as e:
             logger.error(f"Ride {ride_request.id} PaymentIntent cancel failed: {e}")
 
-    # Expire all pending bids
+    # Expire every live bid, including countered ones, so no driver can revive a cancelled ride
     pending_bids = db.query(RideBid).filter(
         and_(
             RideBid.ride_request_id == request_id,
-            RideBid.status == BidStatus.PENDING
+            RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED])
         )
     ).all()
 
@@ -1427,23 +1521,16 @@ async def get_available_ride_requests(
         latitude is not None and longitude is not None
         and (driver.email or "").lower() not in SHARED_DEMO_DRIVER_EMAILS
     )
-    online_points = []
-    if dispatch_enabled:
-        online_points = [
-            (d.id, d.current_latitude, d.current_longitude)
-            for d in db.query(Driver).filter(
-                Driver.is_online == True,  # noqa: E712
-                Driver.current_latitude.isnot(None),
-                Driver.current_longitude.isnot(None),
-                Driver.id != driver.id,
-            ).all()
-        ]
-        online_points.append((driver.id, latitude, longitude))
+    dispatch_pool = _dispatch_pool(db) if dispatch_enabled else []
+    is_demo_driver = (driver.email or "").lower() in SHARED_DEMO_DRIVER_EMAILS
 
     nearby_requests = []
     for request in open_requests:
         if dispatch_enabled:
             age_seconds = (now - (request.created_at or now)).total_seconds()
+            online_points = _dispatch_points(
+                dispatch_pool, bool(request.accessibility_requested), exclude_id=driver.id
+            ) + [(driver.id, latitude, longitude)]
             if not is_driver_notified(
                 driver.id, request.pickup_latitude, request.pickup_longitude,
                 online_points, age_seconds, has_bids=any(
@@ -1458,7 +1545,7 @@ async def get_available_ride_requests(
                 latitude, longitude,
                 request.pickup_latitude, request.pickup_longitude
             )
-            if distance > radius_km:
+            if distance > radius_km and not is_demo_driver:
                 continue
 
         existing_bid = driver_existing_bids.get(request.id)
@@ -1526,6 +1613,9 @@ async def submit_bid(request_id: int, data: SubmitBidInput, request: Request, dr
         raise HTTPException(status_code=400, detail="Bid price must be greater than $0")
     if data.proposed_price is not None and data.proposed_price > 10000:
         raise HTTPException(status_code=400, detail="Bid price exceeds maximum allowed ($10,000)")
+    floor_error = _bid_floor_error(data.proposed_price)
+    if floor_error:
+        raise HTTPException(status_code=400, detail=floor_error)
 
     # Get ride request
     ride_request = db.query(RideRequest).filter(RideRequest.id == request_id).first()
@@ -1551,6 +1641,9 @@ async def submit_bid(request_id: int, data: SubmitBidInput, request: Request, dr
     driver = db.query(Driver).filter(Driver.id == data.driver_id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
+
+    if not driver.is_online:
+        raise HTTPException(status_code=403, detail="Go online before bidding on ride requests.")
 
     # KYC gate: driver must be identity-verified before submitting bids.
     # "verified"/documents_verified come from the older Persona-based pipeline;
@@ -1787,6 +1880,16 @@ async def update_bid(bid_id: int, data: UpdateBidInput, request: Request, auth_d
     if bid.status != BidStatus.PENDING:
         raise HTTPException(status_code=400, detail=f"Cannot update bid that is {bid.status.value}")
 
+    ride_request = db.query(RideRequest).filter(RideRequest.id == bid.ride_request_id).first()
+    if ride_request is None or ride_request.status not in (RideRequestStatus.OPEN, RideRequestStatus.BIDDING):
+        raise HTTPException(status_code=400, detail="This ride is no longer accepting bids")
+    if _bidding_window_closed(ride_request):
+        raise HTTPException(status_code=400, detail="Bidding window has closed")
+
+    floor_error = _bid_floor_error(data.proposed_price)
+    if floor_error:
+        raise HTTPException(status_code=400, detail=floor_error)
+
     bid.proposed_price = data.proposed_price
     if data.message:
         bid.message = data.message
@@ -1868,9 +1971,15 @@ async def driver_counter_offer(bid_id: int, data: DriverCounterInput, request: R
     if not ride_request:
         raise HTTPException(status_code=404, detail="Ride request not found")
 
+    _require_ride_open_for_negotiation(ride_request)
+
     # Validate counter price
     if data.counter_price <= 0:
         raise HTTPException(status_code=400, detail="Counter price must be greater than $0")
+
+    floor_error = _bid_floor_error(data.counter_price)
+    if floor_error:
+        raise HTTPException(status_code=400, detail=floor_error)
 
     # Driver counter should be higher than customer's counter (negotiating up)
     if bid.customer_counter_price and data.counter_price <= bid.customer_counter_price:
@@ -1896,6 +2005,7 @@ async def driver_counter_offer(bid_id: int, data: DriverCounterInput, request: R
     bid.round_counter = (bid.round_counter or 0) + 1
     bid.updated_at = now
     bid.status = BidStatus.PENDING  # Back to pending for customer decision
+    bid.expires_at = now + timedelta(minutes=10)  # the rider gets a fresh window to answer
 
     db.commit()
 
@@ -1952,16 +2062,23 @@ async def accept_counter_offer(bid_id: int, request: Request, auth_driver: Drive
     if auth_driver.id != bid.driver_id:
         raise HTTPException(status_code=403, detail="Only the bid owner can accept counter")
 
-    if bid.status != BidStatus.COUNTERED:
-        raise HTTPException(status_code=400, detail="This bid doesn't have a counter-offer")
-
     ride_request = db.query(RideRequest).filter(RideRequest.id == bid.ride_request_id).first()
     if not ride_request:
         raise HTTPException(status_code=404, detail="Ride request not found")
 
+    if bid.status != BidStatus.COUNTERED:
+        # A bid closed because another driver matched the ride is a lost race, not a malformed request
+        if ride_request.status not in (RideRequestStatus.OPEN, RideRequestStatus.BIDDING):
+            raise HTTPException(status_code=409, detail="This ride is no longer available")
+        raise HTTPException(status_code=400, detail="This bid doesn't have a counter-offer")
+
     # A counter can only be accepted while the ride is still open; otherwise this would overwrite another driver's match
-    if ride_request.status not in (RideRequestStatus.OPEN, RideRequestStatus.BIDDING):
-        raise HTTPException(status_code=409, detail="This ride is no longer available")
+    _require_ride_open_for_negotiation(ride_request)
+
+    if _driver_has_active_ride(db, bid.driver_id):
+        _drop_bid_of_unavailable_driver(db, bid, "Driver took another ride")
+        raise HTTPException(status_code=409, detail="You already have an active ride. Complete it before accepting another.")
+    _claim_ride_for_match(db, ride_request)
 
     now = datetime.utcnow()
 
@@ -3935,7 +4052,7 @@ async def admin_cleanup_stale_rides(
         # Expire pending bids
         pending_bids = db.query(RideBid).filter(
             RideBid.ride_request_id == ride.id,
-            RideBid.status == BidStatus.PENDING
+            RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED])
         ).all()
         for bid in pending_bids:
             bid.status = BidStatus.EXPIRED
@@ -3992,7 +4109,7 @@ def check_ride_bidding_expiry_job():
             # Also expire any pending bids on this ride
             pending_bids = db.query(RideBid).filter(
                 RideBid.ride_request_id == ride.id,
-                RideBid.status == BidStatus.PENDING
+                RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED])
             ).all()
             for bid in pending_bids:
                 bid.status = BidStatus.EXPIRED
@@ -4034,7 +4151,7 @@ def check_ride_bidding_expiry_job():
             # Also expire any pending bids on this ride
             pending_bids = db.query(RideBid).filter(
                 RideBid.ride_request_id == ride.id,
-                RideBid.status == BidStatus.PENDING
+                RideBid.status.in_([BidStatus.PENDING, BidStatus.COUNTERED])
             ).all()
             for bid in pending_bids:
                 bid.status = BidStatus.EXPIRED
