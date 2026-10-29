@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit
 class OrderCreationFieldMappingTest {
 
     companion object {
-        const val STAGING_BASE_URL = "https://d3kuu45w6kl8hr.cloudfront.net"
+        const val STAGING_BASE_URL = "https://api.dollor.ai"
         const val API_BASE_URL = "$STAGING_BASE_URL/api"
 
         const val TEST_CUSTOMER_EMAIL = "demo@dollor.ai"

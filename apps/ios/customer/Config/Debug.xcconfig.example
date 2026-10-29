@@ -1,9 +1,9 @@
 // Debug wrapper – chains Pods + Staging environment URLs
 #include "../Pods/Target Support Files/Pods-eatfaircustomer/Pods-eatfaircustomer.debug.xcconfig"
 
-// Staging environment
+// Debug uses the single production backend
 ENVIRONMENT = Staging
-API_BASE_URL = https:/$()/d34u5ixl0bulv4.cloudfront.net
-WEBSOCKET_URL = wss:/$()/d34u5ixl0bulv4.cloudfront.net
-CDN_URL = https:/$()/d34u5ixl0bulv4.cloudfront.net
+API_BASE_URL = https:/$()/api.dollor.ai
+WEBSOCKET_URL = wss:/$()/api.dollor.ai
+CDN_URL = https:/$()/api.dollor.ai
 GOOGLE_MAPS_API_KEY = YOUR_GOOGLE_MAPS_API_KEY

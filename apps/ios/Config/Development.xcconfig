@@ -35,5 +35,5 @@ GCC_OPTIMIZATION_LEVEL = 0
 ENABLE_TESTABILITY = YES
 
 // Server URLs
-WEBSOCKET_URL = wss:/$()/ws.dollor.ai
-CDN_URL = https:/$()/cdn.dollor.ai
+WEBSOCKET_URL = wss:/$()/api.dollor.ai
+CDN_URL = https:/$()/api.dollor.ai

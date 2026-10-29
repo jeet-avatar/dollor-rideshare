@@ -34,6 +34,6 @@ SWIFT_OPTIMIZATION_LEVEL = -O
 GCC_OPTIMIZATION_LEVEL = s
 ENABLE_TESTABILITY = NO
 
-// Server URLs (Using CloudFront - staging-ws.dollor.ai DNS not configured)
-WEBSOCKET_URL = wss:/$()/ws.dollor.ai
-CDN_URL = https:/$()/cdn.dollor.ai
+// Server URLs (single production backend; ws/cdn hosts do not exist)
+WEBSOCKET_URL = wss:/$()/api.dollor.ai
+CDN_URL = https:/$()/api.dollor.ai

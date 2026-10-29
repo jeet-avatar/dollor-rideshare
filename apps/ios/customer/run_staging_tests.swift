@@ -3,13 +3,13 @@
 /// Standalone iOS Customer App Staging API Tests
 /// Run with: swift run_staging_tests.swift
 ///
-/// STAGING ENVIRONMENT: https://d34u5ixl0bulv4.cloudfront.net
+/// TARGET ENVIRONMENT (single production backend): https://api.dollor.ai
 
 import Foundation
 
 // MARK: - Configuration
 
-let stagingBaseURL = "https://d34u5ixl0bulv4.cloudfront.net"
+let stagingBaseURL = "https://api.dollor.ai"
 let apiBaseURL = "\(stagingBaseURL)/api"
 let testCustomerEmail = "demo@dollor.ai"
 let testCustomerPassword = "demo123"

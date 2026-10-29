@@ -40,5 +40,5 @@ ENABLE_BITCODE = NO
 STRIP_SWIFT_SYMBOLS = YES
 
 // Server URLs
-WEBSOCKET_URL = wss:/$()/ws.dollor.ai
-CDN_URL = https:/$()/cdn.dollor.ai
+WEBSOCKET_URL = wss:/$()/api.dollor.ai
+CDN_URL = https:/$()/api.dollor.ai

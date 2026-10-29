@@ -8,9 +8,7 @@ private let configLogger = Logger(subsystem: "ai.dollor.shared", category: "AppC
 /// Firebase/Google is ONLY used for authentication
 ///
 /// Environment URLs are loaded from Info.plist (set via xcconfig files):
-/// - Development.xcconfig: https://dev-api.dollor.ai
-/// - Staging.xcconfig: https://d34u5ixl0bulv4.cloudfront.net
-/// - Production.xcconfig: https://api.dollor.ai
+/// - All xcconfigs (Development/Staging/Production, Debug/Release): https://api.dollor.ai (single backend)
 public class AppConfig: ObservableObject {
     public static let shared = AppConfig()
 

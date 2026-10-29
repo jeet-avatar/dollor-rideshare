@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Rideshare Customer App Staging API Tests
  *
- * STAGING ENVIRONMENT: https://d3kuu45w6kl8hr.cloudfront.net
+ * TARGET ENVIRONMENT (single production backend): https://api.dollor.ai
  *
  * Test Categories:
  * 1. Health Check & Connectivity
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
 class CustomerAppStagingApiTest {
 
     companion object {
-        const val STAGING_BASE_URL = "https://d3kuu45w6kl8hr.cloudfront.net"
+        const val STAGING_BASE_URL = "https://api.dollor.ai"
         const val API_BASE_URL = "$STAGING_BASE_URL/api"
 
         const val TEST_CUSTOMER_EMAIL = "demo@dollor.ai"

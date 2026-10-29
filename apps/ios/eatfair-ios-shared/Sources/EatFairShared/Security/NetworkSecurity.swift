@@ -39,9 +39,6 @@ public final class NetworkSecurity: NSObject {
         ],
         // NOTE: api.stripe.com is NOT pinned. Stripe SDK handles its own certificate
         // validation and rotates certificates frequently.
-        //
-        // NOTE: CloudFront staging domain (d34u5ixl0bulv4.cloudfront.net) is intentionally
-        // NOT pinned. CloudFront rotates TLS certificates frequently.
     ]
 
     // Domains that require SSL pinning (only our own domains)

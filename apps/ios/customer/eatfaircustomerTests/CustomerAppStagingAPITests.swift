@@ -3,7 +3,7 @@
 //  eatfaircustomerTests
 //
 //  Comprehensive Staging API Tests for iOS Customer App
-//  STAGING ENVIRONMENT: https://d34u5ixl0bulv4.cloudfront.net
+//  TARGET ENVIRONMENT (single production backend): https://api.dollor.ai
 //
 
 import Testing
@@ -28,7 +28,7 @@ import Foundation
 // MARK: - Staging Configuration
 
 struct StagingConfig {
-    static let baseURL = "https://d34u5ixl0bulv4.cloudfront.net"
+    static let baseURL = "https://api.dollor.ai"
     static let apiBaseURL = "\(baseURL)/api"
 
     // Test credentials
