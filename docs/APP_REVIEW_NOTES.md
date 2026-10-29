@@ -60,4 +60,4 @@ A request made while no driver is online simply stays open for the 5-minute bidd
 - No tracking, no ads, no contacts, no Bluetooth.
 
 ## Contact
-support@dollor.ai. Operator: Zietra Technologies, Inc., Rancho Santa Margarita, CA 92688. CPUC TNC permit application PSG0050982 (the application is in review; do not describe the service as licensed).
+support@dollor.ai. Operator: Zietra Technologies, Inc., Rancho Santa Margarita, CA 92688. CPUC TNC Permit TNC0050982-N (application PSG0050982), issued October 7, 2026, active through 2029.

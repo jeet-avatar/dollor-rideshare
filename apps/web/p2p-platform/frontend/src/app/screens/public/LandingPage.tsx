@@ -542,7 +542,7 @@ const LandingPage: React.FC = () => {
         </div>
         <div style={{ maxWidth: 1100, margin: '32px auto 0', paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 13 }}>© 2026 Zietra Technologies Inc. All rights reserved.</p>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>Zietra Technologies Inc. (DBA Dollor.ai)</p>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>Zietra Technologies Inc. (DBA Dollor.ai) · CPUC TNC Permit TNC0050982-N</p>
         </div>
       </footer>
 

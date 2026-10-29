@@ -26,7 +26,7 @@ FEATURES
 - Accessibility setting to receive requests that need extra space for a mobility device
 
 REQUIREMENTS
-- 18 years or older
+- 21 years or older
 - Valid driver's license
 - Vehicle with valid personal auto insurance
 - iPhone with GPS
