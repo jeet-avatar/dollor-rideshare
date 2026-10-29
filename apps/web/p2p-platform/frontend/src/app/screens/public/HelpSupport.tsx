@@ -4,21 +4,20 @@ import PublicNav, { PublicFooter, publicPageStyle } from '../../components/layou
 interface FAQ { q: string; a: string; cat: string }
 
 const FAQS: FAQ[] = [
-  { cat: 'Rides', q: 'How do I book a ride?', a: 'Open the Dollor app, tap "Book a Ride", enter your pickup and destination, then tap "Get Estimate". Review the fare range and tap "Request Ride" — nearby drivers will submit bids within minutes.' },
-  { cat: 'Rides', q: 'How does the bidding system work?', a: 'Dollor uses a transparent bid system. After you request a ride, drivers in the area submit their price. You choose the driver whose price and profile you prefer. You\'re always in control of what you pay.' },
-  { cat: 'Rides', q: 'What if I need to cancel my ride?', a: 'You can cancel before a driver accepts your request with no charge. After acceptance, cancellations may incur a small fee (typically $2–$5) to compensate the driver for their time. Cancellations after driver arrival are subject to a higher fee.' },
-  { cat: 'Rides', q: 'How do I schedule a ride in advance?', a: 'From the home screen, tap "Schedule" to set a future pickup time. You can schedule rides up to 7 days in advance. You\'ll receive a reminder 30 minutes before your ride.' },
-  { cat: 'Payments', q: 'What is the $1 platform fee?', a: 'Dollor charges a flat $1 platform fee per completed ride. That\'s it. No percentage cut, no surge pricing multipliers, no hidden fees. The driver keeps 100% of the negotiated fare, and you pay exactly what you agreed to plus $1.' },
-  { cat: 'Payments', q: 'What payment methods are accepted?', a: 'Dollor accepts all major credit and debit cards (Visa, Mastercard, Amex, Discover) and ACH bank transfers. Cards are processed securely via Stripe. You can add multiple payment methods in Settings > Payment Methods.' },
+  { cat: 'Rides', q: 'How do I book a ride?', a: 'Open the Dollor app, tap "Book a Ride", enter your pickup and destination, then tap "Get Estimate". Review the fare range and tap "Request Ride" — nearby online drivers can submit bids during a 5-minute window.' },
+  { cat: 'Rides', q: 'How does the bidding system work?', a: 'After you request a ride, drivers who are online nearby submit bids during a 5-minute window. You can accept a bid, make a counter-offer, or decline.' },
+  { cat: 'Rides', q: 'What if I need to cancel my ride?', a: 'You can cancel before the trip starts at no charge. If a driver has arrived at your pickup and waited at least 5 minutes, the driver can mark you as a no-show and your saved card is charged a $5.00 no-show fee. If a driver cancels, you are not charged.' },
+  { cat: 'Payments', q: 'What is the connection fee?', a: 'Dollor charges a flat connection fee based on the fare: $1 if the fare is $35 or less, $2 up to $70, and $3 above $70, charged to the rider and separately to the driver, plus a $0.05 CPUC Access for All charge to each. It is not a percentage commission. Suggested fares include a time-of-day adjustment that is shown in the estimate before you request.' },
+  { cat: 'Payments', q: 'What payment methods are accepted?', a: 'Dollor accepts credit and debit cards, processed by Stripe (Apple Pay is also offered on iOS where your device supports it). You can manage payment methods in Profile > Payment Methods.' },
   { cat: 'Payments', q: 'Where does my tip go?', a: '100% of your tip goes directly to the driver. Dollor does not take any portion of tips. You can tip through the app after your ride is complete.' },
-  { cat: 'Payments', q: 'When is my card charged?', a: 'Your card is charged after the ride is completed. A temporary authorization hold may appear before the ride starts, which is released and replaced with the final charge once you arrive.' },
-  { cat: 'Drivers', q: 'How do I apply to drive with Dollor?', a: 'Tap "Drive with Us" on the home screen or visit dollor.ai/driver/apply. You\'ll need a valid California driver\'s license, an insured vehicle (2010 or newer), and a clean driving record. The application takes about 5 minutes.' },
-  { cat: 'Drivers', q: 'What is the background check process?', a: 'All Dollor drivers complete a background and motor vehicle record check through Checkr, a leading background check provider. The process typically takes 1–5 business days. You\'ll be notified by email when your check is complete.' },
-  { cat: 'Drivers', q: 'How and when do drivers get paid?', a: 'Driver earnings are available for instant payout after each completed ride to a connected bank account via ACH. There is no minimum payout threshold and no waiting period.' },
-  { cat: 'Safety', q: 'What safety features does Dollor have?', a: 'Dollor includes an in-app emergency button, real-time trip sharing with trusted contacts, driver identity verification, and 24/7 support. All drivers are background-checked and insured. If you ever feel unsafe, tap the shield icon to alert emergency services.' },
-  { cat: 'Safety', q: 'What is Dollor\'s Zero Tolerance policy?', a: 'Dollor has a strict zero tolerance policy for discrimination, harassment, drug and alcohol use, and unprofessional conduct. Violations result in immediate permanent deactivation. See our full Zero Tolerance Policy for details.' },
-  { cat: 'Account', q: 'How do I update my profile or phone number?', a: 'Go to Settings > My Profile in the app. You can update your name, email, phone number, and profile photo. For security, changing your phone number requires re-verification via SMS.' },
-  { cat: 'Account', q: 'How do I delete my account?', a: 'Go to Settings > Account > Delete Account. Deletion is permanent and removes all personal data within 30 days per our Privacy Policy. Any outstanding balance will be settled before deletion.' },
+  { cat: 'Payments', q: 'When is my card charged?', a: 'Your card is authorized when you accept a bid and the fare is captured when the ride is completed. If the ride is cancelled before the trip starts, the authorization is released.' },
+  { cat: 'Drivers', q: 'How do I apply to drive with Dollor?', a: 'Download the Dollor driver app or visit dollor.ai/driver/apply. You must be at least 21, with a valid driver\'s license, vehicle insurance, and a profile photo, and complete a Checkr background check and approval before you can go online.' },
+  { cat: 'Drivers', q: 'What is the background check process?', a: 'Drivers complete a background and motor vehicle record check through Checkr on Checkr\'s own page. The Dollor server does not let a driver go online until the driver is approved and the check has cleared.' },
+  { cat: 'Drivers', q: 'How and when do drivers get paid?', a: 'Drivers are paid through Stripe. Complete Stripe payout onboarding in the driver app, then see Earnings for trip earnings and payouts.' },
+  { cat: 'Safety', q: 'What safety features does Dollor have?', a: 'The iOS rider app includes Share trip and an emergency button that calls 911 from your phone. Drivers must be approved with a cleared Checkr background check before going online. In an emergency, call 911 directly.' },
+  { cat: 'Safety', q: 'What is Dollor\'s Zero Tolerance policy?', a: 'Dollor prohibits discrimination, harassment, and driving or riding under the influence. Violations may result in suspension or deactivation. See our full Zero Tolerance Policy.' },
+  { cat: 'Account', q: 'How do I update my profile or phone number?', a: 'Go to Profile in the app to update your name and phone number.' },
+  { cat: 'Account', q: 'How do I delete my account?', a: 'In the app, go to Profile > Delete Account (riders can also use Settings > Delete Account). Deletion is permanent. You can also email support@dollor.ai from your registered address; requests are completed within 30 days. Details: dollor.ai/delete-account.' },
 ];
 
 const CATS = ['All', 'Rides', 'Payments', 'Drivers', 'Safety', 'Account'];
@@ -98,11 +97,11 @@ const HelpSupport: React.FC = () => {
           {/* Contact section */}
           <div style={{ marginTop: 60, background: 'rgba(255,107,0,0.06)', border: '1px solid rgba(255,107,0,0.15)', borderRadius: 20, padding: '36px' }}>
             <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Still need help?</h2>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginBottom: 28 }}>Our support team typically responds within 2 hours.</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginBottom: 28 }}>Email us and we will reply as soon as we can. Support is by email; we do not offer 24/7 support.</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16 }}>
               {[
                 { icon: '✉️', label: 'Email Support', val: 'support@dollor.ai', href: 'mailto:support@dollor.ai' },
-                { icon: '🚗', label: 'Driver Support', val: 'drivers@dollor.ai', href: 'mailto:drivers@dollor.ai' },
+                { icon: '🗑️', label: 'Delete Account', val: 'How to delete', href: '/delete-account' },
                 { icon: '📸', label: 'Instagram', val: '@dollorai', href: 'https://instagram.com/dollorai' },
               ].map(c => (
                 <a key={c.label} href={c.href} target={c.href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '20px', textDecoration: 'none' }}>

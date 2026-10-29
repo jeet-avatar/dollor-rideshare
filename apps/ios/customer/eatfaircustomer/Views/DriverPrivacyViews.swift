@@ -355,7 +355,7 @@ struct SafetyFeaturesPage: View {
                         VStack(spacing: 0) {
                             SafetyFeatureRow(
                                 icon: "person.badge.shield.checkmark.fill",
-                                title: "Verified Drivers",
+                                title: "Driver Requirements",
                                 description: "Drivers must submit their license and insurance and complete a background check (through Checkr) before they can go online.",
                                 iconColor: Theme.lxOrange
                             )

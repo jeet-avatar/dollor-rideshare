@@ -1,7 +1,7 @@
 {
   "name": "Dollor - Rideshare California",
   "short_name": "Dollor",
-  "description": "Book affordable rides in California. $1 platform fee, no surge pricing.",
+  "description": "Peer-to-peer rideshare marketplace in California. Post a ride offer and drivers bid. Flat $1 to $3 connection fee by fare tier.",
   "start_url": "/customer/login",
   "display": "standalone",
   "background_color": "#0a0a0f",

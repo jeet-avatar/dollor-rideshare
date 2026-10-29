@@ -1,7 +1,9 @@
 # Dollor.ai Driver - Play Store Listing (Driver App, ai.dollor.driver)
 
 Rideshare marketplace, driver side. Every statement below is backed by the shipped code.
-Screenshots and feature graphic in this folder (01-login ... 05-profile, feature-graphic) are OLD web captures: do not upload them. Capture new phone screenshots from the release build (online screen, available rides, bid sheet, active ride, earnings).
+Store graphics (captured 2026-10-29 from release build versionCode 261028, demo account data; regenerate the feature graphic with create-feature-graphics.py):
+- Phone screenshots, 1080x2424 PNG, in `screenshots/`: 01-available-requests, 02-submit-bid, 03-bid-submitted, 04-active-ride, 05-earnings, 06-home, 07-profile, 08-earnings-week.
+- Feature graphic: `feature-graphic-1024x500.png`. App icon: `app-icon-512x512.png`.
 
 ## App Title (30 chars max)
 Dollor Driver

@@ -310,7 +310,7 @@ const GetInvolved: React.FC = () => {
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,107,0,0.1)', border: '1px solid rgba(255,107,0,0.25)', color: '#ff9500', borderRadius: 50, padding: '7px 18px', fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', marginBottom: 20 }}>🤝 GET INVOLVED</div>
             <h1 style={{ fontSize: 'clamp(28px,5vw,48px)', fontWeight: 900, letterSpacing: '-1.5px', marginBottom: 12 }}>Be part of the movement.</h1>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 1.7 }}>Uber and Lyft won't give up their 35% without a fight. Help us take it back.</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 1.7 }}>Help us bring flat-fee, bid-based rideshare to more riders and drivers.</p>
           </div>
 
           {/* Tab selector */}

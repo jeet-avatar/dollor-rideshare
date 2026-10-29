@@ -96,7 +96,7 @@ const LandingPage: React.FC = () => {
         {/* Badge */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,107,0,0.12)', border: '1px solid rgba(255,107,0,0.3)', color: '#ff9500', borderRadius: 50, padding: '8px 20px', fontSize: 13, fontWeight: 600, marginBottom: 32, letterSpacing: '0.3px' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff6b00', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-          WEB APP LIVE · CALIFORNIA LICENSED TNC
+          WEB APP LIVE · CALIFORNIA RIDESHARE MARKETPLACE
         </div>
 
         <h1 style={{ fontSize: 'clamp(36px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, marginBottom: 24, letterSpacing: '-2px', maxWidth: 900 }}>
@@ -105,12 +105,12 @@ const LandingPage: React.FC = () => {
         </h1>
 
         <p style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.6)', maxWidth: 620, lineHeight: 1.7, marginBottom: 16 }}>
-          Uber takes 28%. Lyft takes 35%. Dollor charges a flat <strong style={{ color: '#fff' }}>$1</strong> — and keeps nothing else.
-          Riders save. Drivers earn more. Launching across <strong style={{ color: '#fff' }}>California</strong>.
+          Riders post an offer and independent drivers bid. Dollor charges a flat <strong style={{ color: '#fff' }}>$1–$3</strong> connection fee by fare tier, not a percentage of the fare.
+          Rideshare in <strong style={{ color: '#fff' }}>California</strong>.
         </p>
 
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', marginBottom: 48, letterSpacing: '0.3px' }}>
-          CPUC Permit TNC0050982-N · Active 2026–2029
+          Peer-to-peer rideshare · 5-minute bidding window · Tips go 100% to the driver
         </p>
 
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 32 }}>
@@ -139,9 +139,8 @@ const LandingPage: React.FC = () => {
         {/* Trust badges */}
         <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
           {[
-            { icon: '🏛️', text: 'State Licensed TNC' },
-            { icon: '🛡️', text: '$1M Insured' },
-            { icon: '✅', text: 'Background Checked Drivers' },
+            { icon: '🤝', text: 'Riders post an offer, drivers bid' },
+            { icon: '✅', text: 'Drivers need a cleared Checkr check to go online' },
             { icon: '🌐', text: 'Web App Live Now' },
           ].map(b => (
             <div key={b.text} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
@@ -155,10 +154,10 @@ const LandingPage: React.FC = () => {
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '40px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', gap: 0, flexWrap: 'wrap', justifyContent: 'center' }}>
           {[
-            { value: '$1', label: 'Flat platform fee per ride', sub: 'No surge pricing' },
+            { value: '$1–$3', label: 'Flat connection fee per ride', sub: 'By fare tier, not a %' },
             { value: '100%', label: 'Tips kept by driver', sub: 'Every cent' },
-            { value: '3 yr', label: 'CPUC License term', sub: 'Permit TNC0050982-N' },
-            { value: '24/7', label: 'Driver support', sub: 'Always on' },
+            { value: '5 min', label: 'Bidding window', sub: 'Accept, counter or decline' },
+            { value: '$0.05', label: 'CPUC Access for All charge', sub: 'Each for rider and driver' },
           ].map((s, i) => (
             <div key={i} style={{ textAlign: 'center', padding: '12px 40px', borderRight: i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
               <div style={{ fontSize: 'clamp(28px,4vw,42px)', fontWeight: 900, background: 'linear-gradient(135deg,#ff6b00,#ffcc00)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.value}</div>
@@ -175,16 +174,16 @@ const LandingPage: React.FC = () => {
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <div style={{ color: '#ff6b00', fontSize: 13, fontWeight: 700, letterSpacing: '2px', marginBottom: 12 }}>WHY DOLLOR</div>
             <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 16 }}>Built different. For everyone.</h2>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 17, maxWidth: 520, margin: '0 auto' }}>Uber and Lyft take up to 35% from drivers. We charge a flat $1. That's it.</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 17, maxWidth: 520, margin: '0 auto' }}>A flat connection fee by fare tier instead of a percentage commission.</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))', gap: 20 }}>
             {[
-              { icon: '💸', title: 'Flat $1 Fee', desc: 'Riders pay a predictable $1 platform fee. No surge pricing, ever. The fare you see is the fare you pay.' },
-              { icon: '🚗', title: 'Drivers Keep More', desc: 'Drivers set their own price per trip and keep 100% of tips. No commission cuts eating into your earnings.' },
-              { icon: '🔍', title: 'Full Transparency', desc: 'See the breakdown on every receipt — platform fee, driver earnings, and tip. No hidden charges, ever.' },
-              { icon: '⚡', title: 'AI-Matched Rides', desc: 'Our AI pairs you with the closest available driver in seconds, optimizing routes for faster pickups.' },
-              { icon: '🛡️', title: 'Safety First', desc: 'Checkr background checks on all drivers. In-app emergency contact, live ride tracking, and safety reports.' },
-              { icon: '💳', title: 'Instant Driver Payouts', desc: 'Earnings land in your bank account immediately after every completed trip. No weekly wait.' },
+              { icon: '💸', title: 'Flat Connection Fee', desc: 'A flat $1, $2 or $3 connection fee by fare tier (plus a $0.05 CPUC charge), charged to the rider and to the driver. Suggested fares include a time-of-day adjustment that is shown before you request.' },
+              { icon: '🚗', title: 'Drivers Keep More', desc: 'Drivers bid their own price per trip and keep 100% of tips. The platform fee is flat, not a percentage.' },
+              { icon: '🔍', title: 'Full Transparency', desc: 'See the fare and fee breakdown before you request a ride.' },
+              { icon: '⚡', title: 'Bids From Nearby Drivers', desc: 'Online drivers near your pickup can bid on your request for 5 minutes. You accept, counter or decline.' },
+              { icon: '🛡️', title: 'Safety First', desc: 'Drivers must complete a Checkr background check and be approved before going online. Live ride tracking and in-app chat. The iOS app adds Share trip and an emergency button that calls 911.' },
+              { icon: '💳', title: 'Stripe Payouts', desc: 'Drivers are paid through Stripe after completed trips. Tips are 100% the driver\'s.' },
             ].map(card => (
               <div key={card.title} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: '36px 32px', transition: 'all 0.2s' }}>
                 <div style={{ fontSize: 36, marginBottom: 20 }}>{card.icon}</div>
@@ -207,7 +206,6 @@ const LandingPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: 16 }}>
             {[
               { icon: '✈️', title: 'Airport Pickups', desc: 'Flat-rate SNA, LAX, LGB runs. Track your flight, we track your gate.' },
-              { icon: '🍜', title: 'Food Delivery', desc: 'Local restaurants, flat $1 delivery fee. No markup on menu prices.' },
               { icon: '📦', title: 'Courier & Packages', desc: 'Same-day courier for businesses and individuals across California.' },
               { icon: '👑', title: 'VIP Service', desc: 'Premium vehicles, priority matching, dedicated driver availability.' },
               { icon: '🔄', title: 'Recurring Rides', desc: 'Schedule your daily commute once, ride every day automatically.' },
@@ -231,14 +229,14 @@ const LandingPage: React.FC = () => {
             <div style={{ color: '#ff6b00', fontSize: 13, fontWeight: 700, letterSpacing: '2px', marginBottom: 16 }}>FOR DRIVERS</div>
             <h2 style={{ fontSize: 'clamp(26px,4vw,44px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 20 }}>Your car.<br />Your rules.<br />Your earnings.</h2>
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 16, lineHeight: 1.8, marginBottom: 32 }}>
-              Other platforms take 25–35% of every fare. Dollor takes a flat $1. If a rider pays $20, you keep $19 plus any tip. Your income is yours.
+              Dollor charges a flat connection fee by fare tier ($1, $2 or $3) instead of a percentage. On a $20 fare the fee is $1, plus a $0.05 CPUC charge. Tips are yours.
             </p>
             {[
               'Set your own price per trip',
               'Accept only the rides you want',
               'Keep 100% of every tip',
-              'Instant payout after each ride',
-              'Background check included — we cover the cost',
+              'Payouts through Stripe',
+              'Checkr background check required before you go online',
             ].map(item => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                 <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,107,0,0.15)', border: '1px solid rgba(255,107,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#ff6b00', flexShrink: 0 }}>✓</div>
@@ -255,12 +253,12 @@ const LandingPage: React.FC = () => {
 
           {/* earnings card */}
           <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: 40 }}>
-            <div style={{ marginBottom: 24, color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: 600, letterSpacing: '1px' }}>SAMPLE EARNINGS — 6-HR SHIFT</div>
+            <div style={{ marginBottom: 24, color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: 600, letterSpacing: '1px' }}>EXAMPLE — FARE, FEES AND DRIVER EARNINGS</div>
             {[
-              { route: 'Irvine → LAX', fare: '$48', fee: '-$1', earn: '$47' },
-              { route: 'Irvine → Newport Beach', fare: '$18', fee: '-$1', earn: '$17' },
-              { route: 'Costa Mesa → Anaheim', fare: '$22', fee: '-$1', earn: '$21' },
-              { route: 'Tip from rider 3', fare: '$5', fee: '$0', earn: '$5' },
+              { route: 'Irvine → LAX', fare: '$48', fee: '-$2.05', earn: '$45.95' },
+              { route: 'Irvine → Newport Beach', fare: '$18', fee: '-$1.05', earn: '$16.95' },
+              { route: 'Costa Mesa → Anaheim', fare: '$22', fee: '-$1.05', earn: '$20.95' },
+              { route: 'Tip from a rider', fare: '$5', fee: '$0', earn: '$5.00' },
             ].map(r => (
               <div key={r.route} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>{r.route}</span>
@@ -272,10 +270,10 @@ const LandingPage: React.FC = () => {
               </div>
             ))}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 20 }}>
-              <span style={{ fontSize: 16, fontWeight: 700 }}>Total Earned</span>
-              <span style={{ fontSize: 26, fontWeight: 900, color: '#4ade80' }}>$90</span>
+              <span style={{ fontSize: 16, fontWeight: 700 }}>Total</span>
+              <span style={{ fontSize: 26, fontWeight: 900, color: '#4ade80' }}>$88.85</span>
             </div>
-            <div style={{ marginTop: 8, color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>vs. ~$65 on Uber/Lyft after their 28% cut</div>
+            <div style={{ marginTop: 8, color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>Illustrative only. Fees: $1 / $2 / $3 connection fee by fare tier plus a $0.05 CPUC charge. Fares are set by driver bids.</div>
           </div>
         </div>
       </section>
@@ -287,8 +285,6 @@ const LandingPage: React.FC = () => {
           <h2 style={{ fontSize: 'clamp(24px,3.5vw,40px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 48 }}>We're almost there.</h2>
           <div style={{ textAlign: 'left' }}>
             {[
-              { done: true, label: 'CPUC TNC License Granted', date: 'Oct 7, 2026', detail: 'Permit TNC0050982-N — active through 2029' },
-              { done: true, label: '$1M Commercial Liability Insurance', date: 'Secured', detail: 'Fully insured per California GO 115-G requirements' },
               { done: true, label: 'iOS App Submitted to Apple', date: 'In Review', detail: 'Customer + Driver apps awaiting App Store approval' },
               { done: false, label: 'App Store Launch', date: 'Coming Soon', detail: 'Join the waitlist to get notified the moment we go live' },
               { done: false, label: 'California Launch', date: 'Coming Soon', detail: 'Statewide rideshare launch — riders and drivers across CA' },
@@ -300,7 +296,7 @@ const LandingPage: React.FC = () => {
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: item.done ? 'linear-gradient(135deg,#ff6b00,#ff9500)' : 'rgba(255,255,255,0.06)', border: item.done ? 'none' : '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
                     {item.done ? '✓' : '○'}
                   </div>
-                  {i < 6 && <div style={{ width: 1, flex: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0', minHeight: 40 }} />}
+                  {i < 4 && <div style={{ width: 1, flex: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0', minHeight: 40 }} />}
                 </div>
                 <div style={{ paddingBottom: 32 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
@@ -325,7 +321,7 @@ const LandingPage: React.FC = () => {
               <span style={{ background: 'linear-gradient(135deg,#ff6b00,#ffcc00)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Help us change the industry.</span>
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 17, maxWidth: 580, margin: '0 auto', lineHeight: 1.7 }}>
-              We're building a movement. Uber and Lyft won't give up their 35% without a fight — we need believers, builders, and backers at our side.
+              We're building a flat-fee, bid-based rideshare marketplace — we need believers, builders, and backers at our side.
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px,1fr))', gap: 20 }}>
@@ -513,7 +509,7 @@ const LandingPage: React.FC = () => {
               <span style={{ fontSize: 18, fontWeight: 800 }}>dollor<span style={{ color: '#ff6b00' }}>.ai</span></span>
             </div>
             <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, maxWidth: 280, lineHeight: 1.7 }}>
-              Licensed rideshare platform operating under CPUC Permit TNC0050982-N. Zietra Technologies Inc., RSM, CA 92688.
+              Peer-to-peer rideshare marketplace operated by Zietra Technologies Inc., Rancho Santa Margarita, CA 92688.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 56, flexWrap: 'wrap' }}>
@@ -546,7 +542,7 @@ const LandingPage: React.FC = () => {
         </div>
         <div style={{ maxWidth: 1100, margin: '32px auto 0', paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 13 }}>© 2026 Zietra Technologies Inc. All rights reserved.</p>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>CPUC Permit TNC0050982-N · Licensed in California</p>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>Zietra Technologies Inc. (DBA Dollor.ai)</p>
         </div>
       </footer>
 

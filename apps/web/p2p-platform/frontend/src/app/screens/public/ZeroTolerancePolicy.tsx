@@ -17,7 +17,7 @@ const ZeroTolerancePolicy: React.FC = () => (
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,107,0,0.1)', border: '1px solid rgba(255,107,0,0.25)', color: '#ff9500', borderRadius: 50, padding: '7px 18px', fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', marginBottom: 20 }}>🛡️ SAFETY</div>
           <h1 style={{ fontSize: 'clamp(28px,5vw,44px)', fontWeight: 900, letterSpacing: '-1.5px', marginBottom: 14 }}>Zero Tolerance Policy</h1>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Last updated: October 7, 2026 · Zietra Technologies Inc.</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Last updated: October 29, 2026 · Zietra Technologies Inc. (DBA Dollor.ai)</p>
         </div>
 
         <div style={{ background: 'rgba(255,107,0,0.06)', border: '1px solid rgba(255,107,0,0.2)', borderRadius: 20, padding: '28px 32px', marginBottom: 32 }}>
@@ -27,9 +27,9 @@ const ZeroTolerancePolicy: React.FC = () => (
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '40px' }}>
 
           {s('1. Drugs and Alcohol', <>
-            <p>Dollor prohibits the use, possession, or influence of alcohol, marijuana, or any controlled substance by drivers while using the Dollor platform (including during Period 1, 2, and 3 as defined by California TNC regulations).</p>
+            <p>Dollor prohibits the use, possession, or influence of alcohol, marijuana, or any controlled substance by drivers while using the Dollor platform (while online or during a ride).</p>
             <p style={{ marginTop: 12 }}>Riders who request a driver to transport them under the influence in a way that endangers others may also be permanently deactivated.</p>
-            <p style={{ marginTop: 12 }}>If you believe your driver is impaired: <strong>tap the emergency button immediately and exit the vehicle when safe to do so.</strong></p>
+            <p style={{ marginTop: 12 }}>If you believe your driver is impaired: <strong>call 911 if you are in danger and exit the vehicle when safe to do so.</strong></p>
           </>)}
 
           {s('2. Discrimination', <>
@@ -59,9 +59,9 @@ const ZeroTolerancePolicy: React.FC = () => (
             <p>If you experience or witness a zero tolerance violation:</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
               {[
-                { icon: '🚨', t: 'Immediate danger', d: 'Tap the emergency button in the app. This contacts 911 directly.' },
-                { icon: '✉️', t: 'Report after the fact', d: 'Email safety@dollor.ai with your ride details and description.' },
-                { icon: '⭐', t: 'In-app reporting', d: 'After your ride, rate your experience and use "Report an Issue" to flag the incident.' },
+                { icon: '🚨', t: 'Immediate danger', d: 'Call 911. The iOS rider app has an emergency button that calls 911 from your phone.' },
+                { icon: '✉️', t: 'Report after the fact', d: 'Email support@dollor.ai with your ride details and description.' },
+                { icon: '⭐', t: 'In-app reporting', d: 'After your ride, rate your experience and, if needed, contact support.' },
               ].map(c => (
                 <div key={c.t} style={{ display: 'flex', gap: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px 20px' }}>
                   <span style={{ fontSize: 24, flexShrink: 0 }}>{c.icon}</span>
@@ -75,7 +75,7 @@ const ZeroTolerancePolicy: React.FC = () => (
           </>)}
 
           {s('7. Investigation Process', <>
-            <p>All reported violations are reviewed by our Trust & Safety team within 24 hours. Accounts under investigation may be temporarily suspended. Drivers found to have violated this policy are permanently deactivated and may be reported to the CPUC and law enforcement as required by California Public Utilities Code § 5440.5.</p>
+            <p>Reported violations are reviewed by our team. Accounts under investigation may be temporarily suspended. Drivers found to have violated this policy are permanently deactivated and may be reported to the CPUC and law enforcement as required by California Public Utilities Code § 5440.5.</p>
           </>)}
 
           {s('8. CPUC Compliance', <>
@@ -83,7 +83,7 @@ const ZeroTolerancePolicy: React.FC = () => (
             <p style={{ marginTop: 12 }}>To report a TNC violation to the CPUC directly, visit the CPUC Consumer Affairs website or call 1-800-649-7570.</p>
           </>)}
 
-          {s('Contact', <p>Safety concerns: <a href="mailto:safety@dollor.ai" style={{ color: '#ff9500' }}>safety@dollor.ai</a><br />General support: <a href="mailto:support@dollor.ai" style={{ color: '#ff9500' }}>support@dollor.ai</a></p>)}
+          {s('Contact', <p>Safety concerns and general support: <a href="mailto:support@dollor.ai" style={{ color: '#ff9500' }}>support@dollor.ai</a></p>)}
         </div>
       </div>
     </div>

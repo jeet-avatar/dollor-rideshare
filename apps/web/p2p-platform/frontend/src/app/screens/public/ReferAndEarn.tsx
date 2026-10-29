@@ -17,7 +17,7 @@ const ReferAndEarn: React.FC = () => {
   };
 
   const share = (method: 'copy' | 'twitter' | 'sms') => {
-    const msg = `I'm joining Dollor — the rideshare app that charges $1 flat instead of taking 28% like Uber. Use my code ${referralCode} to get a free ride credit when it launches! dollor.ai`;
+    const msg = `I'm joining Dollor — a bid-based rideshare app with a flat connection fee instead of a percentage commission. My referral code: ${referralCode}. dollor.ai`;
     if (method === 'copy') { navigator.clipboard.writeText(msg).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); }
     if (method === 'twitter') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(msg)}`, '_blank');
     if (method === 'sms') window.open(`sms:?body=${encodeURIComponent(msg)}`, '_blank');

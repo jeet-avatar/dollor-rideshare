@@ -261,12 +261,12 @@ struct DriverLoginView: View {
                 }
                 .padding(.bottom, isSignUp ? 10 : 20)
 
-                Text("Dollor AI Service")
+                Text("Dollor Driver")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .foregroundColor(Theme.lxText)
 
-                Text("$ online store")
+                Text("Drive and bid for rides")
                     .font(.subheadline)
                     .foregroundColor(Theme.lxTextSecondary)
                     .padding(.bottom, isSignUp ? 10 : 20)

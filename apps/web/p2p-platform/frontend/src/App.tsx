@@ -36,6 +36,8 @@ import Prop22Compliance from './app/screens/prop22/Prop22Compliance';
 import LandingPage from './app/screens/public/LandingPage';
 import TermsOfService from './app/screens/public/TermsOfService';
 import PrivacyPolicy from './app/screens/public/PrivacyPolicy';
+import DriverTerms from './app/screens/public/DriverTerms';
+import DeleteAccount from './app/screens/public/DeleteAccount';
 import RestaurantApplication from './app/screens/public/RestaurantApplication';
 import DriverApplication from './app/screens/public/DriverApplication';
 import HelpSupport from './app/screens/public/HelpSupport';
@@ -148,6 +150,8 @@ function App() {
         {/* Public Pages */}
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/driver-terms" element={<DriverTerms />} />
+        <Route path="/delete-account" element={<DeleteAccount />} />
         <Route path="/refund" element={<RefundPolicy />} />
         <Route path="/refunds" element={<RefundPolicy />} />
         <Route path="/zero-tolerance" element={<ZeroTolerancePolicy />} />

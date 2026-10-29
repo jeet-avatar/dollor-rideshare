@@ -341,6 +341,39 @@ def rotate_active_session(session_key: str, new_jti: str, ttl_seconds: int) -> N
         blacklist_token(previous, ttl_seconds)
 
 
+_revoked_accounts: set = set()  # in-memory fallback
+
+
+def revoke_account(role: str, account_id: int, ttl_seconds: int = 31 * 24 * 3600) -> None:
+    """Reject every token issued to this account (e.g. "customer", 12), whatever its jti.
+
+    Used by account deletion: we cannot enumerate the live tokens, so the account itself is marked.
+    The default TTL outlives the longest token lifetime.
+    """
+    key = f"revoked_account:{role}:{account_id}"
+    if redis_client:
+        try:
+            redis_client.setex(key, ttl_seconds, "1")
+            return
+        except Exception:
+            pass
+    _revoked_accounts.add(key)
+
+
+def is_account_revoked(role: str, account_id) -> bool:
+    """Return True if revoke_account() was called for this account."""
+    if account_id is None:
+        return False
+    key = f"revoked_account:{role}:{account_id}"
+    if redis_client:
+        try:
+            if redis_client.exists(key):
+                return True
+        except Exception:
+            pass
+    return key in _revoked_accounts
+
+
 def is_token_blacklisted(jti: str) -> bool:
     """Return True if token has been revoked."""
     key = f"revoked:{jti}"

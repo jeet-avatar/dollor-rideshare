@@ -1,143 +1,78 @@
 #!/usr/bin/env python3
-"""
-Create Feature Graphics for Play Store (1024x500)
-"""
+"""Build the Play feature graphics (1024x500) for the Dollor rider and driver apps.
 
-from PIL import Image, ImageDraw, ImageFont
+Colours come from the shared design tokens (shared/.../ui/Lx.kt). Text is limited to
+statements the apps support (see customer/listing.md and driver/listing.md).
+Run from this folder:  python3 create-feature-graphics.py
+"""
 import os
+from PIL import Image, ImageDraw, ImageFont
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Feature graphic dimensions
-WIDTH = 1024
-HEIGHT = 500
-
-# Brand colors
-DARK_BG = (26, 26, 46)  # #1a1a2e
-GOLD = (255, 215, 0)     # #ffd700
+HERE = os.path.dirname(os.path.abspath(__file__))
+BG = (0x0B, 0x0B, 0x0D)
+SURFACE = (0x17, 0x17, 0x1A)
+HAIRLINE = (0x2A, 0x2A, 0x2E)
+ORANGE = (0xFF, 0x7A, 0x1A)
 WHITE = (255, 255, 255)
-GREEN = (34, 197, 94)    # #22c55e
+SECONDARY = (0xA1, 0xA1, 0xAA)
+BOLD = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+REGULAR = "/System/Library/Fonts/Supplemental/Arial.ttf"
 
-def create_gradient_background(width, height):
-    """Create a dark gradient background"""
-    img = Image.new('RGB', (width, height), DARK_BG)
+APPS = {
+    "customer": {
+        "icon": "customer/app-icon-512x512.png",
+        "title": ["Bid on", "your ride"],
+        "sub": ["Request a ride, compare", "driver bids, pick your fare."],
+        "shot": "customer/screenshots/03-matched.png",
+        "crop": (0, 1100, 1080, 2324),
+    },
+    "driver": {
+        "icon": "driver/app-icon-512x512.png",
+        "title": ["Bid on", "ride requests"],
+        "sub": ["Set your own price and see", "what you earn before you bid."],
+        "shot": "driver/screenshots/02-submit-bid.png",
+        "crop": (0, 900, 1080, 2124),
+    },
+}
+
+
+def font(path, size):
+    return ImageFont.truetype(path, size)
+
+
+def build(name, cfg):
+    img = Image.new("RGB", (1024, 500), BG)
     draw = ImageDraw.Draw(img)
-
-    # Add subtle gradient
-    for y in range(height):
-        # Gradient from darker to slightly lighter
-        factor = y / height
-        r = int(26 + (22 - 26) * factor)
-        g = int(26 + (33 - 26) * factor)
-        b = int(46 + (62 - 46) * factor)
-        draw.line([(0, y), (width, y)], fill=(r, g, b))
-
-    return img
-
-
-def add_text(draw, text, position, font_size, color, bold=False):
-    """Add text to image - uses default font"""
-    try:
-        # Try to load a system font
-        font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", font_size)
-    except:
-        try:
-            font = ImageFont.truetype("/System/Library/Fonts/SFNSDisplay.ttf", font_size)
-        except:
-            font = ImageFont.load_default()
-
-    draw.text(position, text, fill=color, font=font)
-
-
-def create_feature_graphic(app_type, tagline, subtitle):
-    """Create a feature graphic for an app"""
-    img = create_gradient_background(WIDTH, HEIGHT)
-    draw = ImageDraw.Draw(img)
-
-    # Add decorative elements
-    # Gold accent line at top
-    draw.rectangle([(0, 0), (WIDTH, 5)], fill=GOLD)
-
-    # Draw dollar sign logo (circle with $)
-    logo_x, logo_y = 80, 180
-    logo_radius = 50
-    draw.ellipse(
-        [(logo_x - logo_radius, logo_y - logo_radius),
-         (logo_x + logo_radius, logo_y + logo_radius)],
-        fill=GOLD
-    )
-
-    # Add app name
-    add_text(draw, "Dollor.ai", (160, 140), 60, GOLD)
-
-    # Add app type subtitle
-    add_text(draw, app_type.upper(), (160, 210), 24, WHITE)
-
-    # Add main tagline
-    add_text(draw, tagline, (80, 300), 48, WHITE)
-
-    # Add subtitle
-    add_text(draw, subtitle, (80, 370), 28, (180, 180, 180))
-
-    # Add accent elements
-    # Green "badge" for key feature
-    badge_text = "0% Commission" if "Driver" in app_type else "$1 Flat Fee"
-    badge_width = 200
-    badge_x = WIDTH - badge_width - 80
-    draw.rounded_rectangle(
-        [(badge_x, 200), (badge_x + badge_width, 250)],
-        radius=25,
-        fill=GREEN
-    )
-    add_text(draw, badge_text, (badge_x + 20, 210), 24, WHITE)
-
-    return img
+    for x in range(1024):  # soft orange glow on the right edge
+        t = max(0.0, (x - 560) / 464)
+        draw.line([(x, 0), (x, 500)], fill=tuple(int(BG[i] + (c - BG[i]) * 0.10 * t) for i, c in enumerate(ORANGE)))
+    icon = Image.open(os.path.join(HERE, cfg["icon"])).convert("RGB").resize((72, 72))
+    mask = Image.new("L", (72, 72), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, 71, 71), 16, fill=255)
+    img.paste(icon, (56, 56), mask)
+    draw.text((142, 70), "Dollor", font=font(BOLD, 40), fill=WHITE)
+    y = 160
+    for line in cfg["title"]:
+        draw.text((56, y), line, font=font(BOLD, 60), fill=WHITE if line is cfg["title"][0] else ORANGE)
+        y += 76
+    y += 14
+    for line in cfg["sub"]:
+        draw.text((56, y), line, font=font(REGULAR, 26), fill=SECONDARY)
+        y += 36
+    shot = Image.open(os.path.join(HERE, cfg["shot"])).convert("RGB").crop(cfg["crop"])
+    w = 330
+    shot = shot.resize((w, int(shot.height * w / shot.width)))
+    frame = Image.new("RGB", (w + 16, 390), SURFACE)
+    frame.paste(shot, (8, 8))
+    fmask = Image.new("L", frame.size, 0)
+    ImageDraw.Draw(fmask).rounded_rectangle((0, 0, frame.width - 1, frame.height + 60), 38, fill=255)
+    img.paste(frame, (640, 110), fmask.crop((0, 0, frame.width, frame.height)))
+    ImageDraw.Draw(img).rounded_rectangle((640, 110, 640 + frame.width, 110 + 600), 38, outline=HAIRLINE, width=3)
+    # re-clip anything the outline drew below the canvas
+    out = os.path.join(HERE, name, "feature-graphic-1024x500.png")
+    img.save(out, "PNG")
+    print(out, img.size, img.mode)
 
 
-def main():
-    graphics = {
-        'driver': {
-            'app_type': 'Driver Partner',
-            'tagline': 'Deliver & Earn More',
-            'subtitle': 'Keep 100% of delivery fees. Set your own prices.',
-        },
-        'partner': {
-            'app_type': 'Restaurant Partner',
-            'tagline': 'Manage Orders Easily',
-            'subtitle': 'Just $1 per order. No commission. Full control.',
-        }
-    }
-
-    for name, config in graphics.items():
-        print(f"Creating {name} feature graphic...")
-
-        img = create_feature_graphic(
-            config['app_type'],
-            config['tagline'],
-            config['subtitle']
-        )
-
-        output_dir = os.path.join(SCRIPT_DIR, name)
-        os.makedirs(output_dir, exist_ok=True)
-
-        filename = os.path.join(output_dir, 'feature-graphic-1024x500.png')
-        img.save(filename, 'PNG')
-        print(f"  ✅ Saved: {filename}")
-
-    # Also copy existing customer feature graphic if needed
-    customer_dir = os.path.join(SCRIPT_DIR, 'customer')
-    os.makedirs(customer_dir, exist_ok=True)
-
-    existing_graphic = os.path.join(SCRIPT_DIR, 'feature-graphic-1024x500.png')
-    if os.path.exists(existing_graphic):
-        import shutil
-        dest = os.path.join(customer_dir, 'feature-graphic-1024x500.png')
-        if not os.path.exists(dest):
-            shutil.copy(existing_graphic, dest)
-            print(f"  ✅ Copied existing graphic to customer/")
-
-    print("\n✅ Feature graphics created!")
-
-
-if __name__ == '__main__':
-    main()
+for n, c in APPS.items():
+    build(n, c)

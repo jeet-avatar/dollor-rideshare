@@ -51,7 +51,7 @@ android {
     defaultConfig {
         applicationId = "ai.dollor.customer"
         minSdk = 24
-        versionCode = 261026
+        versionCode = 261029
         versionName = "1.1.0"
         targetSdk = 36
 

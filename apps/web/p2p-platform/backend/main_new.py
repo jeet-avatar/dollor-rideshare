@@ -408,7 +408,7 @@ _PUBLIC_EXACT_PATHS = {
     "/robots.txt",
 
     # Legal pages
-    "/privacy", "/terms",
+    "/privacy", "/terms", "/driver-terms", "/delete-account",
     "/api/legal/terms", "/api/legal/privacy",
     "/api/legal/tos", "/api/legal/privacy-policy",
     "/api/legal/regulatory",
@@ -493,7 +493,7 @@ _PUBLIC_PREFIXES = [
     "/api/admin/",            # Handled by admin_auth_middleware (don't double-check)
     "/api/demo/",             # Demo endpoints have own _require_admin_secret check
     "/ws/",                   # WebSocket connections (auth handled in websocket_route)
-    "/privacy", "/terms",     # Legal pages (HTML)
+    "/privacy", "/terms", "/driver-terms", "/delete-account",     # Legal pages (HTML)
 ]
 
 # SECURITY (NSA-002): Only allow docs prefixes in non-production environments.
@@ -3589,46 +3589,81 @@ def update_customer_profile(
 # ==================== CUSTOMER ACCOUNT DELETION ====================
 # Required by Google Play Store policy for account deletion
 
+def _authorize_account_deletion(role: str, account_id: int, auth: dict, db: Session):
+    """Only the account owner (matching role + id in the JWT) or an admin may delete the account."""
+    token_role = auth.get("role")
+    if token_role == "admin":
+        admin = db.query(User).filter(User.email == auth.get("sub"), User.role == UserRole.ADMIN).first()
+        if admin:
+            return
+    elif token_role in (None, role):
+        id_claim = "customer_id" if role == "customer" else "driver_id"
+        if auth.get(id_claim) == account_id:
+            return
+        if role == "customer" and auth.get("sub"):
+            owner = db.query(Customer).filter(Customer.email == auth["sub"]).first()
+            if owner and owner.id == account_id:
+                return
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot delete another user's account")
+
+
+def _delete_account(role: str, account_id: int, auth: dict, db: Session, success_message: str):
+    import account_deletion
+    _authorize_account_deletion(role, account_id, auth, db)
+    model = Customer if role == "customer" else Driver
+    account = db.query(model).filter(model.id == account_id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    # Idempotent: a repeated call succeeds and only retries any Stripe cleanup that failed before
+    if account_deletion.is_deleted_account(account):
+        account_deletion.retry_pending_stripe_cleanup(db, role, account)
+        return {"success": True, "message": "Account already deleted"}
+
+    # Shared App Store / Play reviewer accounts: report success, change nothing (see account_deletion.py)
+    if account_deletion.is_demo_account(account.email):
+        logger.info("account deletion requested for shared demo %s %s: no-op", role, account_id)
+        return {"success": True, "message": success_message}
+
+    try:
+        if role == "customer":
+            account_deletion.delete_customer(db, account)
+        else:
+            account_deletion.delete_driver(db, account)
+    except account_deletion.AccountDeletionBlocked as blocked:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(blocked))
+
+    # Sign out the device that made the request right away
+    if auth.get("jti"):
+        _revoke_current_token(auth)
+    logger.info("%s %s deleted (anonymised)", role, account_id)
+    return {"success": True, "message": success_message}
+
+
+# ==================== CUSTOMER ACCOUNT DELETION ====================
+# Required by Apple App Store 5.1.1(v) and Google Play. Anonymises instead of hard-deleting: see account_deletion.py
+
 @app.delete("/api/customers/{customer_id}/delete")
 def delete_customer_account(
     customer_id: int,
-    customer: Customer = Depends(require_customer),
+    auth: dict = Depends(require_any_auth),
     db: Session = Depends(get_db)
 ):
-    """Delete customer account - required by Play Store policy"""
-    # SECURITY: Verify the token belongs to the customer being deleted
-    if customer.id != customer_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot delete another user's account"
-        )
-
-    # Delete the customer
-    db.delete(customer)
-    db.commit()
-
-    return {"success": True, "message": "Account deleted successfully"}
+    """Delete (anonymise) a customer account. 409 while a ride is active; owner or admin only."""
+    return _delete_account("customer", customer_id, auth, db, "Account deleted successfully")
 
 
 # ==================== DRIVER ACCOUNT DELETION ====================
-# Required by Google Play Store policy for account deletion
+# Required by Apple App Store 5.1.1(v) and Google Play
 
 @app.delete("/api/drivers/{driver_id}/delete")
 def delete_driver_account(
     driver_id: int,
-    driver: Driver = Depends(require_driver),
+    auth: dict = Depends(require_any_auth),
     db: Session = Depends(get_db)
 ):
-    """Delete driver account - required by Play Store policy"""
-    # SECURITY: Verify the authenticated driver owns this account
-    if driver.id != driver_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    # Delete the driver
-    db.delete(driver)
-    db.commit()
-
-    return {"success": True, "message": "Driver account deleted successfully"}
+    """Delete (anonymise) a driver account. 409 while a ride is active or a payout is unpaid; owner or admin only."""
+    return _delete_account("driver", driver_id, auth, db, "Driver account deleted successfully")
 
 
 # ==================== VENDOR ACCOUNT DELETION ====================
@@ -11824,41 +11859,34 @@ def create_in_app_notification(db: Session, customer_id: int, title: str, messag
 @app.get("/api/legal/terms")
 def get_terms_of_service():
     """Get Terms of Service content and URL."""
+    cfg = pricing_engine.config
     return {
-        "url": "https://dollor.ai/terms",
-        "last_updated": "2025-12-15",
-        "version": "1.0",
+        "url": "https://api.dollor.ai/terms",
+        "last_updated": "2026-10-29",
+        "version": "4.0-CA",
         "summary": {
-            "service_type": "Matchmaking Platform",
+            "service_type": "Peer-to-peer rideshare marketplace (California)",
             "pricing": {
-                "food_delivery": {
-                    "customer_fee": 1.00,
-                    "restaurant_fee": 1.00,
-                    "driver_fee": 0.00,
-                    "tip_fee": 0.00
-                },
                 "rideshare": {
-                    "rider_fee": 1.00,
-                    "driver_fee": 1.00,
+                    "connection_fee_rider": "$1 (fare <= $35), $2 (<= $70), $3 (> $70)",
+                    "connection_fee_driver": "$1 (fare <= $35), $2 (<= $70), $3 (> $70)",
+                    "cpuc_access_for_all_rider": cfg.ACCESS_FOR_ALL_RIDER_SHARE,
+                    "cpuc_access_for_all_driver": cfg.ACCESS_FOR_ALL_DRIVER_SHARE,
                     "tip_fee": 0.00
                 }
             },
             "key_points": [
-                "Dollor.ai is a technology matchmaking platform, not a delivery or transportation company",
+                "Dollor.ai is a technology marketplace that connects riders with independent drivers",
                 "Drivers are independent contractors, not employees",
-                "Flat $1 matchmaking fee - no percentage commissions",
-                "100% of tips go directly to drivers",
-                "Drivers choose their own routes, schedules, and which requests to accept"
+                "Riders post an offer and drivers bid during a 5-minute window",
+                "Flat tiered connection fee, not a percentage commission",
+                "100% of tips go directly to drivers"
             ],
             "cancellation_policy": {
-                "food_delivery": {
-                    "cancellable_statuses": ["pending_payment", "confirmed", "pending_restaurant"],
-                    "non_cancellable_after": "Restaurant has accepted the order",
-                    "refund_timeline": "1-3 business days"
-                },
                 "rideshare": {
-                    "free_cancellation": "Before driver assignment",
-                    "cancellation_fee": "After driver assigned and en route"
+                    "rider_cancellation_fee": cfg.RIDER_CANCELLATION_FEE,
+                    "driver_cancellation": "No charge to the rider; the request is re-opened",
+                    "rider_no_show_fee": cfg.NOSHOW_FEE
                 }
             }
         }
@@ -11875,13 +11903,12 @@ def get_privacy_policy():
         "data_collected": [
             {"type": "Account Information", "purpose": "Account creation and authentication"},
             {"type": "Payment Information", "purpose": "Process transactions securely via Stripe"},
-            {"type": "Location Data", "purpose": "Facilitate accurate deliveries and rides"},
-            {"type": "Order History", "purpose": "Personalization and customer service"},
+            {"type": "Location Data", "purpose": "Match riders with drivers and track rides"},
+            {"type": "Ride History", "purpose": "Receipts, trip history and customer service"},
             {"type": "Device Information", "purpose": "Security and push notifications"}
         ],
         "data_sharing": [
-            "Restaurant Partners - for order fulfillment",
-            "Driver Partners - for delivery/ride completion",
+            "Matched drivers or riders - to complete a ride",
             "Payment Processors (Stripe) - for secure transactions",
             "We do NOT sell personal information"
         ],
@@ -12919,6 +12946,28 @@ def serve_terms_of_service_page():
             return HTMLResponse(content=f.read(), status_code=200)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Terms of service page not found")
+
+
+@app.get("/driver-terms", response_class=HTMLResponse)
+def serve_driver_terms_page():
+    """Serve the Driver Terms HTML page (linked from the Terms of Service)."""
+    driver_terms_file = os.path.join(os.path.dirname(__file__), "legal", "driver-terms.html")
+    try:
+        with open(driver_terms_file, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read(), status_code=200)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Driver terms page not found")
+
+
+@app.get("/delete-account", response_class=HTMLResponse)
+def serve_delete_account_page():
+    """Serve the public account-deletion instructions page (Google Play data deletion URL)."""
+    page_file = os.path.join(os.path.dirname(__file__), "legal", "delete-account.html")
+    try:
+        with open(page_file, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read(), status_code=200)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Delete account page not found")
 
 
 # Fare estimate helper for ERP alias (below)

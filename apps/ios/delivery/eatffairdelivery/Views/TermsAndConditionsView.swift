@@ -152,12 +152,12 @@ struct TermsHeader: View {
                     .foregroundColor(Theme.lxOrange)
             }
 
-            Text("Dollor AI Service")
+            Text("Dollor Driver")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .foregroundColor(Theme.lxText)
 
-            Text("$ online store")
+            Text("Drive and bid for rides")
                 .font(.headline)
                 .foregroundColor(Theme.lxOrange)
 
@@ -318,12 +318,6 @@ struct KeyBenefitsSection: View {
                     icon: "hand.raised.fill",
                     title: "Independent Contractor Freedom",
                     description: "Set your own schedule, prices, and negotiate directly with riders"
-                )
-
-                BenefitRow(
-                    icon: "speaker.wave.2.fill",
-                    title: "Voice Assistant",
-                    description: "Hands-free operation while driving - stay safe, stay productive"
                 )
 
                 BenefitRow(
@@ -774,20 +768,6 @@ struct FullTermsView: View {
                             • Payouts are made through Stripe to your linked bank account
                             • Instant cashout available for a small fee
                             • Detailed earnings reports available in the app
-                            """)
-                        }
-
-                        TermsSection(title: "8. Voice Assistant Feature") {
-                            Text("""
-                            Dollor AI Service provides a hands-free voice assistant for driver safety:
-
-                            • Accept or decline rides by voice
-                            • Get navigation directions
-                            • Send quick messages to riders
-                            • Check earnings
-                            • Mark trips as complete
-
-                            Important: Always prioritize safe driving. Use voice features responsibly.
                             """)
                         }
 

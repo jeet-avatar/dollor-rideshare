@@ -1,7 +1,9 @@
 # Dollor.ai - Play Store Listing (Rider App, ai.dollor.customer)
 
 Rideshare marketplace. Every statement below is backed by the shipped code.
-Screenshots and feature graphic in this folder (01-home ... 05-login, feature-graphic) are OLD food-delivery web captures: do not upload them. Capture new phone screenshots from the release build (ride request, fare estimate, bids, active ride, profile).
+Store graphics (captured 2026-10-29 from release build versionCode 261029, demo account data; regenerate the feature graphic with create-feature-graphics.py):
+- Phone screenshots, 1080x2424 PNG, in `screenshots/`: 01-request (fare estimate), 02-bids, 03-matched, 04-chat, 05-receipt, 06-safety, 07-profile, 08-driver-arrived.
+- Feature graphic: `feature-graphic-1024x500.png`. App icon: `app-icon-512x512.png`.
 
 ## App Title (30 chars max)
 Dollor - Bid Your Ride

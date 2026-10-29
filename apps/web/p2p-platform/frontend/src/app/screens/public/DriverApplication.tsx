@@ -66,11 +66,11 @@ const DriverApplication: React.FC = () => {
             <div style={{ fontSize: 72, marginBottom: 24 }}>🎉</div>
             <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: '-1px', marginBottom: 16 }}>You're in!</h1>
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 17, lineHeight: 1.7, marginBottom: 32 }}>
-              Your driver application has been submitted. We'll review your details and reach out within 24–48 hours with next steps including your background check.
+              Your driver application has been submitted. We'll review your details and reach out with next steps, including your background check.
             </p>
             <div style={{ background: 'rgba(255,107,0,0.08)', border: '1px solid rgba(255,107,0,0.2)', borderRadius: 16, padding: '24px 28px', marginBottom: 32, textAlign: 'left' }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#ff9500' }}>What happens next</h3>
-              {['Email confirmation sent to ' + form.email, 'Checkr background check initiated', 'Vehicle verification (we\'ll contact you)', 'Account activated — start earning'].map((s, i) => (
+              {['Email confirmation sent to ' + form.email, 'Complete your Checkr background check', 'Upload your license and insurance in the driver app', 'Once approved and your check clears, you can go online'].map((s, i) => (
                 <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,107,0,0.15)', border: '1px solid rgba(255,107,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#ff6b00', flexShrink: 0 }}>{i + 1}</div>
                   <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>{s}</span>
@@ -179,7 +179,7 @@ const DriverApplication: React.FC = () => {
                 </div>
                 <div style={{ background: 'rgba(255,107,0,0.06)', border: '1px solid rgba(255,107,0,0.15)', borderRadius: 14, padding: '20px', marginBottom: 24 }}>
                   <h4 style={{ fontSize: 14, fontWeight: 700, color: '#ff9500', marginBottom: 12 }}>Requirements</h4>
-                  {['Valid CA driver\'s license', 'Insured personal vehicle (2010 or newer)', 'Clean driving record', 'Pass Checkr background check'].map(r => (
+                  {['Valid CA driver\'s license', 'Insured vehicle', 'At least 21 years old', 'Pass Checkr background check'].map(r => (
                     <div key={r} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, fontSize: 14, color: 'rgba(255,255,255,0.55)' }}>
                       <span style={{ color: '#ff6b00' }}>✓</span> {r}
                     </div>
@@ -218,7 +218,7 @@ const DriverApplication: React.FC = () => {
 
           {/* Benefits below form */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginTop: 32 }}>
-            {[{ icon: '💸', t: 'Flat $1 fee', d: 'Keep the rest' }, { icon: '⚡', t: 'Instant payout', d: 'After every ride' }, { icon: '🕒', t: 'Your schedule', d: 'No minimums' }].map(c => (
+            {[{ icon: '💸', t: 'Flat fee, not a %', d: '$1–$3 by fare tier' }, { icon: '💵', t: '100% of tips', d: 'No fee on tips' }, { icon: '🕒', t: 'Your schedule', d: 'No minimums' }].map(c => (
               <div key={c.t} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '20px 16px', textAlign: 'center' }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>{c.icon}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{c.t}</div>

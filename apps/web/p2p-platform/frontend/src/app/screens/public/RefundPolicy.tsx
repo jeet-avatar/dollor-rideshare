@@ -17,20 +17,20 @@ const RefundPolicy: React.FC = () => (
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,107,0,0.1)', border: '1px solid rgba(255,107,0,0.25)', color: '#ff9500', borderRadius: 50, padding: '7px 18px', fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', marginBottom: 20 }}>💳 LEGAL</div>
           <h1 style={{ fontSize: 'clamp(28px,5vw,44px)', fontWeight: 900, letterSpacing: '-1.5px', marginBottom: 14 }}>Refund Policy</h1>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Last updated: October 7, 2026 · Zietra Technologies Inc.</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Last updated: October 29, 2026 · Zietra Technologies Inc. (DBA Dollor.ai)</p>
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '40px' }}>
 
-          {s('Overview', <p>Because Dollor connects riders with independent driver-partners and charges a flat $1 platform fee, our refund policy is straightforward. Drivers are compensated for completed trips; refunds affect both the driver's earnings and the platform fee.</p>)}
+          {s('Overview', <p>Dollor connects riders with independent drivers and charges a flat connection fee. Your card is authorized when you accept a bid and charged when the ride is completed.</p>)}
 
-          {s('Cancellation Fees', <>
+          {s('Cancellations and No-Shows', <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
               {[
-                { stage: 'Before driver acceptance', fee: 'No charge', desc: 'You can cancel freely before a driver accepts your request.' },
-                { stage: 'After acceptance, before pickup', fee: '$2–$5', desc: 'A small cancellation fee compensates the driver for time and travel toward pickup.' },
-                { stage: 'After driver arrival', fee: '$5–$10', desc: 'Fee applies if you cancel after the driver has arrived at your pickup location.' },
-                { stage: 'Completed ride', fee: 'No refund', desc: 'Completed trips are not refundable except under dispute resolution (see below).' },
+                { stage: 'Rider cancels before the trip starts', fee: 'No charge', desc: 'The card authorization is released. Open bids on the request are closed.' },
+                { stage: 'Driver cancels after a match', fee: 'No charge', desc: 'The authorization is released and the request re-opens for other drivers.' },
+                { stage: 'Rider no-show', fee: '$5.00', desc: 'If the driver has arrived and waited at least 5 minutes, the driver may mark a no-show; your saved card is charged $5.00 (80% goes to the driver).' },
+                { stage: 'Completed ride', fee: 'Case by case', desc: 'Contact support to dispute a charge on a completed ride (see below).' },
               ].map(r => (
                 <div key={r.stage} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px 20px', alignItems: 'start' }}>
                   <div>
@@ -48,15 +48,15 @@ const RefundPolicy: React.FC = () => (
             <ul style={{ paddingLeft: 20, marginTop: 12 }}>
               {['Driver took a significantly longer route than necessary without explanation', 'Ride was charged but never completed (ghost trip)', 'You were charged for a ride you did not request', 'Safety incident during the trip substantiated by our Trust & Safety team', 'Technical error in charge amount'].map(i => <li key={i} style={{ marginBottom: 8 }}>{i}</li>)}
             </ul>
-            <p style={{ marginTop: 12 }}>Disputes must be submitted within <strong style={{ color: '#fff' }}>24 hours</strong> of the ride via the in-app "Report an Issue" feature or by emailing <a href="mailto:support@dollor.ai" style={{ color: '#ff9500' }}>support@dollor.ai</a>.</p>
+            <p style={{ marginTop: 12 }}>Please report disputes as soon as possible after the ride by emailing <a href="mailto:support@dollor.ai" style={{ color: '#ff9500' }}>support@dollor.ai</a>.</p>
           </>)}
 
           {s('Refund Processing', <>
             <p>Approved refunds are returned to the original payment method:</p>
             <ul style={{ paddingLeft: 20, marginTop: 12 }}>
-              {['Credit/debit cards: 3–5 business days', 'ACH bank transfers: 5–7 business days'].map(i => <li key={i} style={{ marginBottom: 8 }}>{i}</li>)}
+              {['Refunds are returned to the original card through Stripe. Timing depends on your card issuer.'].map(i => <li key={i} style={{ marginBottom: 8 }}>{i}</li>)}
             </ul>
-            <p style={{ marginTop: 12 }}>Refunds are processed through Stripe. The $1 platform fee is non-refundable on disputed rides unless there was a technical error.</p>
+            <p style={{ marginTop: 12 }}>Refunds are processed through Stripe. Whether the connection fee is refunded is decided case by case.</p>
           </>)}
 
           {s('Chargebacks', <p>Initiating a chargeback with your bank before contacting Dollor support may result in account suspension. We encourage you to contact us first — most issues are resolved quickly and a chargeback is rarely necessary.</p>)}
@@ -64,11 +64,11 @@ const RefundPolicy: React.FC = () => (
           {s('Non-Refundable Items', <>
             <p>The following are not eligible for refunds:</p>
             <ul style={{ paddingLeft: 20, marginTop: 12 }}>
-              {['Completed rides where service was rendered as described', 'Tips paid to drivers', 'Cancellation fees (these compensate the driver)', 'Platform fee ($1) except in cases of technical error', 'Founding Membership fee once the account has been activated'].map(i => <li key={i} style={{ marginBottom: 8 }}>{i}</li>)}
+              {['Completed rides where service was rendered as described', 'Tips paid to drivers', 'Cancellation fees (these compensate the driver)', 'Connection fees, except where we decide otherwise case by case'].map(i => <li key={i} style={{ marginBottom: 8 }}>{i}</li>)}
             </ul>
           </>)}
 
-          {s('Contact', <p>To dispute a charge or request a refund, email <a href="mailto:support@dollor.ai" style={{ color: '#ff9500' }}>support@dollor.ai</a> with your trip ID, date, and a description of the issue. We typically respond within 4 hours.</p>)}
+          {s('Contact', <p>To dispute a charge or request a refund, email <a href="mailto:support@dollor.ai" style={{ color: '#ff9500' }}>support@dollor.ai</a> with your trip ID, date, and a description of the issue.</p>)}
         </div>
       </div>
     </div>

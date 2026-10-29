@@ -28,7 +28,7 @@ import logging
 
 from database import get_db
 from models import User, UserRole, Customer, Driver, Vendor
-from cache import is_token_blacklisted
+from cache import is_account_revoked, is_token_blacklisted
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,20 @@ _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
 # JWT config - same values as main_new.py
 _SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")
 _ALGORITHM = "HS256"
+
+# Email domain of anonymised (deleted) accounts, see account_deletion.py
+DELETED_EMAIL_SUFFIX = "@deleted.invalid"
+
+
+def _reject_if_deleted(role: str, account):
+    """401 for an account that was deleted (anonymised) in-app; otherwise return it unchanged."""
+    if is_account_revoked(role, account.id) or (account.email or "").endswith(DELETED_EMAIL_SUFFIX):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account has been deleted",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return account
 
 
 async def require_any_auth(token: str = Depends(_oauth2_scheme)) -> dict:
@@ -72,6 +86,13 @@ async def require_any_auth(token: str = Depends(_oauth2_scheme)) -> dict:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has been revoked",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        # Account deletion revokes every token of the deleted customer/driver
+        if is_account_revoked("customer", payload.get("customer_id")) or is_account_revoked("driver", payload.get("driver_id")):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Account has been deleted",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return payload
@@ -122,14 +143,14 @@ async def require_customer(
         if customer_id:
             customer = db.query(Customer).filter(Customer.id == customer_id).first()
             if customer:
-                return customer
+                return _reject_if_deleted("customer", customer)
 
         # Fallback to email
         email = payload.get("sub")
         if email:
             customer = db.query(Customer).filter(Customer.email == email).first()
             if customer:
-                return customer
+                return _reject_if_deleted("customer", customer)
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -186,14 +207,14 @@ async def require_driver(
             else:
                 driver = db.query(Driver).filter(Driver.driver_id == driver_id).first()
             if driver:
-                return driver
+                return _reject_if_deleted("driver", driver)
 
         # Fallback to email
         email = payload.get("sub")
         if email:
             driver = db.query(Driver).filter(Driver.email == email).first()
             if driver:
-                return driver
+                return _reject_if_deleted("driver", driver)
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

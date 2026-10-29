@@ -95,10 +95,14 @@ def _clear_rate_limits():
     """Clear in-memory rate limits before each test to prevent cross-test pollution.
     The in-memory rate limiter (NSA-004 fallback) persists across tests when Redis
     is unavailable, causing spurious 429 failures."""
+    import cache
     from cache import reset_memory_rate_limits
     reset_memory_rate_limits()
+    # Account deletion revokes by account id; rolled-back test DBs reuse ids (production never does)
+    cache._revoked_accounts.clear()
     yield
     reset_memory_rate_limits()
+    cache._revoked_accounts.clear()
 
 
 @pytest.fixture(scope="session")
