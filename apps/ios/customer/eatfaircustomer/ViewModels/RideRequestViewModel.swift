@@ -1140,7 +1140,11 @@ class RideRequestViewModel: ObservableObject {
         case "cancelled":
             // Cancelled elsewhere (e.g. another device): clear the ride so the form is not left stale.
             resetRide()
-            showErrorMessage("Your ride was cancelled.")
+            // Alert only once the ride cover has finished dismissing: an alert requested during the
+            // dismissal is dropped by UIKit while its flag stays set.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                self?.showErrorMessage("Your ride was cancelled.")
+            }
         default:
             break
         }

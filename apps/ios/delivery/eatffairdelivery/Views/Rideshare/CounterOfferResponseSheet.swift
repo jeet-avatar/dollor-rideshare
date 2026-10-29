@@ -76,11 +76,7 @@ struct CounterOfferResponseSheet: View {
             .safeAreaInset(edge: .bottom) {
                 actionButtons
             }
-            .alert("Error", isPresented: $viewModel.showError) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(viewModel.errorMessage ?? "An error occurred")
-            }
+            .rideshareBanner(viewModel)
         }
         .preferredColorScheme(.dark)
     }

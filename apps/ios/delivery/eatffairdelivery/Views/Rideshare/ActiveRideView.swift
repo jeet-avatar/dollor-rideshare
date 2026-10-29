@@ -83,12 +83,12 @@ struct ActiveRideView: View {
 
     /// The agreed fare from the server (final_price, set at match and settled at completion); falls back to the bid's prices only if the server has none yet.
     private var finalPrice: Double {
-        viewModel.completionData?.final_price ?? request?.final_price ?? bid.customer_counter_price ?? bid.proposed_price
+        viewModel.completion(for: bid)?.final_price ?? request?.final_price ?? bid.customer_counter_price ?? bid.proposed_price
     }
 
     private var driverEarnings: Double {
         let config = AppConfig.shared
-        return viewModel.completionData?.driver_payout
+        return viewModel.completion(for: bid)?.driver_payout
             ?? request?.driver_payout
             ?? max(0, finalPrice - config.calculateRidesharePlatformFee(fareAmount: finalPrice) - config.rideshareDriverRegulatoryShare)
     }
@@ -117,6 +117,7 @@ struct ActiveRideView: View {
                 actionCard
             }
         }
+        .rideshareBanner(viewModel)
         .navigationTitle("Active Ride")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -629,7 +630,7 @@ struct ActiveRideView: View {
     // MARK: - Ride Completion Summary
 
     private var rideCompletionSummary: some View {
-        let completion = viewModel.completionData
+        let completion = viewModel.completion(for: bid)
         let fare = completion?.final_price ?? finalPrice
         let fee = completion?.platform_fee ?? AppConfig.shared.calculateRidesharePlatformFee(fareAmount: fare)
         let regulatoryShare = AppConfig.shared.rideshareDriverRegulatoryShare

@@ -26,13 +26,14 @@ class RideBiddingViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isSubmittingBid = false
 
-    /// Error handling
-    @Published var errorMessage: String?
-    @Published var showError = false
+    /// Transient, non-modal message (success or error). Deliberately NOT an .alert: alerts bound to this
+    /// view model collided with the counter/bid sheets and the full-screen ride cover (an alert requested
+    /// while a presentation was animating out was dropped but its flag stayed true, which blocked every
+    /// later sheet/cover until relaunch).
+    @Published var banner: RideshareBanner?
 
-    /// Success message
-    @Published var successMessage: String?
-    @Published var showSuccess = false
+    /// Incremented each time a bid is accepted by the server; the bid sheet closes itself on change.
+    @Published var bidSubmitCount = 0
 
     /// Selected request for bidding
     @Published var selectedRequest: RideRequestForBidding?
@@ -44,6 +45,22 @@ class RideBiddingViewModel: ObservableObject {
 
     /// Ride completion data
     @Published var completionData: RideCompletionDetail?
+
+    /// Settlement data for this ride only. completionData belongs to the ride that was just completed;
+    /// it must never be read for any other ride.
+    func completion(for bid: RideBid) -> RideCompletionDetail? {
+        guard let data = completionData, data.id == (bid.ride_request?.id ?? bid.ride_request_id) else { return nil }
+        return data
+    }
+
+    /// Bid count for a request, minus this driver's own bids on it that are already closed (declined/expired)
+    /// but that the server still counts.
+    func displayBidCount(for request: RideRequestForBidding) -> Int {
+        let ownClosed = myBids.filter {
+            ($0.ride_request?.id ?? $0.ride_request_id) == request.id && ($0.status == "rejected" || $0.status == "expired")
+        }.count
+        return max(0, (request.bid_count ?? 0) - ownClosed)
+    }
 
     // MARK: - Computed Properties
 
@@ -333,6 +350,7 @@ class RideBiddingViewModel: ObservableObject {
                 switch result {
                 case .success(let response):
                     self?.showSuccessMessage(response.message)
+                    self?.bidSubmitCount += 1
                     self?.refreshData()
                     // Remove from available requests since we bid on it
                     self?.availableRequests.removeAll { $0.id == requestId }
@@ -664,13 +682,11 @@ class RideBiddingViewModel: ObservableObject {
     // MARK: - Helpers
 
     private func showErrorMessage(_ message: String) {
-        errorMessage = message
-        showError = true
+        banner = RideshareBanner(text: message, isError: true)
     }
 
     private func showSuccessMessage(_ message: String) {
-        successMessage = message
-        showSuccess = true
+        banner = RideshareBanner(text: message, isError: false)
     }
 
     /// Calculate driver earnings after the connection fee and the CPUC Access for All driver share
@@ -757,6 +773,12 @@ extension RideBiddingViewModel {
     }
 }
 #endif
+
+struct RideshareBanner: Identifiable, Equatable {
+    let id = UUID()
+    let text: String
+    let isError: Bool
+}
 
 extension RideBid {
     /// Why this bid is no longer live, or nil while it is still open. The server marks every losing

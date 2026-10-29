@@ -8,12 +8,29 @@ struct RideshareDashboardView: View {
     @StateObject private var viewModel = RideBiddingViewModel()
     @ObservedObject private var onlineManager = OnlineStatusManager.shared
     @State private var selectedTab: RideshareTab = .available
-    @State private var showPayoutDashboard = false
+    /// The one sheet shown above the dashboard. Every sheet (bid, counter-offer, payouts) is presented from
+    /// here, never from inside a tab page: presenting from the pages of the paged TabView left UIKit with
+    /// a dead presenter once the page was recycled, after which later sheets/covers silently never opened.
+    @State private var sheet: DashboardSheet?
     /// The bid currently presented full-screen. Set when an active ride appears;
     /// cleared only when the driver explicitly finishes (done/cancel/no-show).
     /// Using local state prevents the poll-driven activeRides update from
     /// force-dismissing the screen mid-flow.
     @State private var presentedActiveBid: RideBid?
+
+    enum DashboardSheet: Identifiable {
+        case bid(RideRequestForBidding)
+        case counter(RideBid)
+        case payouts
+
+        var id: String {
+            switch self {
+            case .bid(let request): return "bid-\(request.id)"
+            case .counter(let bid): return "counter-\(bid.id)"
+            case .payouts: return "payouts"
+            }
+        }
+    }
 
     enum RideshareTab: String, CaseIterable {
         case available = "Available"
@@ -39,17 +56,6 @@ struct RideshareDashboardView: View {
 
     var body: some View {
         mainNavigationContent
-            .alert(alertTitle, isPresented: $viewModel.showError) {
-                errorAlertButtons
-            } message: {
-                Text(viewModel.errorMessage ?? "An error occurred")
-            }
-            .alert("Success", isPresented: $viewModel.showSuccess) {
-                Button("OK", role: .cancel) {}
-                    .accessibilityLabel("Dismiss success message")
-            } message: {
-                Text(viewModel.successMessage ?? "")
-            }
             .alert("Can't go online yet", isPresented: Binding(
                 get: { onlineManager.statusError != nil },
                 set: { if !$0 { onlineManager.statusError = nil } }
@@ -67,27 +73,25 @@ struct RideshareDashboardView: View {
                 VStack(spacing: 0) {
                     onlineToggleBar
                     tabSelector
-                    TabView(selection: $selectedTab) {
-                        AvailableRequestsContent(viewModel: viewModel, onBidSubmitted: {
-                            selectedTab = .myBids
-                        })
-                        .tag(RideshareTab.available)
-
-                        MyBidsContent(viewModel: viewModel)
-                            .tag(RideshareTab.myBids)
-
+                    // A plain switch, not a paged TabView: pages are recycled by a UIPageViewController, and
+                    // swipe-paging fights the swipe cards.
+                    switch selectedTab {
+                    case .available:
+                        AvailableRequestsContent(viewModel: viewModel, onSelect: { sheet = .bid($0) })
+                    case .myBids:
+                        MyBidsContent(viewModel: viewModel, onRespond: { sheet = .counter($0) })
+                    case .active:
                         ActiveRidesContent(viewModel: viewModel, presentedActiveBid: $presentedActiveBid)
-                            .tag(RideshareTab.active)
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
                 }
             }
+            .rideshareBanner(viewModel)
             .navigationTitle("Rideshare")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 12) {
-                        Button(action: { showPayoutDashboard = true }) {
+                        Button(action: { sheet = .payouts }) {
                             Image(systemName: "dollarsign.circle")
                                 .foregroundColor(Theme.lxSuccess)
                         }
@@ -100,8 +104,20 @@ struct RideshareDashboardView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showPayoutDashboard) {
-                PayoutDashboardView()
+            .sheet(item: $sheet) { current in
+                switch current {
+                case .bid(let request):
+                    SubmitBidSheet(request: request, viewModel: viewModel) {
+                        sheet = nil
+                        selectedTab = .myBids
+                    }
+                case .counter(let bid):
+                    CounterOfferResponseSheet(bid: bid, viewModel: viewModel) {
+                        sheet = nil
+                    }
+                case .payouts:
+                    PayoutDashboardView()
+                }
             }
             // Full-screen active ride cover. Driven by presentedActiveBid (not
             // activeRides directly) so that a poll-driven activeRides update cannot
@@ -127,6 +143,20 @@ struct RideshareDashboardView: View {
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                 viewModel.refreshData()
             }
+            .onChange(of: viewModel.counteredBids) { _, bids in
+                // The bid is no longer a live counter-offer (matched, withdrawn, expired): close its sheet so
+                // it cannot collide with the full-screen ride presentation.
+                if case .counter(let current)? = sheet, !bids.contains(where: { $0.id == current.id }) {
+                    sheet = nil
+                }
+            }
+            .onChange(of: viewModel.showCounterOfferSheet) { _, isShowing in
+                guard isShowing else { return }
+                if let offer = viewModel.selectedCounterOffer, presentedActiveBid == nil, sheet == nil {
+                    sheet = .counter(offer)
+                }
+                viewModel.showCounterOfferSheet = false
+            }
             .onChange(of: viewModel.myBids) { _, bids in
                 // The rider (or support) cancelled the ride we are showing: close the screen instead of leaving a dead ride.
                 if let current = presentedActiveBid,
@@ -135,28 +165,44 @@ struct RideshareDashboardView: View {
                     presentedActiveBid = nil
                 }
             }
+            .onChange(of: presentedActiveBid?.id) { _, _ in
+                // Settlement data belongs to one ride: drop it whenever the screen closes or shows another ride.
+                if let data = viewModel.completionData, data.id != presentedActiveBid.map({ $0.ride_request?.id ?? $0.ride_request_id }) {
+                    viewModel.completionData = nil
+                }
+            }
             .onChange(of: viewModel.activeRides) { _, newRides in
                 // The server no longer lists the ride we show (and it is not in the completion/rating
                 // step): close the screen instead of leaving a ghost active ride.
                 if let current = presentedActiveBid,
                    !newRides.contains(where: { $0.id == current.id }),
-                   viewModel.completionData == nil {
+                   viewModel.completion(for: current) == nil {
                     presentedActiveBid = nil
                 }
                 if presentedActiveBid == nil, let first = newRides.first {
-                    // Let any sheet/alert that is mid-dismissal finish: UIKit drops a presentation
-                    // requested while another one is still animating out.
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        if presentedActiveBid == nil,
-                           viewModel.activeRides.contains(where: { $0.id == first.id }) {
-                            presentedActiveBid = first
-                        }
-                    }
+                    presentActiveRide(first)
                 }
             }
 
         }
         .preferredColorScheme(.dark)
+    }
+
+    /// Shows the ride cover once no sheet is on screen. UIKit drops a presentation requested while another
+    /// one is animating out, and SwiftUI would then believe the cover is up, so wait until the sheet is gone.
+    private func presentActiveRide(_ bid: RideBid, attempt: Int = 0) {
+        if sheet != nil {
+            sheet = nil
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            guard presentedActiveBid == nil,
+                  viewModel.activeRides.contains(where: { $0.id == bid.id }) else { return }
+            if sheet != nil, attempt < 5 {
+                presentActiveRide(bid, attempt: attempt + 1)
+                return
+            }
+            presentedActiveBid = bid
+        }
     }
 
     private var onlineToggleBar: some View {
@@ -179,21 +225,6 @@ struct RideshareDashboardView: View {
         .padding(.horizontal)
         .padding(.vertical, 10)
         .background(viewModel.isOnline ? Theme.lxSuccess.opacity(0.15) : Theme.lxError.opacity(0.15))
-    }
-
-    @ViewBuilder
-    private var errorAlertButtons: some View {
-        if isBlockingError {
-            Button("View Active Work") {
-                withAnimation { selectedTab = .active }
-            }
-            .accessibilityLabel("View your active work")
-            Button("OK", role: .cancel) {}
-                .accessibilityLabel("Dismiss error")
-        } else {
-            Button("OK", role: .cancel) {}
-                .accessibilityLabel("Dismiss error")
-        }
     }
 
     // MARK: - Tab Selector
@@ -261,43 +292,14 @@ struct RideshareDashboardView: View {
             return viewModel.activeRides.count
         }
     }
-
-    // MARK: - Smart Error Alert Helpers
-
-    /// Check if error is about active ride blocking
-    private var hasActiveRide: Bool {
-        viewModel.errorMessage?.contains("active ride") == true
-    }
-
-    /// Check if error is about active delivery blocking
-    private var hasActiveDelivery: Bool {
-        viewModel.errorMessage?.contains("active delivery") == true
-    }
-
-    /// Check if this is a blocking error (driver has active work)
-    private var isBlockingError: Bool {
-        hasActiveRide || hasActiveDelivery
-    }
-
-    /// Smart alert title based on error type
-    private var alertTitle: String {
-        if hasActiveRide {
-            return "Complete Active Ride First"
-        } else if hasActiveDelivery {
-            return "Complete Delivery First"
-        } else {
-            return "Error"
-        }
-    }
 }
 
 // MARK: - Available Requests Content
 
 struct AvailableRequestsContent: View {
     @ObservedObject var viewModel: RideBiddingViewModel
-    var onBidSubmitted: (() -> Void)? = nil
+    let onSelect: (RideRequestForBidding) -> Void
     @StateObject private var locationManager = LocationManager.shared
-    @State private var selectedRequest: RideRequestForBidding?
 
     var body: some View {
         Group {
@@ -307,12 +309,6 @@ struct AvailableRequestsContent: View {
                 emptyStateView
             } else {
                 requestsList
-            }
-        }
-        .sheet(item: $selectedRequest) { request in
-            SubmitBidSheet(request: request, viewModel: viewModel) {
-                selectedRequest = nil
-                onBidSubmitted?()
             }
         }
     }
@@ -374,15 +370,16 @@ struct AvailableRequestsContent: View {
                 ForEach(viewModel.availableRequests) { request in
                     TinderSwipeCard(
                         onAccept: {
-                            selectedRequest = request
+                            onSelect(request)
                         },
                         onDecline: { /* skip to next card — no-op */ }
                     ) {
                         RideRequestCard(
                             request: request,
                             locationManager: locationManager,
+                            bidCount: viewModel.displayBidCount(for: request),
                             onBid: {
-                                selectedRequest = request
+                                onSelect(request)
                             }
                         )
                     }
@@ -400,8 +397,7 @@ struct AvailableRequestsContent: View {
 
 struct MyBidsContent: View {
     @ObservedObject var viewModel: RideBiddingViewModel
-    /// Item-driven so the sheet can never be shown without its bid or get stuck "presented" with stale state.
-    @State private var selectedBid: RideBid?
+    let onRespond: (RideBid) -> Void
 
     /// True when there are bids worth showing (pending or countered).
     /// Accepted bids live in the Active tab so they don't count here.
@@ -415,27 +411,6 @@ struct MyBidsContent: View {
                 bidsList
             } else {
                 emptyStateView
-            }
-        }
-        .sheet(item: $selectedBid) { bid in
-            CounterOfferResponseSheet(bid: bid, viewModel: viewModel) {
-                selectedBid = nil
-            }
-        }
-        // Wire the ViewModel's auto-detected counter-offer to the local sheet.
-        // When a new counter-offer arrives mid-poll, the VM sets selectedCounterOffer
-        // and flips showCounterOfferSheet — we observe that and mirror it here.
-        // The bid is no longer a live counter-offer (matched, withdrawn, expired): close its sheet so
-        // it cannot collide with the full-screen ride presentation.
-        .onChange(of: viewModel.counteredBids) { _, bids in
-            if let current = selectedBid, !bids.contains(where: { $0.id == current.id }) {
-                selectedBid = nil
-            }
-        }
-        .onChange(of: viewModel.showCounterOfferSheet) { _, isShowing in
-            if isShowing, let offer = viewModel.selectedCounterOffer {
-                selectedBid = offer
-                viewModel.showCounterOfferSheet = false
             }
         }
     }
@@ -490,7 +465,7 @@ struct MyBidsContent: View {
                                 bid: bid,
                                 viewModel: viewModel,
                                 onCounterOffer: {
-                                    selectedBid = bid
+                                    onRespond(bid)
                                 }
                             )
                         }
@@ -726,6 +701,7 @@ struct ActiveRideCard: View {
 struct RideRequestCard: View {
     let request: RideRequestForBidding
     let locationManager: LocationManager
+    let bidCount: Int
     let onBid: () -> Void
 
     private var distanceToPickup: String {
@@ -780,7 +756,7 @@ struct RideRequestCard: View {
                     }
                     .foregroundColor(Lx.Palette.textSecondary)
 
-                    if let bidCount = request.bid_count, bidCount > 0 {
+                    if bidCount > 0 {
                         HStack(spacing: Lx.Spacing.xs) {
                             Image(systemName: "person.3.fill")
                                 .font(Lx.Typography.caption)
@@ -927,3 +903,42 @@ struct RideshareDashboardView_Previews: PreviewProvider {
     }
 }
 #endif
+
+// MARK: - Transient banner
+
+private struct RideshareBannerModifier: ViewModifier {
+    @ObservedObject var viewModel: RideBiddingViewModel
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .top) {
+            if let banner = viewModel.banner {
+                Text(banner.text)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(banner.isError ? Theme.lxError : Theme.lxSuccess.opacity(0.95))
+                    .cornerRadius(12)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                    .shadow(radius: 6)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onTapGesture { viewModel.banner = nil }
+                    .accessibilityAddTraits(.isStaticText)
+                    .task(id: banner.id) {
+                        try? await Task.sleep(nanoseconds: banner.isError ? 6_000_000_000 : 4_000_000_000)
+                        if viewModel.banner?.id == banner.id { viewModel.banner = nil }
+                    }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.banner)
+    }
+}
+
+extension View {
+    func rideshareBanner(_ viewModel: RideBiddingViewModel) -> some View {
+        modifier(RideshareBannerModifier(viewModel: viewModel))
+    }
+}

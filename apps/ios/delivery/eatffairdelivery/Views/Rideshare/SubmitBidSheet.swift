@@ -110,14 +110,11 @@ struct SubmitBidSheet: View {
                 // Pre-fill with suggested price
                 proposedPrice = String(format: "%.2f", suggestedPrice)
             }
-            .onChange(of: viewModel.showSuccess) { _, success in
+            .rideshareBanner(viewModel)
+            .onChange(of: viewModel.bidSubmitCount) { _, _ in
                 // Dismiss sheet when bid is successfully submitted
-                if success {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        dismiss()
-                        onDismiss()
-                    }
-                }
+                dismiss()
+                onDismiss()
             }
         }
         .preferredColorScheme(.dark)
