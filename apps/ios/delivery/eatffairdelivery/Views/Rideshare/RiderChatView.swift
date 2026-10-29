@@ -12,6 +12,7 @@ struct RiderChatView: View {
     let riderName: String
     let riderPhone: String?
 
+    @StateObject private var safety: ChatSafetyController
     @Environment(\.dismiss) private var dismiss
     @State private var messageText = ""
     @State private var messages: [RideChatMessage] = []
@@ -19,6 +20,18 @@ struct RiderChatView: View {
     @State private var isSending = false
     @State private var errorMessage: String?
     @FocusState private var isInputFocused: Bool
+
+    init(rideRequestId: Int, riderName: String, riderPhone: String?, riderId: Int? = nil) {
+        self.rideRequestId = rideRequestId
+        self.riderName = riderName
+        self.riderPhone = riderPhone
+        _safety = StateObject(wrappedValue: ChatSafetyController(
+            rideRequestId: rideRequestId,
+            otherUserType: "customer",
+            otherUserId: riderId,
+            otherName: riderName
+        ))
+    }
 
     private let quickMessages = [
         "I'm on my way!",
@@ -34,13 +47,15 @@ struct RiderChatView: View {
                 // Messages List
                 messagesScrollView
 
-                // Quick Messages
-                quickMessagesBar
-
-                // Input Bar
-                inputBar
+                if safety.isBlocked {
+                    ChatBlockedBar(controller: safety)
+                } else {
+                    quickMessagesBar
+                    inputBar
+                }
             }
             .background(Theme.lxBg.ignoresSafeArea())
+            .chatSafety(safety)
             .navigationTitle(riderName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -52,15 +67,19 @@ struct RiderChatView: View {
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if let phone = riderPhone, !phone.isEmpty {
-                        Button(action: callRider) {
-                            Image(systemName: "phone.fill")
-                                .foregroundColor(Theme.lxSuccess)
+                    HStack(spacing: 16) {
+                        if let phone = riderPhone, !phone.isEmpty {
+                            Button(action: callRider) {
+                                Image(systemName: "phone.fill")
+                                    .foregroundColor(Theme.lxSuccess)
+                            }
                         }
+                        ChatSafetyMenu(controller: safety)
                     }
                 }
             }
             .onAppear {
+                safety.refreshBlocks()
                 loadMessages()
                 startPolling()
             }
@@ -86,7 +105,7 @@ struct RiderChatView: View {
                     } else if messages.isEmpty {
                         emptyStateView
                     } else {
-                        ForEach(messages) { message in
+                        ForEach(visibleMessages) { message in
                             RideChatBubble(message: message, isDriver: true)
                                 .id(message.id)
                         }
@@ -103,6 +122,11 @@ struct RiderChatView: View {
                 }
             }
         }
+    }
+
+    /// Messages from a blocked rider are hidden on this device.
+    private var visibleMessages: [RideChatMessage] {
+        safety.isBlocked ? messages.filter { $0.isFromDriver } : messages
     }
 
     // MARK: - Error State
@@ -235,6 +259,7 @@ struct RiderChatView: View {
             switch result {
             case .success(let fetchedMessages):
                 messages = fetchedMessages.sorted { $0.id < $1.id }
+                safety.learnOtherUser(from: messages)
                 errorMessage = nil
             case .failure(let error):
                 #if DEBUG

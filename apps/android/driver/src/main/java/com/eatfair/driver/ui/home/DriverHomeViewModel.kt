@@ -191,6 +191,18 @@ class DriverHomeViewModel @Inject constructor(
         }
     }
 
+    /** Report/block operations for the chat of [rideRequestId]; the other participant is the rider (customer). */
+    fun chatSafetyOps(rideRequestId: Int): com.eatfair.shared.ui.ChatSafetyOps =
+        object : com.eatfair.shared.ui.ChatSafetyOps {
+            override suspend fun report(reason: String, details: String) =
+                repository.reportChat(rideRequestId, reason, details)
+
+            override suspend fun setBlocked(block: Boolean, userId: Int) =
+                repository.setChatBlock(block, "customer", userId)
+
+            override suspend fun fetchBlocks() = repository.getChatBlocks()
+        }
+
     fun closeChat() {
         chatJob?.cancel()
         chatJob = null

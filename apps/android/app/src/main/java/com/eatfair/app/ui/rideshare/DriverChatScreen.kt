@@ -34,8 +34,17 @@ import java.util.*
 fun DriverChatScreen(
     rideRequestId: Int,
     driverName: String,
+    driverId: Int? = null,
     onNavigateBack: () -> Unit = {}
 ) {
+    val safety = com.eatfair.shared.ui.rememberChatSafetyState(
+        rideRequestId = rideRequestId,
+        otherUserType = "driver",
+        otherUserId = driverId,
+        otherName = driverName,
+        ops = remember(rideRequestId) { CustomerRideshareApiService.chatSafetyOps(rideRequestId) }
+    )
+    LaunchedEffect(rideRequestId) { safety.refreshBlocks() }
     var messages by remember { mutableStateOf<List<RideChatMessage>>(emptyList()) }
     var messageText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
@@ -58,10 +67,15 @@ fun DriverChatScreen(
         }
     }
 
+    LaunchedEffect(messages) { safety.learnOtherUser(messages) }
+
+    // Messages from a blocked driver are hidden on this device.
+    val visibleMessages = if (safety.isBlocked) messages.filter { !it.isFromDriver } else messages
+
     // Auto-scroll to bottom when new messages arrive
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+    LaunchedEffect(visibleMessages.size) {
+        if (visibleMessages.isNotEmpty()) {
+            listState.animateScrollToItem(visibleMessages.size - 1)
         }
     }
 
@@ -105,10 +119,13 @@ fun DriverChatScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                actions = { com.eatfair.shared.ui.ChatSafetyMenu(safety) }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(safety.snackbarHostState) }
     ) { paddingValues ->
+        com.eatfair.shared.ui.ChatSafetyDialogs(safety)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -128,7 +145,7 @@ fun DriverChatScreen(
                     ) {
                         CircularProgressIndicator()
                     }
-                } else if (messages.isEmpty()) {
+                } else if (visibleMessages.isEmpty()) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -161,73 +178,77 @@ fun DriverChatScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(messages) { message ->
+                        items(visibleMessages) { message ->
                             CustomerChatBubble(message = message, driverName = driverName)
                         }
                     }
                 }
             }
 
-            // Message Input
-            Surface(
-                modifier = Modifier.fillMaxWidth().imePadding(),
-                tonalElevation = 3.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+            if (safety.isBlocked) {
+                com.eatfair.shared.ui.ChatBlockedBar(safety)
+            } else {
+                // Message Input
+                Surface(
+                    modifier = Modifier.fillMaxWidth().imePadding(),
+                    tonalElevation = 3.dp
                 ) {
-                    OutlinedTextField(
-                        value = messageText,
-                        onValueChange = { messageText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type a message...") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(Lx.Radius.sheet),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Lx.Orange,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                        )
-                    )
-
-                    FilledIconButton(
-                        onClick = {
-                            if (messageText.isNotBlank() && !isSending) {
-                                isSending = true
-                                scope.launch {
-                                    val result = CustomerRideshareApiService.sendChatMessage(
-                                        rideRequestId = rideRequestId,
-                                        message = messageText
-                                    )
-                                    result.onSuccess { newMessage ->
-                                        messages = messages + newMessage
-                                        messageText = ""
-                                    }
-                                    isSending = false
-                                }
-                            }
-                        },
-                        enabled = messageText.isNotBlank() && !isSending,
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = Lx.Orange,
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (isSending) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
+                        OutlinedTextField(
+                            value = messageText,
+                            onValueChange = { messageText = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Type a message...") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(Lx.Radius.sheet),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Lx.Orange,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                             )
-                        } else {
-                            Icon(
-                                Icons.Default.Send,
-                                contentDescription = "Send",
-                                tint = Color.White
+                        )
+
+                        FilledIconButton(
+                            onClick = {
+                                if (messageText.isNotBlank() && !isSending) {
+                                    isSending = true
+                                    scope.launch {
+                                        val result = CustomerRideshareApiService.sendChatMessage(
+                                            rideRequestId = rideRequestId,
+                                            message = messageText
+                                        )
+                                        result.onSuccess { newMessage ->
+                                            messages = messages + newMessage
+                                            messageText = ""
+                                        }
+                                        isSending = false
+                                    }
+                                }
+                            },
+                            enabled = messageText.isNotBlank() && !isSending,
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = Lx.Orange,
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
+                        ) {
+                            if (isSending) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Send,
+                                    contentDescription = "Send",
+                                    tint = Color.White
+                                )
+                            }
                         }
                     }
                 }

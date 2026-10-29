@@ -455,9 +455,19 @@ struct PersonalInfoSection: View {
 // MARK: - Vehicle & Documents Section
 struct VehicleDocumentsSection: View {
     @ObservedObject var viewModel: DriverProfileViewModel
-    @State private var showWebVerification = false
+    @State private var activeCapture: DocumentCapture?
 
-    private let webVerificationURL = AppConstants.driverApplicationURL
+    private struct DocumentCapture: Identifiable {
+        let documentType: String
+        let source: DocumentCaptureView.Source
+        var id: String { "\(documentType)-\(source)" }
+    }
+
+    private static let uploadableDocuments: [(type: String, title: String, icon: String)] = [
+        ("drivers_license", "Driver's License", "person.text.rectangle"),
+        ("insurance", "Insurance Card", "doc.text"),
+        ("vehicle_registration", "Vehicle Registration", "car.fill")
+    ]
 
     var body: some View {
         VStack(spacing: 16) {
@@ -614,7 +624,7 @@ struct VehicleDocumentsSection: View {
                             Text("No Documents Submitted")
                                 .font(.headline)
                                 .foregroundColor(Theme.lxText)
-                            Text("Complete your verification on the web portal")
+                            Text("Add your documents below to complete verification")
                                 .font(.subheadline)
                                 .foregroundColor(Theme.lxTextSecondary)
                                 .multilineTextAlignment(.center)
@@ -624,29 +634,50 @@ struct VehicleDocumentsSection: View {
 
                     Divider().overlay(Theme.lxHairline)
 
-                    // Web Verification Button
+                    // Native document upload
                     VStack(spacing: 8) {
-                        Text("Upload documents through our secure web portal:")
+                        Text("Upload your documents securely from your phone:")
                             .font(.caption)
                             .foregroundColor(Theme.lxTextSecondary)
                             .multilineTextAlignment(.center)
 
-                        Button(action: { showWebVerification = true }) {
-                            HStack {
-                                Image(systemName: "safari.fill")
-                                Text("Upload Documents on Web")
+                        ForEach(Self.uploadableDocuments, id: \.type) { document in
+                            Menu {
+                                if DocumentCaptureView.isCameraAvailable {
+                                    Button("Take Photo") {
+                                        activeCapture = DocumentCapture(documentType: document.type, source: .camera)
+                                    }
+                                }
+                                Button("Choose from Library") {
+                                    activeCapture = DocumentCapture(documentType: document.type, source: .photoLibrary)
+                                }
+                            } label: {
+                                HStack {
+                                    if viewModel.uploadingDocumentType == document.type {
+                                        ProgressView().tint(Lx.Palette.onAccent)
+                                    } else {
+                                        Image(systemName: document.icon)
+                                    }
+                                    Text("Upload \(document.title)")
+                                }
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Lx.Palette.onAccent)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Theme.lxButtonGradient)
+                                .cornerRadius(Lx.Radius.button)
                             }
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(Lx.Palette.onAccent)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Theme.lxButtonGradient)
-                            .cornerRadius(Lx.Radius.button)
-                            .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
+                            .disabled(viewModel.uploadingDocumentType != nil)
+                            .accessibilityLabel("Upload \(document.title)")
                         }
-                        .accessibilityLabel("Upload documents on web")
-                        .accessibilityHint("Opens the web portal for document upload")
+
+                        if let notice = viewModel.documentUploadNotice {
+                            Text(notice)
+                                .font(.caption)
+                                .foregroundColor(Theme.lxSuccess)
+                                .multilineTextAlignment(.center)
+                        }
                     }
                 }
             }
@@ -674,11 +705,18 @@ struct VehicleDocumentsSection: View {
             }
         }
         .padding(.bottom, 24)
-        .sheet(isPresented: $showWebVerification) {
-            if let url = URL(string: webVerificationURL) {
-                SafariView(url: url)
-                    .ignoresSafeArea()
-            }
+        .fullScreenCover(item: $activeCapture) { capture in
+            DocumentCaptureView(
+                source: capture.source,
+                image: Binding(
+                    get: { nil },
+                    set: { newImage in
+                        guard let newImage, let jpeg = newImage.resizedForDocumentUpload() else { return }
+                        viewModel.uploadVerificationDocument(documentType: capture.documentType, imageData: jpeg)
+                    }
+                )
+            )
+            .ignoresSafeArea()
         }
     }
 }
@@ -883,61 +921,28 @@ struct EarningsPaymentSection: View {
                 earningsViewModel.fetchEarnings()
             }
 
-            // Bank Account
+            // Bank details are collected only by Stripe Connect onboarding (never typed into this app).
             ProfileCard(title: "Bank Account", icon: "banknote.fill") {
                 VStack(spacing: 12) {
-                    ProfileField(
-                        label: "Bank Name",
-                        value: $viewModel.bankName,
-                        isEditing: viewModel.isEditing,
-                        icon: "building.columns"
-                    )
+                    HStack(spacing: 12) {
+                        Image(systemName: "lock.shield")
+                            .foregroundColor(Theme.lxOrange)
+                        Text("Payouts are handled securely by Stripe. Use \"Set Up / Manage Payouts\" below to add or change your bank account. Bank and routing numbers are never entered in this app.")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.lxTextSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
 
-                    ProfileField(
-                        label: "Account Holder Name",
-                        value: $viewModel.accountHolderName,
-                        isEditing: viewModel.isEditing,
-                        icon: "person"
-                    )
-
-                    if viewModel.isEditing {
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Account Type")
-                                    .font(.caption)
-                                    .foregroundColor(Theme.lxTextSecondary)
-                                Picker("Account Type", selection: $viewModel.accountType) {
-                                    Text("Checking").tag("checking")
-                                    Text("Savings").tag("savings")
-                                }
-                                .pickerStyle(.segmented)
-                            }
-                        }
-
-                        ProfileField(
-                            label: "Routing Number",
-                            value: $viewModel.routingNumber,
-                            isEditing: viewModel.isEditing,
-                            icon: "number",
-                            keyboardType: .numberPad
-                        )
-
-                        ProfileField(
-                            label: "Account Number",
-                            value: $viewModel.accountNumber,
-                            isEditing: viewModel.isEditing,
-                            icon: "creditcard",
-                            keyboardType: .numberPad,
-                            isSecure: true
-                        )
-                    } else {
+                    if let last4 = viewModel.driver?.bankAccount?.accountNumberLast4, !last4.isEmpty {
                         HStack {
                             Image(systemName: "creditcard")
                                 .foregroundColor(Theme.lxTextMuted)
-                            Text("Account")
+                            Text("Account on file")
                                 .foregroundColor(Theme.lxTextSecondary)
                             Spacer()
-                            Text("****\(viewModel.driver?.bankAccount?.accountNumberLast4 ?? "****")")
+                            Text("****\(last4)")
                                 .foregroundColor(Theme.lxText)
                         }
                         .padding(.horizontal, 12)
@@ -1089,15 +1094,6 @@ struct SettingsSection: View {
                     }
                     .tint(Theme.lxOrange)
 
-                    Toggle(isOn: $viewModel.acceptCashOrders) {
-                        HStack {
-                            Image(systemName: "banknote.fill")
-                                .foregroundColor(Theme.lxOrange)
-                            Text("Accept Cash Rides")
-                        }
-                    }
-                    .tint(Theme.lxOrange)
-
                     Divider().overlay(Theme.lxHairline)
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -1130,12 +1126,6 @@ struct SettingsSection: View {
                     if let supportURL = URL(string: "mailto:\(AppConfig.shared.supportEmail)") {
                         Link(destination: supportURL) {
                             SettingsRow(icon: "envelope.fill", title: "Contact Support", color: Theme.lxSuccess)
-                        }
-                        Divider().overlay(Theme.lxHairline)
-                    }
-                    if let rateURL = URL(string: "https://apps.apple.com/app/id\(Bundle.main.bundleIdentifier ?? "")") {
-                        Link(destination: rateURL) {
-                            SettingsRow(icon: "star.fill", title: "Rate the App", color: .yellow)
                         }
                     }
                 }
@@ -1204,7 +1194,7 @@ struct SettingsSection: View {
             } message: {
                 Text("This is your final warning. Your account and all associated data will be permanently deleted. This cannot be reversed.")
             }
-            .alert("Error", isPresented: .constant(deleteError != nil)) {
+            .alert("Couldn't Delete Account", isPresented: .constant(deleteError != nil)) {
                 Button("OK") { deleteError = nil }
                     .accessibilityLabel("Dismiss error")
             } message: {
@@ -1259,7 +1249,7 @@ struct SettingsSection: View {
                     try? Auth.auth().signOut()
 
                 case .failure(let error):
-                    self.deleteError = "Failed to delete account: \(error.localizedDescription)"
+                    self.deleteError = error.localizedDescription
                 }
             }
         }

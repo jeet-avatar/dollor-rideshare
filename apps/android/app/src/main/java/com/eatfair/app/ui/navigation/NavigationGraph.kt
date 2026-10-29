@@ -169,18 +169,11 @@ fun NavigationGraph(
                 onSafetyFeaturesClick = {
                     navController.navigate(Screen.SafetyFeatures.route)
                 },
-                onDeleteAccountClick = {
-                    // Call delete account API - matches Settings screen behavior
+                onDeleteAccountClick = { onError ->
+                    // Stay signed in on failure so the server's reason (e.g. a ride in progress) is shown
                     authViewModel.deleteAccount(
-                        onSuccess = {
-                            // Account deleted, logout and navigate to welcome
-                            authViewModel.logout()
-                        },
-                        onError = { error ->
-                            // Log error but still logout for safety
-                            android.util.Log.e("NavigationGraph", "Delete account failed: $error")
-                            authViewModel.logout()
-                        }
+                        onSuccess = { authViewModel.logout() },
+                        onError = onError
                     )
                 },
                 onLogoutClick = {
@@ -561,11 +554,10 @@ fun NavGraphBuilder.profileGraph(
                 onWhatDriversSeeClick = { navController.navigate(Screen.WhatDriversSee.route) },
                 onYourPrivacyClick = { navController.navigate(Screen.YourPrivacy.route) },
                 onSafetyFeaturesClick = { navController.navigate(Screen.SafetyFeatures.route) },
-                onDeleteAccountClick = {
-                    // Delete account handled in ProfileScreen dialog, then logout
+                onDeleteAccountClick = { onError ->
                     authViewModel.deleteAccount(
                         onSuccess = { authViewModel.logout() },
-                        onError = { /* Error already shown in ProfileScreen */ }
+                        onError = onError
                     )
                 },
                 onLogoutClick = { authViewModel.logout() }

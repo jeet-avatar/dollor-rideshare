@@ -43,6 +43,31 @@ public class NotificationManager: NSObject, ObservableObject {
         }
     }
 
+    /// Launch-time hook: never prompts. If the user already granted permission in an earlier session,
+    /// re-register with APNs so push keeps working.
+    public func registerIfAlreadyAuthorized() {
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
+            let status = settings.authorizationStatus
+            guard status == .authorized || status == .provisional || status == .ephemeral else { return }
+            DispatchQueue.main.async {
+                self?.isAuthorized = true
+                self?.registerForRemoteNotifications()
+            }
+        }
+    }
+
+    /// Contextual prompt (e.g. after the first ride request, or when a driver goes online).
+    /// Shows the system dialog only while the status is still undetermined.
+    public func requestAuthorizationIfNeeded() {
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
+            if settings.authorizationStatus == .notDetermined {
+                self?.requestAuthorization()
+            } else {
+                self?.registerIfAlreadyAuthorized()
+            }
+        }
+    }
+
     /// Register for remote notifications (call after authorization)
     public func registerForRemoteNotifications() {
         #if canImport(UIKit)

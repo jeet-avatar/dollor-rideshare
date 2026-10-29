@@ -60,13 +60,10 @@ class DriverProfileViewModel: ObservableObject {
     @Published var bankName = ""
     @Published var accountHolderName = ""
     @Published var accountType = "checking"
-    @Published var routingNumber = ""
-    @Published var accountNumber = ""
 
     // MARK: - Preferences
     @Published var notificationsEnabled = true
     @Published var soundEnabled = true
-    @Published var acceptCashOrders = true
     @Published var maxDeliveryDistance: Double = AppConfig.shared.maxDeliveryDistanceMiles
 
     // MARK: - Expiration Alerts
@@ -74,6 +71,9 @@ class DriverProfileViewModel: ObservableObject {
 
     // MARK: - Documents from P2P API
     @Published var documentsResponse: DriverDocumentsResponse?
+    /// Document type currently being uploaded from the profile (nil when idle)
+    @Published var uploadingDocumentType: String?
+    @Published var documentUploadNotice: String?
     @Published var isLoadingDocuments = false
 
     struct ExpirationAlert: Identifiable {
@@ -132,46 +132,18 @@ class DriverProfileViewModel: ObservableObject {
         return digitsOnly.count >= 10 && digitsOnly.count <= 15
     }
 
-    /// Validates routing number (9 digits, ABA checksum)
-    var isRoutingNumberValid: Bool {
-        guard !routingNumber.isEmpty else { return true } // Empty is valid (optional)
-        let digitsOnly = routingNumber.filter { $0.isNumber }
-        guard digitsOnly.count == 9 else { return false }
-
-        // ABA routing number checksum validation
-        let digits = digitsOnly.compactMap { Int(String($0)) }
-        guard digits.count == 9 else { return false }
-        let checksum = (3 * (digits[0] + digits[3] + digits[6]) +
-                        7 * (digits[1] + digits[4] + digits[7]) +
-                        1 * (digits[2] + digits[5] + digits[8])) % 10
-        return checksum == 0
-    }
-
-    /// Validates account number (4-17 digits)
-    var isAccountNumberValid: Bool {
-        guard !accountNumber.isEmpty else { return true } // Empty is valid (optional)
-        let digitsOnly = accountNumber.filter { $0.isNumber }
-        return digitsOnly.count >= 4 && digitsOnly.count <= 17
-    }
-
     /// Returns validation error messages
     var validationErrors: [String] {
         var errors: [String] = []
         if !phone.isEmpty && !isPhoneValid {
             errors.append("Phone number must be 10-15 digits")
         }
-        if !routingNumber.isEmpty && !isRoutingNumberValid {
-            errors.append("Invalid routing number")
-        }
-        if !accountNumber.isEmpty && !isAccountNumberValid {
-            errors.append("Account number must be 4-17 digits")
-        }
         return errors
     }
 
     /// Check if all inputs are valid before saving
     var canSaveProfile: Bool {
-        return isPhoneValid && isRoutingNumberValid && isAccountNumberValid
+        return isPhoneValid
     }
 
     // Helper to get current driver ID (P2P or Firebase)
@@ -468,7 +440,6 @@ class DriverProfileViewModel: ObservableObject {
         if let prefsData = data["preferences"] as? [String: Any] {
             notificationsEnabled = prefsData["notificationsEnabled"] as? Bool ?? true
             soundEnabled = prefsData["soundEnabled"] as? Bool ?? true
-            acceptCashOrders = prefsData["acceptCashOrders"] as? Bool ?? true
             maxDeliveryDistance = prefsData["maxDeliveryDistance"] as? Double ?? AppConfig.shared.maxDeliveryDistanceMiles
         }
 
@@ -704,10 +675,7 @@ class DriverProfileViewModel: ObservableObject {
             vehicleColor: vehicleColor.isEmpty ? nil : vehicleColor,
             licensePlate: licensePlate.isEmpty ? nil : licensePlate,
             licenseExpiry: licenseExpiration,
-            insuranceExpiry: insuranceExpiration,
-            bankName: bankName.isEmpty ? nil : bankName,
-            bankRoutingNumber: routingNumber.isEmpty ? nil : routingNumber,
-            accountNumber: accountNumber.isEmpty ? nil : accountNumber
+            insuranceExpiry: insuranceExpiration
         ) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
@@ -770,6 +738,27 @@ class DriverProfileViewModel: ObservableObject {
                     self?.errorMessage = "Unable to upload your photo. Please try again."
                     self?.showError = true
                     logger.error("Upload profile image error: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    // MARK: - Upload Verification Document (native, POST /api/auth/driver/documents)
+    func uploadVerificationDocument(documentType: String, imageData: Data) {
+        guard uploadingDocumentType == nil else { return }
+        uploadingDocumentType = documentType
+        documentUploadNotice = nil
+        p2pService.uploadDriverDocument(documentType: documentType, imageData: imageData) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.uploadingDocumentType = nil
+                switch result {
+                case .success:
+                    self.documentUploadNotice = "Document uploaded. We'll review it shortly."
+                    self.fetchProfile()
+                case .failure(let error):
+                    self.errorMessage = "Upload failed: \(error.localizedDescription)"
+                    self.showError = true
                 }
             }
         }

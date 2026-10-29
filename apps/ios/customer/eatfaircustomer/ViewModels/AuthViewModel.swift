@@ -494,6 +494,8 @@ extension AuthViewModel: ASAuthorizationControllerDelegate {
             identityTokenString = tokenString
         }
 
+        let authorizationCodeString = appleIDCredential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+
         // IMPORTANT: Apple only provides name on FIRST sign-in
         // Save name locally if provided, or retrieve saved name for subsequent logins
         if !fullName.isEmpty {
@@ -514,7 +516,8 @@ extension AuthViewModel: ASAuthorizationControllerDelegate {
             email: appleEmail,
             name: fullName,
             appleId: appleUserId,
-            identityToken: identityTokenString
+            identityToken: identityTokenString,
+            authorizationCode: authorizationCodeString
         ) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false

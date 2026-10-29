@@ -486,6 +486,29 @@ interface DollorApiService {
         @Header("Authorization") token: String
     ): com.eatfair.shared.model.rideshare.BidActionResponse
 
+    @POST("chat/report")
+    suspend fun reportChat(
+        @Body request: com.eatfair.shared.ui.ChatReportRequest,
+        @Header("Authorization") token: String
+    ): retrofit2.Response<okhttp3.ResponseBody>
+
+    @POST("chat/block")
+    suspend fun blockChatUser(
+        @Body request: com.eatfair.shared.ui.ChatBlockRequest,
+        @Header("Authorization") token: String
+    ): retrofit2.Response<okhttp3.ResponseBody>
+
+    @retrofit2.http.HTTP(method = "DELETE", path = "chat/block", hasBody = true)
+    suspend fun unblockChatUser(
+        @Body request: com.eatfair.shared.ui.ChatBlockRequest,
+        @Header("Authorization") token: String
+    ): retrofit2.Response<okhttp3.ResponseBody>
+
+    @GET("chat/blocks")
+    suspend fun getChatBlocks(
+        @Header("Authorization") token: String
+    ): retrofit2.Response<com.eatfair.shared.ui.ChatBlocksResponse>
+
     @GET("auth/driver/me")
     suspend fun getDriverMe(
         @Header("Authorization") token: String

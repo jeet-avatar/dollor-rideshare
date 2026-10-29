@@ -1812,6 +1812,48 @@ class RideChatMessage(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class ChatReport(Base):
+    """User report of a chat message or user (App Store Guideline 1.2). Reviewed by support/admin."""
+    __tablename__ = "chat_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reporter_type = Column(String(20), nullable=False)  # 'customer' or 'driver'
+    reporter_id = Column(Integer, nullable=False, index=True)
+    reported_type = Column(String(20), nullable=False)
+    reported_id = Column(Integer, nullable=False, index=True)
+    ride_request_id = Column(Integer, ForeignKey("ride_requests.id"), nullable=False, index=True)
+    message_id = Column(Integer, ForeignKey("ride_chat_messages.id"), nullable=True)
+    reason = Column(String(20), nullable=False)
+    details = Column(Text, nullable=True)
+    status = Column(String(20), nullable=False, default="open")
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class UserBlock(Base):
+    """blocker no longer sees the blocked user's chat messages, and neither can message the other."""
+    __tablename__ = "user_blocks"
+    __table_args__ = (UniqueConstraint("blocker_type", "blocker_id", "blocked_type", "blocked_id", name="uq_user_blocks_pair"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    blocker_type = Column(String(20), nullable=False)
+    blocker_id = Column(Integer, nullable=False, index=True)
+    blocked_type = Column(String(20), nullable=False)
+    blocked_id = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AppleSigninToken(Base):
+    """Encrypted Sign in with Apple refresh token, kept only so it can be revoked on account deletion."""
+    __tablename__ = "apple_signin_tokens"
+    __table_args__ = (UniqueConstraint("account_type", "account_id", name="uq_apple_signin_tokens_account"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    account_type = Column(String(20), nullable=False)  # 'customer' or 'driver'
+    account_id = Column(Integer, nullable=False, index=True)
+    refresh_token_encrypted = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 # =============================================================================
 # RIDE DISPUTE - Payment dispute/refund tracking
 # =============================================================================

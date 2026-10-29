@@ -103,7 +103,7 @@ fun ProfileScreen(
     onWhatDriversSeeClick: () -> Unit = {},
     onYourPrivacyClick: () -> Unit = {},
     onSafetyFeaturesClick: () -> Unit = {},
-    onDeleteAccountClick: () -> Unit = {},
+    onDeleteAccountClick: (onError: (String) -> Unit) -> Unit = {},
     onLogoutClick: () -> Unit = {}
 ) {
     val profileImageUri by profileViewModel.profileImageUri.collectAsState()
@@ -114,6 +114,7 @@ fun ProfileScreen(
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var isDeletingAccount by remember { mutableStateOf(false) }
+    var deleteAccountError by remember { mutableStateOf<String?>(null) }
 
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
@@ -368,7 +369,10 @@ fun ProfileScreen(
                             onClick = {
                                 showDeleteConfirmation = false
                                 isDeletingAccount = true
-                                onDeleteAccountClick()
+                                onDeleteAccountClick { error ->
+                                    isDeletingAccount = false
+                                    deleteAccountError = error
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Lx.Error)
                         ) {
@@ -378,6 +382,19 @@ fun ProfileScreen(
                     dismissButton = {
                         TextButton(onClick = { showDeleteConfirmation = false }) {
                             Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            deleteAccountError?.let { error ->
+                AlertDialog(
+                    onDismissRequest = { deleteAccountError = null },
+                    title = { Text("Couldn't Delete Account", fontWeight = FontWeight.Bold) },
+                    text = { Text(error) },
+                    confirmButton = {
+                        TextButton(onClick = { deleteAccountError = null }) {
+                            Text("OK")
                         }
                     }
                 )

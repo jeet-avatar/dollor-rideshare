@@ -164,7 +164,8 @@ struct ActiveRideView: View {
                 RiderChatView(
                     rideRequestId: request.id,
                     riderName: request.customer_name ?? "Rider",
-                    riderPhone: request.customer_phone
+                    riderPhone: request.customer_phone,
+                    riderId: request.customer_id
                 )
             }
         }
@@ -840,7 +841,9 @@ struct ActiveRideView: View {
         noShowTimerActive = false
         rideStatus = .inProgress
         viewModel.startRide(bid) { success in
-            if !success {
+            if success {
+                LocationManager.shared.requestAlwaysPermissionForActiveRide()
+            } else {
                 rideStatus = .arrivedAtPickup
                 noShowTimerActive = true
             }

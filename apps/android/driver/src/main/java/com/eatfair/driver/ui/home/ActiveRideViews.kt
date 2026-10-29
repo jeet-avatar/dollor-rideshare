@@ -297,6 +297,9 @@ private fun PrimaryAction(label: String, color: Color, busy: Boolean, onClick: (
 @Composable
 fun RideChatSheet(
     riderName: String?,
+    rideRequestId: Int,
+    riderId: Int?,
+    safetyOps: com.eatfair.shared.ui.ChatSafetyOps,
     messages: List<RideChatMessage>,
     onSend: (String) -> Unit,
     onDismiss: () -> Unit
@@ -304,22 +307,37 @@ fun RideChatSheet(
     var draft by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     LaunchedEffect(messages.size) { if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex) }
+    val safety = com.eatfair.shared.ui.rememberChatSafetyState(
+        rideRequestId = rideRequestId,
+        otherUserType = "customer",
+        otherUserId = riderId,
+        otherName = riderName ?: "rider",
+        ops = safetyOps
+    )
+    LaunchedEffect(rideRequestId) { safety.refreshBlocks() }
+    LaunchedEffect(messages) { safety.learnOtherUser(messages) }
+    // Messages from a blocked rider are hidden on this device.
+    val visibleMessages = if (safety.isBlocked) messages.filter { it.senderType == "driver" } else messages
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f).padding(horizontal = 16.dp)) {
-            Text(
-                "Chat with ${riderName ?: "rider"}",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "Chat with ${riderName ?: "rider"}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.weight(1f)
+                )
+                com.eatfair.shared.ui.ChatSafetyMenu(safety)
+            }
             Spacer(Modifier.height(8.dp))
             LazyColumn(state = listState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (messages.isEmpty()) {
+                if (visibleMessages.isEmpty()) {
                     item { Text("No messages yet. Say hi!", color = DollorDriverColors.Gray500) }
                 }
-                items(messages, key = { it.id }) { msg ->
+                items(visibleMessages, key = { it.id }) { msg ->
                     val mine = msg.senderType == "driver"
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
                         Column(horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
@@ -344,16 +362,22 @@ fun RideChatSheet(
                     }
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
-                OutlinedTextField(
-                    value = draft,
-                    onValueChange = { draft = it },
-                    placeholder = { Text("Message") },
-                    modifier = Modifier.weight(1f),
-                    maxLines = 3
-                )
-                IconButton(onClick = { onSend(draft); draft = "" }, enabled = draft.isNotBlank()) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = DollorDriverColors.Blue)
+            androidx.compose.material3.SnackbarHost(safety.snackbarHostState)
+            com.eatfair.shared.ui.ChatSafetyDialogs(safety)
+            if (safety.isBlocked) {
+                com.eatfair.shared.ui.ChatBlockedBar(safety)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
+                    OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it },
+                        placeholder = { Text("Message") },
+                        modifier = Modifier.weight(1f),
+                        maxLines = 3
+                    )
+                    IconButton(onClick = { onSend(draft); draft = "" }, enabled = draft.isNotBlank()) {
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = DollorDriverColors.Blue)
+                    }
                 }
             }
         }

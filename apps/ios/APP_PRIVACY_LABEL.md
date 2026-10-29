@@ -4,9 +4,9 @@ Derived from the code of the two shipped iOS apps (rider `com.dollorai.customer`
 
 Facts from code:
 - No ad SDKs, no ATT prompt (`ATTrackingManager` not used), no tracking domains. `NSPrivacyTracking` = false in both manifests.
-- No analytics SDK is linked on iOS (no Firebase Analytics, no Crashlytics). Firebase is used for Auth (Google/Apple sign-in) and Cloud Messaging (push tokens).
+- No analytics SDK is linked on iOS (no Firebase Analytics, no Crashlytics). FirebaseAnalytics and its GoogleAppMeasurement* dependencies were removed from the driver target and nothing in either app imports them. Firebase is used for Auth (Google/Apple sign-in), Firestore and Cloud Messaging (push tokens).
 - Rider app permissions (Info.plist): camera (Stripe card scanning), location when in use. Push notifications. No photo library, microphone, contacts, Bluetooth, Face ID.
-- Driver app permissions: camera (document photos), photo library (profile photo and document picker), location when in use and always, microphone and speech recognition (voice dictation of chat messages), push notifications.
+- Driver app permissions: camera (document photos), photo library (profile photo and document picker), location when in use (the "Always" upgrade is requested only when a trip starts, for live trip tracking), microphone and speech recognition (voice dictation of chat messages), push notifications. Notification permission is requested in context (rider: after the first ride request; driver: when first going online), not at launch. Raw bank routing/account numbers are no longer collected in the app; payouts use Stripe Connect onboarding in an in-app browser.
 
 ## Tracking
 Data is not used to track users. Answer "No" to "Do you or your third-party partners use data from this app for tracking?".
@@ -22,7 +22,7 @@ Data is not used to track users. Answer "No" to "Do you or your third-party part
 | Location | Precise Location | App Functionality | While the app is in use |
 | Financial Info | Payment Info | App Functionality | Card entered into Stripe's form; Dollor stores Stripe tokens and card brand/last 4 |
 | Purchases | (not declared) | - | Ride receipts are order records, not In-App Purchases; declare under "Other User Content" below if you prefer to be conservative |
-| User Content | Other User Content | App Functionality | Chat messages with driver and support, optional accessibility request text |
+| User Content | Other User Content | App Functionality | Chat messages with driver and support, chat reports (reason and details) and block list, optional accessibility request text |
 | Identifiers | Device ID | App Functionality | Push token (FCM) linked to the account |
 | Health and Fitness | (consider "Health") | App Functionality | Optional accessibility request: only if the rider turns it on; Apple has no disability category, "Other User Content" is the closest |
 

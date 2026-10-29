@@ -15,6 +15,7 @@ from typing import Optional
 import stripe
 from sqlalchemy.orm import Session
 
+import apple_signin
 from auth_utils import DELETED_EMAIL_SUFFIX
 from cache import revoke_account
 from models import (
@@ -240,6 +241,7 @@ def delete_customer(db: Session, customer: Customer) -> dict:
         customer.stripe_customer_id = None
     db.commit()
     revoke_account("customer", customer.id)
+    apple_signin.revoke_for_account(db, "customer", customer.id)
     return {"stripe_cleanup_pending": not stripe_clean}
 
 
@@ -276,11 +278,13 @@ def delete_driver(db: Session, driver: Driver) -> dict:
         driver.stripe_onboarded = False
     db.commit()
     revoke_account("driver", driver.id)
+    apple_signin.revoke_for_account(db, "driver", driver.id)
     return {"stripe_cleanup_pending": not stripe_clean}
 
 
 def retry_pending_stripe_cleanup(db: Session, role: str, account) -> None:
-    """A second delete call finishes Stripe cleanup that failed the first time."""
+    """A second delete call finishes Stripe cleanup (and Apple token revocation) that failed the first time."""
+    apple_signin.revoke_for_account(db, role, account.id)
     if role == "customer" and account.stripe_customer_id:
         if cleanup_customer_stripe(account.stripe_customer_id):
             account.stripe_customer_id = None

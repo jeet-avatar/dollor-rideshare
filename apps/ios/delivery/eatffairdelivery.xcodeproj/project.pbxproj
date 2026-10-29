@@ -11,10 +11,6 @@
 		104405B42ED79B7900ED321A /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 104405B32ED79B7900ED321A /* GoogleSignInSwift */; };
 		104405B72ED7D97400ED321A /* Stripe in Frameworks */ = {isa = PBXBuildFile; productRef = 104405B62ED7D97400ED321A /* Stripe */; };
 		104405B92ED7D97400ED321A /* StripeApplePay in Frameworks */ = {isa = PBXBuildFile; productRef = 104405B82ED7D97400ED321A /* StripeApplePay */; };
-		104405BB2ED7D97400ED321A /* StripeCardScan in Frameworks */ = {isa = PBXBuildFile; productRef = 104405BA2ED7D97400ED321A /* StripeCardScan */; };
-		104405BD2ED7D97400ED321A /* StripeConnect in Frameworks */ = {isa = PBXBuildFile; productRef = 104405BC2ED7D97400ED321A /* StripeConnect */; };
-		104405BF2ED7D97400ED321A /* StripeFinancialConnections in Frameworks */ = {isa = PBXBuildFile; productRef = 104405BE2ED7D97400ED321A /* StripeFinancialConnections */; };
-		104405C22ED7DC3900ED321A /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 104405C12ED7DC3900ED321A /* FirebaseAnalytics */; };
 		104405C42ED7DC3900ED321A /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 104405C32ED7DC3900ED321A /* FirebaseAuth */; };
 		104405C62ED7DC3900ED321A /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 104405C52ED7DC3900ED321A /* FirebaseCore */; };
 		104405C82ED7DC3900ED321A /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 104405C72ED7DC3900ED321A /* FirebaseFirestore */; };
@@ -94,14 +90,10 @@
 				104405B22ED79B7900ED321A /* GoogleSignIn in Frameworks */,
 				104405B92ED7D97400ED321A /* StripeApplePay in Frameworks */,
 				104407A92ED83E4700ED321A /* EatFairShared in Frameworks */,
-				104405C22ED7DC3900ED321A /* FirebaseAnalytics in Frameworks */,
 				104405B42ED79B7900ED321A /* GoogleSignInSwift in Frameworks */,
 				104405C42ED7DC3900ED321A /* FirebaseAuth in Frameworks */,
 				104405CA2ED7DC3900ED321A /* FirebaseStorage in Frameworks */,
-				104405BF2ED7D97400ED321A /* StripeFinancialConnections in Frameworks */,
 				104405C62ED7DC3900ED321A /* FirebaseCore in Frameworks */,
-				104405BB2ED7D97400ED321A /* StripeCardScan in Frameworks */,
-				104405BD2ED7D97400ED321A /* StripeConnect in Frameworks */,
 				104405C82ED7DC3900ED321A /* FirebaseFirestore in Frameworks */,
 				104405B72ED7D97400ED321A /* Stripe in Frameworks */,
 				C8EFDC0952F083F53C017870 /* Pods_eatffairdelivery.framework in Frameworks */,
@@ -200,10 +192,6 @@
 				104405B32ED79B7900ED321A /* GoogleSignInSwift */,
 				104405B62ED7D97400ED321A /* Stripe */,
 				104405B82ED7D97400ED321A /* StripeApplePay */,
-				104405BA2ED7D97400ED321A /* StripeCardScan */,
-				104405BC2ED7D97400ED321A /* StripeConnect */,
-				104405BE2ED7D97400ED321A /* StripeFinancialConnections */,
-				104405C12ED7DC3900ED321A /* FirebaseAnalytics */,
 				104405C32ED7DC3900ED321A /* FirebaseAuth */,
 				104405C52ED7DC3900ED321A /* FirebaseCore */,
 				104405C72ED7DC3900ED321A /* FirebaseFirestore */,
@@ -550,9 +538,8 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Dollor Driver";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -593,9 +580,8 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Dollor Driver";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -798,26 +784,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 104405B52ED7D97400ED321A /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
 			productName = StripeApplePay;
-		};
-		104405BA2ED7D97400ED321A /* StripeCardScan */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 104405B52ED7D97400ED321A /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
-			productName = StripeCardScan;
-		};
-		104405BC2ED7D97400ED321A /* StripeConnect */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 104405B52ED7D97400ED321A /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
-			productName = StripeConnect;
-		};
-		104405BE2ED7D97400ED321A /* StripeFinancialConnections */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 104405B52ED7D97400ED321A /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
-			productName = StripeFinancialConnections;
-		};
-		104405C12ED7DC3900ED321A /* FirebaseAnalytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 104405C02ED7DC3900ED321A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAnalytics;
 		};
 		104405C32ED7DC3900ED321A /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;

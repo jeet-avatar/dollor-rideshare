@@ -762,6 +762,55 @@ object CustomerRideshareApiService {
         }
     }
 
+    // Chat safety (report / block): POST /api/chat/report, POST|DELETE /api/chat/block, GET /api/chat/blocks.
+    // The other participant of a customer's chat is the driver. 404/405 = older backend.
+    private suspend fun chatSafetyRequest(
+        path: String,
+        method: String,
+        body: Any?
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val requestBody = body?.let { gson.toJson(it).toRequestBody(jsonMediaType) }
+            val request = Request.Builder()
+                .url("$BASE_URL/api/chat/$path")
+                .method(method, requestBody ?: if (method == "GET") null else "{}".toRequestBody(jsonMediaType))
+                .addHeader("Content-Type", "application/json")
+                .withCustomerAuth()
+                .build()
+            client.newCall(request).execute().use { response ->
+                val responseBody = response.body?.string().orEmpty()
+                if (response.isSuccessful) Result.success(responseBody)
+                else Result.failure(com.eatfair.shared.ui.ChatSafety.httpError(response.code, responseBody))
+            }
+        } catch (e: java.io.IOException) {
+            Result.failure(Exception("Network error. Check your connection and try again."))
+        } catch (e: Exception) {
+            Log.w(TAG, "Chat safety request failed", e)
+            Result.failure(Exception("Something went wrong. Please try again."))
+        }
+    }
+
+    fun chatSafetyOps(rideRequestId: Int): com.eatfair.shared.ui.ChatSafetyOps =
+        object : com.eatfair.shared.ui.ChatSafetyOps {
+            override suspend fun report(reason: String, details: String): Result<Unit> =
+                chatSafetyRequest(
+                    "report", "POST",
+                    com.eatfair.shared.ui.ChatReportRequest(rideRequestId, null, reason, details)
+                ).map { }
+
+            override suspend fun setBlocked(block: Boolean, userId: Int): Result<Unit> =
+                chatSafetyRequest(
+                    "block", if (block) "POST" else "DELETE",
+                    com.eatfair.shared.ui.ChatBlockRequest("driver", userId)
+                ).map { }
+
+            override suspend fun fetchBlocks(): Result<List<com.eatfair.shared.ui.ChatBlockEntry>> =
+                chatSafetyRequest("blocks", "GET", null).map { json ->
+                    runCatching { gson.fromJson(json, com.eatfair.shared.ui.ChatBlocksResponse::class.java).blocks }
+                        .getOrDefault(emptyList())
+                }
+        }
+
     /**
      * Send a chat message
      * Matches iOS: P2PAPIService.sendRideChatMessage()

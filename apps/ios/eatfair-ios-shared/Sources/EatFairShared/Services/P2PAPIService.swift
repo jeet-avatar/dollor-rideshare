@@ -283,6 +283,7 @@ public class P2PAPIService: ObservableObject {
         name: String,
         appleId: String,
         identityToken: String? = nil,
+        authorizationCode: String? = nil,
         completion: @escaping (Result<P2PCustomerLoginResponse, Error>) -> Void
     ) {
         guard let url = URL(string: "\(baseURL)/customer/apple-auth") else {
@@ -302,6 +303,9 @@ public class P2PAPIService: ObservableObject {
         // Send identity token if available (contains real email for returning users)
         if let token = identityToken {
             body["identity_token"] = token
+        }
+        if let code = authorizationCode {
+            body["authorization_code"] = code
         }
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -1380,6 +1384,7 @@ public class P2PAPIService: ObservableObject {
         name: String,
         appleId: String,
         identityToken: String? = nil,
+        authorizationCode: String? = nil,
         completion: @escaping (Result<P2PDriverLoginResponse, Error>) -> Void
     ) {
         guard let url = URL(string: "\(baseURL)/auth/driver/apple-auth") else {
@@ -1399,6 +1404,9 @@ public class P2PAPIService: ObservableObject {
         // Include identity_token if available - backend can decode JWT to get real email
         if let token = identityToken {
             body["identity_token"] = token
+        }
+        if let code = authorizationCode {
+            body["authorization_code"] = code
         }
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -1526,9 +1534,6 @@ public class P2PAPIService: ObservableObject {
         licensePlate: String? = nil,
         licenseExpiry: Date? = nil,
         insuranceExpiry: Date? = nil,
-        bankName: String? = nil,
-        bankRoutingNumber: String? = nil,
-        accountNumber: String? = nil,
         completion: @escaping (Result<[String: Any], Error>) -> Void
     ) {
         guard let url = URL(string: "\(baseURL)/drivers/\(driverId)") else {
@@ -1569,16 +1574,6 @@ public class P2PAPIService: ObservableObject {
         if let insuranceExpiry = insuranceExpiry {
             let formatter = ISO8601DateFormatter()
             body["insurance_expiry"] = formatter.string(from: insuranceExpiry)
-        }
-
-        if let bankName = bankName, !bankName.isEmpty {
-            body["bank_name"] = bankName
-        }
-        if let bankRoutingNumber = bankRoutingNumber, !bankRoutingNumber.isEmpty {
-            body["bank_routing_number"] = bankRoutingNumber
-        }
-        if let accountNumber = accountNumber, !accountNumber.isEmpty {
-            body["account_number"] = accountNumber
         }
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
@@ -4825,11 +4820,34 @@ public class P2PAPIService: ObservableObject {
                 SecureStorage.shared.clearAuthTokens(type: .driver)
                 DispatchQueue.main.async { completion(.success(())) }
             } else {
+                // Surface the server's own message (e.g. 409 "You have a ride in progress...")
+                let message = Self.accountDeletionFailureMessage(data: data)
                 DispatchQueue.main.async {
-                    completion(.failure(P2PAPIError.serverError("Failed to delete driver account")))
+                    completion(.failure(P2PAPIError.serverError(message)))
                 }
             }
         }.resume()
+    }
+
+    /// Extracts the human-readable reason from a failed account-deletion response body
+    /// (`{"detail": "..."}` or `{"detail": {"message": "..."}}`), falling back to a generic message.
+    private static func accountDeletionFailureMessage(data: Data?) -> String {
+        let fallback = "We couldn't delete your account. Please try again or contact support@dollor.ai."
+        guard let data = data,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return fallback
+        }
+        if let detail = json["detail"] as? String, !detail.isEmpty {
+            return detail
+        }
+        if let detail = json["detail"] as? [String: Any],
+           let message = (detail["message"] as? String) ?? (detail["detail"] as? String), !message.isEmpty {
+            return message
+        }
+        if let message = json["message"] as? String, !message.isEmpty {
+            return message
+        }
+        return fallback
     }
 
     /// Delete customer account and all associated data
@@ -4861,8 +4879,10 @@ public class P2PAPIService: ObservableObject {
                 SecureStorage.shared.clearAuthTokens(type: .customer)
                 DispatchQueue.main.async { completion(.success(())) }
             } else {
+                // Surface the server's own message (e.g. 409 "You have a ride in progress...")
+                let message = Self.accountDeletionFailureMessage(data: data)
                 DispatchQueue.main.async {
-                    completion(.failure(P2PAPIError.serverError("Failed to delete customer account")))
+                    completion(.failure(P2PAPIError.serverError(message)))
                 }
             }
         }.resume()
@@ -8398,3 +8418,138 @@ public struct P2PAssignDriverResponse: Codable {
 }
 
 // MARK: - Refund Processing Response Models
+
+// MARK: - Chat safety (report / block) — Guideline 1.2 UGC safeguards
+
+public enum ChatSafetyError: Error, Equatable {
+    /// Endpoint missing (older backend): show the "temporarily unavailable" copy.
+    case unavailable
+    case message(String)
+
+    public var userMessage: String {
+        switch self {
+        case .unavailable:
+            return ChatSafety.unavailableMessage
+        case .message(let text):
+            return text
+        }
+    }
+}
+
+public enum ChatSafety {
+    public static let unavailableMessage = "Reporting is temporarily unavailable, email support@dollor.ai"
+}
+
+public struct ChatBlockedUser: Equatable {
+    public let userType: String
+    public let userId: Int
+}
+
+extension P2PAPIService {
+    private func chatSafetyRequest(
+        path: String,
+        method: String,
+        body: [String: Any]?
+    ) -> URLRequest? {
+        guard let url = URL(string: "\(baseURL)/chat/\(path)") else { return nil }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = driverToken ?? customerToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        if let body = body {
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        }
+        return request
+    }
+
+    private func performChatSafety(
+        _ request: URLRequest?,
+        completion: @escaping (Result<Data?, ChatSafetyError>) -> Void
+    ) {
+        guard let request = request else {
+            completion(.failure(.message("Something went wrong. Please try again.")))
+            return
+        }
+        secureSession.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if error != nil {
+                    completion(.failure(.message("Network error. Check your connection and try again.")))
+                    return
+                }
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                switch status {
+                case 200..<300:
+                    completion(.success(data))
+                case 404, 405:
+                    completion(.failure(.unavailable))
+                default:
+                    var message = "Something went wrong. Please try again."
+                    if let data = data,
+                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let detail = json["detail"] as? String, !detail.isEmpty {
+                        message = detail
+                    }
+                    completion(.failure(.message(message)))
+                }
+            }
+        }.resume()
+    }
+
+    /// POST /api/chat/report
+    public func reportChat(
+        rideRequestId: Int,
+        messageId: Int? = nil,
+        reason: String,
+        details: String,
+        completion: @escaping (Result<Void, ChatSafetyError>) -> Void
+    ) {
+        var body: [String: Any] = [
+            "ride_request_id": rideRequestId,
+            "reason": reason,
+            "details": details
+        ]
+        if let messageId = messageId { body["message_id"] = messageId }
+        performChatSafety(chatSafetyRequest(path: "report", method: "POST", body: body)) { result in
+            completion(result.map { _ in () })
+        }
+    }
+
+    /// POST /api/chat/block (block == true) or DELETE /api/chat/block (block == false)
+    public func setChatBlock(
+        block: Bool,
+        userType: String,
+        userId: Int,
+        completion: @escaping (Result<Void, ChatSafetyError>) -> Void
+    ) {
+        let body: [String: Any] = ["blocked_user_type": userType, "blocked_user_id": userId]
+        let request = chatSafetyRequest(path: "block", method: block ? "POST" : "DELETE", body: body)
+        performChatSafety(request) { result in
+            completion(result.map { _ in () })
+        }
+    }
+
+    /// GET /api/chat/blocks
+    public func fetchChatBlocks(completion: @escaping (Result<[ChatBlockedUser], ChatSafetyError>) -> Void) {
+        performChatSafety(chatSafetyRequest(path: "blocks", method: "GET", body: nil)) { result in
+            switch result {
+            case .failure(let error):
+                completion(.failure(error))
+            case .success(let data):
+                guard let data = data,
+                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let blocks = json["blocks"] as? [[String: Any]] else {
+                    completion(.success([]))
+                    return
+                }
+                let parsed = blocks.compactMap { entry -> ChatBlockedUser? in
+                    guard let type = entry["blocked_user_type"] as? String,
+                          let id = entry["blocked_user_id"] as? Int else { return nil }
+                    return ChatBlockedUser(userType: type, userId: id)
+                }
+                completion(.success(parsed))
+            }
+        }
+    }
+}

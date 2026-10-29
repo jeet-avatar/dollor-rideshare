@@ -69,8 +69,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
 
-        // Request authorization
-        NotificationManager.shared.requestAuthorization { _ in }
+        // No permission prompt at launch: it is requested after the first ride request.
+        NotificationManager.shared.registerIfAlreadyAuthorized()
     }
 
     // MARK: - Remote Notification Registration

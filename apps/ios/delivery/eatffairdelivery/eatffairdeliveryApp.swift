@@ -64,12 +64,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
 
-        // Request authorization
-        NotificationManager.shared.requestAuthorization { granted in
-            if granted {
-                deliveryLogger.info("Push notification authorization granted")
-            }
-        }
+        // No permission prompt at launch: it is requested when the driver first goes online.
+        NotificationManager.shared.registerIfAlreadyAuthorized()
     }
 
     // MARK: - Remote Notification Registration

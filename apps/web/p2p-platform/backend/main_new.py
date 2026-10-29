@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 from database import get_db, init_db
 from models import User, Client, Invoice, InvoiceItem, Payment, UserRole, InvoiceStatus, PaymentStatus, Vendor, Driver, DriverStatus, Customer, CustomerStatus, Order, OrderStatus, OrderDispute, OrderDisputeReason, DisputeStatus
+import apple_signin
 from auth_utils import require_any_auth, require_customer, require_driver, require_vendor, require_admin
 from encryption import encrypt_field, decrypt_field, mask_email
 from email_service import (
@@ -283,8 +284,10 @@ async def bot_blocklist_middleware(request: Request, call_next):
     # Always serve robots.txt and health endpoints — bots must be able to read
     # crawl directives, and monitoring tools must be able to reach health checks
     path = request.url.path
+    # Public legal pages stay reachable for store link checkers (non-browser user agents)
     if path in ("/robots.txt", "/health", "/api/health", "/api/health/ready",
-                "/api/health/live", "/api/health/db-pool"):
+                "/api/health/live", "/api/health/db-pool",
+                "/privacy", "/terms", "/driver-terms", "/delete-account"):
         return await call_next(request)
 
     ua = request.headers.get("user-agent", "")
@@ -2961,6 +2964,7 @@ class DriverAppleAuthRequest(BaseModel):
     apple_id: Optional[str] = None  # Ignored: the verified token `sub` is authoritative
     identity_token: Optional[str] = None  # JWT from Apple (required)
     nonce_hash: Optional[str] = None  # SHA256 hash of nonce sent to Apple (G2: replay protection)
+    authorization_code: Optional[str] = None  # One-time code; exchanged for a refresh token kept for revocation
 
 @app.post("/api/auth/driver/apple-auth")
 def driver_apple_auth(http_request: Request, request: DriverAppleAuthRequest, db: Session = Depends(get_db)):
@@ -3026,6 +3030,9 @@ def driver_apple_auth(http_request: Request, request: DriverAppleAuthRequest, db
     # Get driver info (may already be loaded)
     if not driver and user and user.driver_id:
         driver = db.query(Driver).filter(Driver.id == user.driver_id).first()
+
+    if driver:
+        apple_signin.store_refresh_token_from_code(db, "driver", driver.id, request.authorization_code)
 
     print(f"Driver Apple auth successful for: {mask_email(user.email)} (status: {driver.status.value if driver else 'unknown'})")
     access_token = create_access_token(data={"sub": user.email, "role": "driver", "driver_id": driver.id if driver else None})
@@ -4500,6 +4507,12 @@ def get_driver_profile_by_id(driver_id: int, driver: Driver = Depends(require_dr
     }
 
 
+BANK_NUMBERS_NOT_ACCEPTED_MESSAGE = (
+    "Bank account numbers can no longer be entered in the app. Set up payouts securely with Stripe from "
+    "Profile > Payouts."
+)
+
+
 class DriverProfileUpdate(BaseModel):
     """Request body for driver profile update (iOS app and web portal compatible)"""
     first_name: Optional[str] = None
@@ -4633,30 +4646,15 @@ def update_driver_profile_by_id(
     if vehicle_photo_url is not None:
         driver.vehicle_photo_url = vehicle_photo_url
 
-    # Update bank account (driver-submitted; auto-verified for demo accounts)
-    if body:
-        bank_name_val = body.bank_name
-        bank_routing_val = body.bank_routing_number
-        account_number_val = body.account_number
-    else:
-        bank_name_val = bank_routing_val = account_number_val = None
-
-    if bank_name_val is not None:
-        from encryption import encrypt_field
-        driver.bank_name = encrypt_field(bank_name_val)
-        driver.bank_routing_number = encrypt_field(bank_routing_val)
-        if account_number_val:
-            driver.bank_last4 = account_number_val[-4:]  # Last 4 stays plaintext for display
-        account_holder = driver.bank_account_holder or f"{driver.first_name or ''} {driver.last_name or ''}".strip()
-        driver.bank_account_holder = encrypt_field(account_holder)
-        driver.bank_verified = True
-        driver.bank_verified_at = datetime.utcnow()
+    # Raw bank routing/account numbers are never persisted or logged (Apple 5.1.1 / PCI hygiene): payout details
+    # are collected by Stripe Connect onboarding. The fields are still accepted so older apps do not crash.
+    bank_fields_ignored = bool(body and (body.bank_name or body.bank_routing_number or body.account_number))
 
     driver.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(driver)
 
-    return {
+    response = {
         "success": True,
         "message": "Profile updated successfully",
         "driver": {
@@ -4669,6 +4667,11 @@ def update_driver_profile_by_id(
             "zip_code": driver.zip_code
         }
     }
+    if bank_fields_ignored:
+        response["bank_details_ignored"] = True
+        response["bank_error"] = BANK_NUMBERS_NOT_ACCEPTED_MESSAGE
+        response["stripe_onboarding_path"] = f"/api/drivers/{driver.id}/stripe/onboarding-link"
+    return response
 
 
 @app.patch("/drivers/{driver_id}/status")
@@ -6081,6 +6084,7 @@ class CustomerAppleAuthRequest(BaseModel):
     apple_id: Optional[str] = None  # Ignored: the verified token `sub` is authoritative
     identity_token: Optional[str] = None  # JWT from Apple (required)
     nonce_hash: Optional[str] = None  # SHA256 hash of nonce sent to Apple (G2: replay protection)
+    authorization_code: Optional[str] = None  # One-time code; exchanged for a refresh token kept for revocation
 
 @app.post("/api/customer/apple-auth")
 def customer_apple_auth(request: CustomerAppleAuthRequest, db: Session = Depends(get_db)):
@@ -6165,6 +6169,8 @@ def customer_apple_auth(request: CustomerAppleAuthRequest, db: Session = Depends
         customer.apple_id = apple_sub
         db.commit()
         print(f"Updated existing customer {mask_email(customer.email)} with apple_id")
+
+    apple_signin.store_refresh_token_from_code(db, "customer", customer.id, request.authorization_code)
 
     # Generate token
     access_token = create_access_token(data={"sub": user.email, "role": "customer", "customer_id": customer.id})
@@ -9836,6 +9842,8 @@ app.include_router(realtime_router, dependencies=[Depends(require_any_auth)])
 
 # Include Ride Bidding routes (Matchmaking platform)
 from bid_routes import router as bid_router
+import chat_safety  # noqa: E402  (report/block routes; the chat endpoints below use its helpers)
+app.include_router(chat_safety.router)
 app.include_router(bid_router)
 
 # Public rideshare config (fees, bidding presets, dispatch, support) read by every app
@@ -10587,13 +10595,19 @@ def get_ride_request_chat(
     _auth: dict = Depends(require_any_auth),
 ):
     """Get chat messages for a ride request"""
-    from models import RideChatMessage
+    from models import RideChatMessage, RideRequest
 
-    _require_ride_chat_participant(db, ride_request_id, _auth)
+    role = _require_ride_chat_participant(db, ride_request_id, _auth)
 
     messages = db.query(RideChatMessage).filter(
         RideChatMessage.ride_request_id == ride_request_id
     ).order_by(RideChatMessage.created_at.asc()).all()
+
+    if role != "admin":
+        # Hide messages from users the viewer blocked (Guideline 1.2); system messages are never hidden
+        ride_for_view = db.query(RideRequest).filter(RideRequest.id == ride_request_id).first()
+        hidden = chat_safety.blocked_senders(db, (role, chat_safety.ride_parties(ride_for_view)[role]))
+        messages = [m for m in messages if (m.sender_type, m.sender_id) not in hidden]
 
     return {
         "ride_request_id": ride_request_id,
@@ -10632,6 +10646,8 @@ def send_ride_request_chat(
         sender_type, sender_id = "customer", ride_for_chat.customer_id
     else:
         sender_type, sender_id = "driver", ride_for_chat.matched_driver_id
+    if role != "admin":
+        chat_safety.assert_can_message(db, ride_for_chat, role)
 
     chat_msg = RideChatMessage(
         ride_request_id=ride_request_id,

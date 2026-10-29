@@ -452,11 +452,8 @@ struct DriverLoginView: View {
                 }
                 .padding(.vertical)
 
-                GoogleSignInButton(action: handleGoogleLogin)
-                    .colorScheme(.dark)
-
-                // Sign in with Apple Button (Required by Apple for App Store)
-                SignInWithAppleButton(.signIn) { request in
+                // Apple first, system button, same width and height as Google (HIG equal prominence)
+                SignInWithAppleButton(isSignUp ? .signUp : .signIn) { request in
                     let nonce = randomNonceString()
                     currentNonce = nonce
                     request.requestedScopes = [.fullName, .email]
@@ -465,8 +462,12 @@ struct DriverLoginView: View {
                     handleAppleSignIn(result: result)
                 }
                 .signInWithAppleButtonStyle(.white)
+                .frame(maxWidth: .infinity)
                 .frame(height: 50)
                 .cornerRadius(Lx.Radius.chip)
+
+                GoogleSignInButton(action: handleGoogleLogin)
+                    .colorScheme(.dark)
 
                 #if DEBUG
                 demoLoginButton
@@ -581,6 +582,8 @@ struct DriverLoginView: View {
             // Extract identity token (contains email for returning users)
             let identityTokenString = appleIDCredential.identityToken.flatMap { String(data: $0, encoding: .utf8) }
 
+            let authorizationCodeString = appleIDCredential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+
             // IMPORTANT: Apple only provides name on FIRST sign-in
             // Save name locally if provided, or retrieve saved name for subsequent logins
             if !fullName.isEmpty {
@@ -600,7 +603,8 @@ struct DriverLoginView: View {
                 email: appleEmail,
                 name: fullName,
                 appleId: appleUserId,
-                identityToken: identityTokenString
+                identityToken: identityTokenString,
+                authorizationCode: authorizationCodeString
             ) { [self] result in
                 DispatchQueue.main.async {
                     self.isLoading = false

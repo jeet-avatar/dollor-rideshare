@@ -17,6 +17,32 @@ private let lxTextMuted    = Lx.Palette.textMuted   // muted / placeholders
 private let lxError        = Lx.Palette.error
 private let lxSuccess      = Lx.Palette.success
 
+/// System "Sign in with Apple" button (ASAuthorizationAppleIDButton) per Apple HIG.
+private struct AppleSignInSystemButton: UIViewRepresentable {
+    let type: ASAuthorizationAppleIDButton.ButtonType
+    let cornerRadius: CGFloat
+    let action: () -> Void
+
+    func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
+        let button = ASAuthorizationAppleIDButton(type: type, style: .white)
+        button.cornerRadius = cornerRadius
+        button.addTarget(context.coordinator, action: #selector(Coordinator.tapped), for: .touchUpInside)
+        return button
+    }
+
+    func updateUIView(_ uiView: ASAuthorizationAppleIDButton, context: Context) {
+        context.coordinator.action = action
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(action: action) }
+
+    final class Coordinator: NSObject {
+        var action: () -> Void
+        init(action: @escaping () -> Void) { self.action = action }
+        @objc func tapped() { action() }
+    }
+}
+
 struct LoginView: View {
     @ObservedObject var authViewModel: AuthViewModel
     @State private var email = ""
@@ -108,25 +134,14 @@ struct LoginView: View {
     // MARK: Social login
     private var socialButtons: some View {
         VStack(spacing: 12) {
-            // Apple (white button is the HIG variant on dark backgrounds)
-            Button(action: { authViewModel.signInWithApple() }) {
-                HStack(spacing: 10) {
-                    if authViewModel.isLoading {
-                        ProgressView().tint(Lx.Palette.onSuccess)
-                    } else {
-                        Image(systemName: "apple.logo").font(Lx.Typography.body)
-                        Text("Continue with Apple").font(Lx.Typography.callout.weight(.semibold))
-                    }
-                }
-                .foregroundColor(Lx.Palette.onSuccess)
+            // Apple: system button (HIG), white style on dark backgrounds
+            AppleSignInSystemButton(type: isSignUp ? .signUp : .signIn,
+                                    cornerRadius: Lx.Radius.button,
+                                    action: { authViewModel.signInWithApple() })
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
-                .background(Lx.Palette.text)
-                .cornerRadius(Lx.Radius.button)
-            }
-            .disabled(authViewModel.isLoading)
-            .accessibilityLabel("Sign in with Apple")
-            .accessibilityHint("Uses your Apple ID to sign in securely")
+                .disabled(authViewModel.isLoading)
+                .accessibilityHint("Uses your Apple ID to sign in securely")
 
             // Google (dark surface + brand-blue G)
             Button(action: { authViewModel.signInWithGoogle() }) {

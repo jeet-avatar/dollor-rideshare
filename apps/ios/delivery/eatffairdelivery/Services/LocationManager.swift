@@ -39,6 +39,9 @@ class LocationManager: NSObject, ObservableObject {
     private var consecutiveP2PFailures = 0
     private let maxConsecutiveFailures = 5
 
+    /// True between startTracking() and stopTracking(), even while the permission prompt is showing.
+    private var wantsTracking = false
+
     // Current active order ID for location updates
     var activeOrderId: Int?
 
@@ -100,21 +103,20 @@ class LocationManager: NSObject, ObservableObject {
         locationManager.requestWhenInUseAuthorization()
     }
 
-    /// Request always-on location permission for background tracking
-    func requestAlwaysPermission() {
+    /// Asks for "Always" only when a trip actually starts, so riders keep seeing the driver's position if the
+    /// driver switches apps or locks the phone mid-trip. Never called at launch or when going online.
+    func requestAlwaysPermissionForActiveRide() {
+        guard authorizationStatus == .authorizedWhenInUse else { return }
         locationManager.requestAlwaysAuthorization()
     }
 
     /// Start tracking driver location
     func startTracking() {
+        wantsTracking = true
         guard authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways else {
+            // Tracking resumes in locationManagerDidChangeAuthorization once the user answers the prompt.
             requestPermission()
             return
-        }
-
-        // Upgrade to Always permission for background tracking
-        if authorizationStatus == .authorizedWhenInUse {
-            requestAlwaysPermission()
         }
 
         locationManager.startUpdatingLocation()
@@ -128,6 +130,7 @@ class LocationManager: NSObject, ObservableObject {
 
     /// Stop tracking driver location
     func stopTracking() {
+        wantsTracking = false
         locationManager.stopUpdatingLocation()
         locationManager.stopUpdatingHeading()
         isTracking = false
@@ -411,6 +414,8 @@ extension LocationManager: CLLocationManagerDelegate {
         case .authorizedWhenInUse, .authorizedAlways:
             if isTracking {
                 locationManager.startUpdatingLocation()
+            } else if wantsTracking {
+                startTracking()
             }
         case .denied, .restricted:
             locationError = "Location access denied. Please enable in Settings."

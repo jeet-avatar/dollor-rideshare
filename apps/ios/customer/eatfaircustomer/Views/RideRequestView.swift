@@ -2415,7 +2415,8 @@ struct RideStatusCard: View {
                 DriverChatView(
                     rideRequestId: rideId,
                     driverName: driver.name ?? "Driver",
-                    driverPhone: driver.phone
+                    driverPhone: driver.phone,
+                    driverId: driver.id
                 )
             }
         }

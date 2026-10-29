@@ -16,3 +16,5 @@ iPad: both apps are universal (TARGETED_DEVICE_FAMILY = "1,2" in customer/eatfai
 Not produced: 6.5-inch (1284x2778); optional because the 6.9-inch set is accepted.
 
 Config change after capture: the only code delta since these shots is xcconfig/test host cleanup (CDN_URL, WEBSOCKET_URL now https://api.dollor.ai); no UI change.
+
+Removed: the stale `08_founding_member.png` (rider) and `09_founding_member.png` (driver) captures in `customer/fastlane/screenshots/en-US/` and `delivery/fastlane/screenshots/en-US/` (6.7-inch and 6.9-inch folders) showed the removed Founding Member feature (Guideline 2.3.3). Those fastlane folders still hold pre-redesign captures; upload the sets in this directory instead.

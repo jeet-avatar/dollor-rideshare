@@ -231,7 +231,8 @@ class DollorRepository @Inject constructor(
         val token = secureStorage.getAuthHeader(SecureStorage.UserType.CUSTOMER)
             ?: return@withContext Result.failure(Exception("Not authenticated"))
         val customerId = secureStorage.customerId
-        safeApiCall {
+        // Surfaces the server message, e.g. 409 "You have a ride in progress..."
+        safeApiCallWithDetail {
             apiService.deleteCustomerAccount(customerId, token)
             // Clear all auth data after successful deletion
             secureStorage.clearCustomerAuth()
@@ -390,7 +391,8 @@ class DollorRepository @Inject constructor(
         val token = secureStorage.getAuthHeader(SecureStorage.UserType.DRIVER)
             ?: return@withContext Result.failure(Exception("Not authenticated"))
         val driverId = secureStorage.driverId
-        safeApiCall {
+        // Surfaces the server message, e.g. 409 "You have a ride in progress..."
+        safeApiCallWithDetail {
             apiService.deleteDriverAccount(driverId, token)
             // Clear all auth data after successful deletion
             secureStorage.clearDriverAuth()
@@ -750,6 +752,35 @@ class DollorRepository @Inject constructor(
             apiService.sendRideChat(requestId, com.eatfair.shared.model.rideshare.SendRideChatRequest(text, "driver"), token)
         }
     }
+
+    // Chat safety (report / block) for the driver app. 404/405 = older backend.
+    private suspend fun <T> chatSafetyCall(
+        call: suspend (token: String) -> retrofit2.Response<T>
+    ): Result<T?> = withContext(Dispatchers.IO) {
+        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
+        try {
+            val response = call(token)
+            if (response.isSuccessful) Result.success(response.body())
+            else Result.failure(com.eatfair.shared.ui.ChatSafety.httpError(response.code(), response.errorBody()?.string()))
+        } catch (e: IOException) {
+            Result.failure(Exception("Network error. Check your connection and try again."))
+        } catch (e: TokenExpiredException) {
+            Result.failure(Exception("Session expired. Please login again."))
+        }
+    }
+
+    suspend fun reportChat(requestId: Int, reason: String, details: String): Result<Unit> =
+        chatSafetyCall { apiService.reportChat(com.eatfair.shared.ui.ChatReportRequest(requestId, null, reason, details), it) }
+            .map { }
+
+    suspend fun setChatBlock(block: Boolean, userType: String, userId: Int): Result<Unit> =
+        chatSafetyCall {
+            val body = com.eatfair.shared.ui.ChatBlockRequest(userType, userId)
+            if (block) apiService.blockChatUser(body, it) else apiService.unblockChatUser(body, it)
+        }.map { }
+
+    suspend fun getChatBlocks(): Result<List<com.eatfair.shared.ui.ChatBlockEntry>> =
+        chatSafetyCall { apiService.getChatBlocks(it) }.map { it?.blocks.orEmpty() }
 
     suspend fun getDriverMe() = withContext(Dispatchers.IO) {
         val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))

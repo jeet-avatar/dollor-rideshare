@@ -64,6 +64,8 @@ final class OnlineStatusManager: ObservableObject {
 
         if online {
             LocationManager.shared.startTracking()
+            // New ride requests arrive by push, so this is the moment to ask.
+            NotificationManager.shared.requestAuthorizationIfNeeded()
         } else {
             LocationManager.shared.stopTracking()
         }

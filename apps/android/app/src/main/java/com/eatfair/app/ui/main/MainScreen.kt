@@ -85,7 +85,7 @@ fun MainScreen(
     onWhatDriversSeeClick: () -> Unit,
     onYourPrivacyClick: () -> Unit,
     onSafetyFeaturesClick: () -> Unit,
-    onDeleteAccountClick: () -> Unit,
+    onDeleteAccountClick: (onError: (String) -> Unit) -> Unit,
     onLogoutClick: () -> Unit
 ) {
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }

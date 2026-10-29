@@ -41,22 +41,29 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access lets you photograph your driver's license and insurance card for driver verification.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Dollor AI Service needs your location to track rides in real-time and provide accurate updates to riders even when the app is in the background.</string>
+	<string>Dollor Driver uses your location in the background only while a trip is in progress, so the rider can follow the trip and the route stays accurate if you switch apps or lock your phone.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Dollor AI Service needs your location to track rides and navigate to pickup and dropoff locations.</string>
+	<string>Dollor Driver uses your location while you are online to show nearby ride requests, navigate to pickup and drop-off, and share your position with the rider on your trip.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access lets you dictate chat messages hands-free while driving.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo library access lets you choose a profile photo and driver documents to upload.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Speech recognition lets you dictate chat messages hands-free while driving.</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>location-services</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
 		<string>remote-notification</string>
 	</array>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>UISupportedInterfaceOrientations</key>

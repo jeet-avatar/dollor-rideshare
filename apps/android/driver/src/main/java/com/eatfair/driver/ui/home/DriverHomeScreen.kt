@@ -125,6 +125,9 @@ fun DriverHomeScreen(
     if (uiState.chatOpen && chatRide != null) {
         RideChatSheet(
             riderName = chatRide.customerName,
+            rideRequestId = chatRide.id,
+            riderId = chatRide.customerId,
+            safetyOps = viewModel.chatSafetyOps(chatRide.id),
             messages = uiState.chatMessages,
             onSend = { viewModel.sendChat(it) },
             onDismiss = { viewModel.closeChat() }

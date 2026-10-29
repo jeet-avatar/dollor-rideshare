@@ -245,7 +245,7 @@ struct SettingsView: View {
         } message: {
             Text("Are you absolutely sure? Your account and all associated data will be permanently deleted.")
         }
-        .alert("Error", isPresented: .constant(deleteError != nil)) {
+        .alert("Couldn't Delete Account", isPresented: .constant(deleteError != nil)) {
             Button("OK") { deleteError = nil }
         } message: {
             Text(deleteError ?? "")
@@ -271,7 +271,7 @@ struct SettingsView: View {
                     try? Auth.auth().signOut()
                     authViewModel.logout()
                 case .failure(let error):
-                    deleteError = "Failed to delete account: \(error.localizedDescription)"
+                    deleteError = error.localizedDescription
                 }
             }
         }

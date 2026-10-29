@@ -563,6 +563,8 @@ class RideRequestViewModel: ObservableObject {
                     self.isRideActive = true
                     self.currentStep = .waitingForDriver
                     self.startTrackingRide()
+                    // Bids and driver arrival come by push, so this is the moment to ask.
+                    NotificationManager.shared.requestAuthorizationIfNeeded()
 
                     // Start polling for driver bids (P2P bidding flow)
                     self.startBidPolling()

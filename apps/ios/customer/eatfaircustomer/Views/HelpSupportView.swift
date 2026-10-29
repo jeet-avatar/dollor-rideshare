@@ -313,7 +313,7 @@ private var allFAQs: [FAQItem] { [
     FAQItem(
         id: "8",
         question: "How do I delete my account?",
-        answer: "Go to Profile > Settings > Delete Account. This action is permanent and will remove all your data including order history and saved addresses.",
+        answer: "Go to Profile > Settings > Delete Account. This action is permanent and will remove all your data including ride history and saved addresses.",
         category: .account
     ),
     FAQItem(
