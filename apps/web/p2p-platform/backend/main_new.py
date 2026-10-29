@@ -2929,100 +2929,99 @@ def driver_google_auth(http_request: Request, request: DriverGoogleAuthRequest, 
     }
 
 
+# Apple Sign-In helpers (shared by customer and driver)
+APPLE_ISSUER = "https://appleid.apple.com"
+
+
+def verify_apple_identity(identity_token: Optional[str], nonce_hash: Optional[str] = None) -> tuple:
+    """Verify an Apple identity token and return (apple_subject, email_or_None).
+
+    The account is keyed on the verified `sub` claim, never on client-supplied
+    apple_id/email: Apple only returns name/email on the first authorization, so
+    later logins carry nothing but the user id and this token.
+    """
+    decoded = _verify_apple_jwt(identity_token) if identity_token else {}
+    if not decoded.get("sub") or decoded.get("iss") != APPLE_ISSUER:
+        raise HTTPException(status_code=401, detail="Invalid Apple identity token")
+    if nonce_hash and decoded.get("nonce") != nonce_hash:
+        logger.warning("Apple nonce mismatch")
+        raise HTTPException(status_code=401, detail="Invalid Apple identity token")
+    return decoded["sub"], decoded.get("email") or None
+
+
+def apple_placeholder_email(apple_sub: str) -> str:
+    """Stable synthetic email for the rare Apple token that carries no email claim."""
+    return f"apple.{apple_sub}@apple-signin.dollor.ai"
+
+
 # Driver Apple OAuth
 class DriverAppleAuthRequest(BaseModel):
-    email: Optional[str] = ""  # Apple only provides on first sign-in
-    name: Optional[str] = None
-    apple_id: str
-    identity_token: Optional[str] = None  # JWT from Apple containing email for returning users
+    email: Optional[str] = ""  # Ignored: identity comes from the verified identity_token
+    name: Optional[str] = None  # Apple only provides on first sign-in
+    apple_id: Optional[str] = None  # Ignored: the verified token `sub` is authoritative
+    identity_token: Optional[str] = None  # JWT from Apple (required)
     nonce_hash: Optional[str] = None  # SHA256 hash of nonce sent to Apple (G2: replay protection)
 
 @app.post("/api/auth/driver/apple-auth")
 def driver_apple_auth(http_request: Request, request: DriverAppleAuthRequest, db: Session = Depends(get_db)):
-    """Apple OAuth authentication for drivers - handles both login and registration"""
+    """Apple OAuth for drivers: logs in, or creates a pending driver account (documents come later in-app)."""
     check_rate_limit(http_request, registration_rate_limiter, "register")
 
-    email = request.email or ""
-    name = request.name
+    apple_sub, token_email = verify_apple_identity(request.identity_token, request.nonce_hash)
+    email = token_email or apple_placeholder_email(apple_sub)
+    name = (request.name or "").strip()
 
-    # Try to decode identity_token first (Apple JWT contains email for returning users)
-    if request.identity_token:
-        try:
-            decoded = decode_google_jwt(request.identity_token)  # Verifies Apple RS256 signature
-            # G2: Validate nonce if provided by iOS (replay attack protection)
-            if request.nonce_hash and decoded.get('nonce') != request.nonce_hash:
-                logger.warning(f"Apple nonce mismatch for driver auth")
-                raise HTTPException(status_code=401, detail="Invalid Apple identity token")
-            elif not request.nonce_hash:
-                logger.warning("Apple driver auth: no nonce provided — replay protection disabled")
-            token_email = decoded.get('email')
-            if token_email:
-                email = token_email
-            if not name and email:
-                name = email.split('@')[0]
-        except Exception as e:
-            logger.debug(f"Apple identity token decode failed for driver auth")
-
-    if not name and email:
-        name = email.split('@')[0]
-    elif not name:
-        name = 'Driver'
-
-    # For returning users, look up by apple_id first (most reliable)
-    driver = None
+    driver = db.query(Driver).filter(Driver.apple_id == apple_sub).first()
     user = None
-
-    # First: Try to find existing driver by apple_id
-    driver = db.query(Driver).filter(Driver.apple_id == request.apple_id).first()
     if driver:
-        email = driver.email
-        user = db.query(User).filter(User.email == email).first()
-
-    # Second: Try to find by email if we have one
-    if not user and email:
-        user = db.query(User).filter(User.email == email).first()
+        user = db.query(User).filter(User.driver_id == driver.id).first() or \
+            db.query(User).filter(User.email == driver.email).first()
+    if not user:
+        user = db.query(User).filter(func.lower(User.email) == email.lower()).first()
         if user and user.driver_id:
             driver = db.query(Driver).filter(Driver.id == user.driver_id).first()
 
-    # If still no user and no email, we can't proceed
-    if not user and not email:
-        raise HTTPException(status_code=400, detail="Email is required for first-time Apple Sign-In. Please go to Settings > Apple ID > Sign-In & Security > Apps Using Apple ID, remove Dollor Driver, and try again.")
-
-    if user:
-        if user.driver_id:
-            # User already has a driver account
-            if not driver:
-                driver = db.query(Driver).filter(Driver.id == user.driver_id).first()
-            if driver and driver.status == DriverStatus.SUSPENDED:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Driver account is suspended. Please contact support@dollor.ai"
-                )
-            # Store apple_id on driver if not already set
-            if driver and not driver.apple_id:
-                driver.apple_id = request.apple_id
-                db.commit()
-            print(f"Existing user {mask_email(email)} (role={user.role.value}) logging in as driver via Apple")
-        else:
-            # User exists but has no driver account — direct them to register
-            return JSONResponse(
-                status_code=403,
-                content={
-                    "detail": "No driver account found. Please register as a driver first.",
-                    "registration_url": "https://dollor.ai/driver/apply",
-                    "requires_registration": True
-                }
-            )
-    else:
-        # Brand new user — direct them to register
-        return JSONResponse(
-            status_code=403,
-            content={
-                "detail": "No driver account found. Please register as a driver first.",
-                "registration_url": "https://dollor.ai/driver/apply",
-                "requires_registration": True
-            }
+    if driver and driver.status == DriverStatus.SUSPENDED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Driver account is suspended. Please contact support@dollor.ai"
         )
+
+    if not driver:
+        # First Apple sign-in as a driver: create a PENDING account without asking the
+        # user for anything. Name defaults server-side; license/insurance/background
+        # check are collected in-app after login (compliance step).
+        name_parts = (sanitize_input(name) if name else "Apple Driver").split(" ", 1)
+        driver = Driver(
+            driver_id=f"DRV-{db.query(Driver).count() + 1:05d}",
+            first_name=name_parts[0] or "Apple",
+            last_name=name_parts[1] if len(name_parts) > 1 else "Driver",
+            email=user.email if user else email,
+            password_hash=get_password_hash(secrets.token_urlsafe(32)),
+            vehicle_type="car",
+            status=DriverStatus.PENDING,
+            apple_id=apple_sub,
+        )
+        db.add(driver)
+        db.commit()
+        db.refresh(driver)
+        if user:
+            user.driver_id = driver.id  # multi-role: existing customer account gains a driver profile
+        else:
+            user = User(
+                email=email,
+                password_hash=driver.password_hash,
+                full_name=f"{driver.first_name} {driver.last_name}",
+                role=UserRole.DRIVER,
+                driver_id=driver.id,
+            )
+            db.add(user)
+        db.commit()
+        db.refresh(user)
+        print(f"Created pending driver {driver.driver_id} via Apple sign-in")
+    elif not driver.apple_id:
+        driver.apple_id = apple_sub
+        db.commit()
 
     # Get driver info (may already be loaded)
     if not driver and user and user.driver_id:
@@ -6077,71 +6076,38 @@ def customer_food_register(http_request: Request, request: CustomerRegisterReque
 
 
 class CustomerAppleAuthRequest(BaseModel):
-    email: Optional[str] = None  # Apple only provides on first sign-in
+    email: Optional[str] = None  # Ignored: identity comes from the verified identity_token
     name: Optional[str] = None   # Apple only provides on first sign-in
-    apple_id: str
-    identity_token: Optional[str] = None  # JWT from Apple
+    apple_id: Optional[str] = None  # Ignored: the verified token `sub` is authoritative
+    identity_token: Optional[str] = None  # JWT from Apple (required)
     nonce_hash: Optional[str] = None  # SHA256 hash of nonce sent to Apple (G2: replay protection)
 
 @app.post("/api/customer/apple-auth")
 def customer_apple_auth(request: CustomerAppleAuthRequest, db: Session = Depends(get_db)):
-    """Apple OAuth authentication for customers - handles both login and registration"""
-    print(f"Customer Apple auth - apple_id: {request.apple_id[:20] if request.apple_id else 'None'}...")
+    """Apple OAuth for customers - login or registration, never needs name/email from the user"""
+    apple_sub, token_email = verify_apple_identity(request.identity_token, request.nonce_hash)
+    print(f"Customer Apple auth - sub: {apple_sub[:12]}...")
 
-    email = request.email
-    name = request.name
+    email = token_email
+    name = (request.name or "").strip()
+    if not name:
+        name = email.split('@')[0] if email else 'Apple User'
 
-    # Always try to decode identity_token first (Apple JWT contains email)
-    if request.identity_token:
-        try:
-            decoded = decode_google_jwt(request.identity_token)  # Verifies Apple RS256 signature
-            # G2: Validate nonce if provided by iOS (replay attack protection)
-            if request.nonce_hash and decoded.get('nonce') != request.nonce_hash:
-                logger.warning(f"Apple nonce mismatch for customer auth")
-                raise HTTPException(status_code=401, detail="Invalid Apple identity token")
-            elif not request.nonce_hash:
-                logger.warning("Apple customer auth: no nonce provided — replay protection disabled")
-            # Token email takes priority over request.email
-            token_email = decoded.get('email')
-            if token_email:
-                email = token_email
-            if not name and email:
-                name = email.split('@')[0]
-        except Exception as e:
-            logger.debug("Apple identity token decode failed for customer auth")
-
-    if not name and email:
-        name = email.split('@')[0]
-    elif not name:
-        name = 'Apple User'
-
-    # For returning users, look up by apple_id first (most reliable)
-    # Then fall back to email lookup
-    customer = None
+    # Returning users: look up by Apple subject first (works with no email at all)
+    customer = db.query(Customer).filter(Customer.apple_id == apple_sub).first()
     user = None
-
-    # First: Try to find existing customer by apple_id (works for returning users without email)
-    customer = db.query(Customer).filter(Customer.apple_id == request.apple_id).first()
     if customer:
         email = customer.email
         user = db.query(User).filter(User.email == email).first()
 
-    # Second: Try to find by email if we have one
     if not user and email:
         user = db.query(User).filter(User.email == email).first()
         if user:
-            # Also check if customer exists with this email
             customer = db.query(Customer).filter(Customer.email == email).first()
 
-    # If still no user and no email, we can't proceed (truly new user needs email)
-    if not user and not email:
-        raise HTTPException(status_code=400, detail="Email is required for first-time Apple Sign-In. Please go to Settings > Apple ID > Sign-In & Security > Apps Using Apple ID, remove this app, and try again.")
-
     if not user:
-        # Create new user - need email and name for new users
-        if not name:
-            name = email.split('@')[0] if email else 'Apple User'
-        hashed_password = get_password_hash(f"apple_oauth_{request.apple_id}")
+        email = email or apple_placeholder_email(apple_sub)
+        hashed_password = get_password_hash(f"apple_oauth_{secrets.token_urlsafe(24)}")
         user = User(
             email=email,
             password_hash=hashed_password,
@@ -6152,6 +6118,7 @@ def customer_apple_auth(request: CustomerAppleAuthRequest, db: Session = Depends
         db.commit()
         db.refresh(user)
         print(f"Created new user for Apple auth: {mask_email(email)}")
+    email = user.email
 
     # Check if customer record exists (may have been found earlier by apple_id)
     if not customer:
@@ -6174,15 +6141,17 @@ def customer_apple_auth(request: CustomerAppleAuthRequest, db: Session = Depends
             first_name=first_name,
             last_name=last_name,
             email=email,
-            apple_id=request.apple_id  # Store apple_id for returning user lookup
+            apple_id=apple_sub  # Store verified Apple subject for returning user lookup
         )
         db.add(customer)
         db.commit()
         db.refresh(customer)
         print(f"Created new customer record for: {mask_email(email)} with ID: {customer_id}, apple_id stored")
 
-        # Send welcome email for new Apple signup
+        # Send welcome email for new Apple signup (skip synthetic placeholder addresses)
         try:
+            if email.endswith("@apple-signin.dollor.ai"):
+                raise ValueError("no real email available")
             send_customer_welcome_email(
                 to_email=email,
                 customer_name=display_name
@@ -6193,7 +6162,7 @@ def customer_apple_auth(request: CustomerAppleAuthRequest, db: Session = Depends
 
     elif not customer.apple_id:
         # Update existing customer with apple_id if not set (for users who signed up before this change)
-        customer.apple_id = request.apple_id
+        customer.apple_id = apple_sub
         db.commit()
         print(f"Updated existing customer {mask_email(customer.email)} with apple_id")
 

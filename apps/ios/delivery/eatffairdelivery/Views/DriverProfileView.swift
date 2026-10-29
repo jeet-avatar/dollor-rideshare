@@ -5,18 +5,6 @@ import FirebaseStorage
 import PhotosUI
 import MapKit
 import EatFairShared
-import SafariServices
-
-// MARK: - Safari View for Persona Verification
-struct SafariView: UIViewControllerRepresentable {
-    let url: URL
-
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        return SFSafariViewController(url: url)
-    }
-
-    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
-}
 
 // MARK: - Main Profile View
 struct DriverProfileView: View {
@@ -25,6 +13,10 @@ struct DriverProfileView: View {
     @State private var selectedTab = 0
 
     var body: some View {
+        content.inAppBrowser(url: $viewModel.webURL)
+    }
+
+    private var content: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 0) {
@@ -1127,18 +1119,14 @@ struct SettingsSection: View {
             // Support
             ProfileCard(title: "Support", icon: "questionmark.circle.fill") {
                 VStack(spacing: 0) {
-                    if let termsURL = URL(string: AppConstants.termsOfServiceURL) {
-                        Link(destination: termsURL) {
-                            SettingsRow(icon: "doc.text.fill", title: "Terms of Service", color: Theme.statusInfo)
-                        }
-                        Divider().overlay(Theme.lxHairline)
+                    Button(action: { viewModel.webURL = URL(string: AppConstants.termsOfServiceURL) }) {
+                        SettingsRow(icon: "doc.text.fill", title: "Terms of Service", color: Theme.statusInfo)
                     }
-                    if let privacyURL = URL(string: AppConstants.privacyPolicyURL) {
-                        Link(destination: privacyURL) {
-                            SettingsRow(icon: "hand.raised.fill", title: "Privacy Policy", color: Theme.statusInfo)
-                        }
-                        Divider().overlay(Theme.lxHairline)
+                    Divider().overlay(Theme.lxHairline)
+                    Button(action: { viewModel.webURL = URL(string: AppConstants.privacyPolicyURL) }) {
+                        SettingsRow(icon: "hand.raised.fill", title: "Privacy Policy", color: Theme.statusInfo)
                     }
+                    Divider().overlay(Theme.lxHairline)
                     if let supportURL = URL(string: "mailto:\(AppConfig.shared.supportEmail)") {
                         Link(destination: supportURL) {
                             SettingsRow(icon: "envelope.fill", title: "Contact Support", color: Theme.lxSuccess)

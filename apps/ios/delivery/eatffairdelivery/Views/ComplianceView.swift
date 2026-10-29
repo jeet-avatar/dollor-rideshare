@@ -14,6 +14,10 @@ struct ComplianceView: View {
     }
 
     var body: some View {
+        content.inAppBrowser(url: $viewModel.invitationURL)
+    }
+
+    private var content: some View {
         ScrollView {
             if viewModel.isLoading {
                 ProgressView("Loading compliance status...")
@@ -269,6 +273,7 @@ class ComplianceViewModel: ObservableObject {
 
     // Checkr background-check initiation state
     @Published var isInitiatingCheck = false
+    @Published var invitationURL: URL?
     @Published var bgCheckError: String?
 
     private let driverId: Int
@@ -305,9 +310,8 @@ class ComplianceViewModel: ObservableObject {
                 self.isInitiatingCheck = false
                 switch result {
                 case .success(let invitation):
-                    if let urlString = invitation.invitationUrl,
-                       let url = URL(string: urlString) {
-                        UIApplication.shared.open(url)
+                    if let urlString = invitation.invitationUrl {
+                        self.invitationURL = URL(string: urlString)
                     }
                     // Reflect the new state and begin polling for the result.
                     self.bgCheckStatus = invitation.status ?? "pending"

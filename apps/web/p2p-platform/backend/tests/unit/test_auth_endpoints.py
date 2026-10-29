@@ -361,23 +361,67 @@ class TestAppleAuth:
         assert response.status_code in [200, 400, 401, 404]
 
 
-class TestMultiRoleAppleAuth:
-    """Tests that Apple Sign-In supports multi-role accounts (same email across customer/driver/vendor)"""
+def _fake_apple_token(monkeypatch, sub, email=None, nonce=None):
+    """Make _verify_apple_jwt return Apple-shaped claims for the token 'tok-<sub>'."""
+    import main_new
+    claims = {"iss": "https://appleid.apple.com", "sub": sub}
+    if email:
+        claims["email"] = email
+    if nonce:
+        claims["nonce"] = nonce
+    monkeypatch.setattr(main_new, "_verify_apple_jwt", lambda token: claims if token == f"tok-{sub}" else {})
+    return f"tok-{sub}"
 
-    def test_driver_apple_auth_existing_customer_user(self, client: TestClient, test_user):
-        """Driver Apple auth should return 403 with registration_url when user has no driver account"""
-        # test_user fixture already creates a real User row with role=USER -- perfect for cross-role test
-        response = client.post("/api/auth/driver/apple-auth", json={
-            "apple_id": f"apple_driver_test_{test_user.email}",
-            "email": test_user.email,
-            "name": test_user.full_name,
-        })
-        # No driver account — should return 403 with registration URL
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
+
+class TestMultiRoleAppleAuth:
+    """Sign in with Apple: account keyed on the verified token subject, no name/email ever required"""
+
+    def test_driver_apple_auth_rejects_missing_or_bad_token(self, client: TestClient, monkeypatch):
+        _fake_apple_token(monkeypatch, "sub-x")
+        for body in ({"apple_id": "a", "email": "victim@example.com"},
+                     {"apple_id": "a", "identity_token": "forged"}):
+            assert client.post("/api/auth/driver/apple-auth", json=body).status_code == 401
+            assert client.post("/api/customer/apple-auth", json=body).status_code == 401
+
+    def test_driver_apple_auth_brand_new_user_creates_pending_driver(self, client: TestClient, monkeypatch):
+        token = _fake_apple_token(monkeypatch, "sub-new-driver", "relay123@privaterelay.appleid.com")
+        response = client.post("/api/auth/driver/apple-auth", json={"identity_token": token})
+        assert response.status_code == 200, response.text
         data = response.json()
-        assert "registration_url" in data
-        assert data["registration_url"] == "https://dollor.ai/driver/apply"
-        assert data["requires_registration"] is True
+        assert data["status"] == "pending" and data["requires_documents"] is True
+        assert data["email"] == "relay123@privaterelay.appleid.com"
+        assert data["name"] == "Apple Driver"
+
+    def test_driver_apple_auth_returning_login_needs_only_token(self, client: TestClient, monkeypatch):
+        token = _fake_apple_token(monkeypatch, "sub-returning-driver", "ret@privaterelay.appleid.com")
+        first = client.post("/api/auth/driver/apple-auth", json={"identity_token": token, "name": "Ada Lovelace"}).json()
+        # Second login: Apple sends no name and no email claim
+        token2 = _fake_apple_token(monkeypatch, "sub-returning-driver")
+        again = client.post("/api/auth/driver/apple-auth", json={"identity_token": token2})
+        assert again.status_code == 200, again.text
+        assert again.json()["driver_id"] == first["driver_id"]
+        assert again.json()["name"] == "Ada Lovelace"
+
+    def test_driver_apple_auth_existing_customer_user_gains_driver_profile(self, client: TestClient, test_user, monkeypatch):
+        token = _fake_apple_token(monkeypatch, "sub-customer-turned-driver", test_user.email)
+        response = client.post("/api/auth/driver/apple-auth", json={"identity_token": token})
+        assert response.status_code == 200, response.text
+        assert response.json()["email"] == test_user.email
+
+    def test_customer_apple_auth_no_name_no_email_claim(self, client: TestClient, monkeypatch):
+        token = _fake_apple_token(monkeypatch, "sub-no-email-customer")
+        response = client.post("/api/customer/apple-auth", json={"identity_token": token})
+        assert response.status_code == 200, response.text
+        assert response.json()["name"] == "Apple User"
+        again = client.post("/api/customer/apple-auth", json={"identity_token": token})
+        assert again.json()["customer_id"] == response.json()["customer_id"]
+
+    def test_customer_apple_auth_ignores_spoofed_body_identity(self, client: TestClient, test_user, monkeypatch):
+        token = _fake_apple_token(monkeypatch, "sub-attacker", "attacker@privaterelay.appleid.com")
+        response = client.post("/api/customer/apple-auth", json={
+            "identity_token": token, "email": test_user.email, "apple_id": "victim"})
+        assert response.status_code == 200
+        assert response.json()["email"] == "attacker@privaterelay.appleid.com"
 
     def test_driver_google_auth_no_driver_returns_403(self, client: TestClient, test_user):
         """Driver Google auth should return 403 with registration_url when user has no driver account"""
@@ -385,19 +429,6 @@ class TestMultiRoleAppleAuth:
             "email": test_user.email,
             "name": test_user.full_name,
             "google_id": f"google_driver_test_{test_user.email}",
-        })
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
-        data = response.json()
-        assert "registration_url" in data
-        assert data["registration_url"] == "https://dollor.ai/driver/apply"
-        assert data["requires_registration"] is True
-
-    def test_driver_apple_auth_brand_new_user_returns_403(self, client: TestClient):
-        """Driver Apple auth should return 403 for a completely new email/apple_id"""
-        response = client.post("/api/auth/driver/apple-auth", json={
-            "apple_id": "apple_brand_new_driver_test_12345",
-            "email": "brand.new.driver.test@example.com",
-            "name": "Brand New Driver",
         })
         assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
         data = response.json()

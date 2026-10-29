@@ -70,6 +70,7 @@ struct PayoutDashboardView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var selectedPeriod = "week"
+    @State private var dashboardURL: URL?
     @State private var expandedRideId: Int?
     // Optional server fields: nil shows a dash, never a made-up $0.00 / 0.0 h
     @State private var availableBalance: Double?
@@ -80,6 +81,10 @@ struct PayoutDashboardView: View {
     private let periodLabels = ["Today": "today", "This Week": "week", "This Month": "month"]
 
     var body: some View {
+        content.inAppBrowser(url: $dashboardURL)
+    }
+
+    private var content: some View {
         NavigationView {
             VStack(spacing: 0) {
                 // Period Selector
@@ -404,7 +409,7 @@ struct PayoutDashboardView: View {
         P2PAPIService.shared.getStripeDashboardLink(driverId: driverId) { result in
             if case .success(let urlStr) = result, let url = URL(string: urlStr) {
                 DispatchQueue.main.async {
-                    UIApplication.shared.open(url)
+                    dashboardURL = url
                 }
             }
         }

@@ -18,6 +18,8 @@ class DriverProfileViewModel: ObservableObject {
     @Published var showError = false
     @Published var errorMessage = ""
     @Published var isLoadingStripeLink = false
+    /// Web page shown in the in-app browser sheet (payout setup, terms, privacy)
+    @Published var webURL: URL?
 
     // MARK: - Personal Info
     @Published var name = ""
@@ -900,9 +902,7 @@ class DriverProfileViewModel: ObservableObject {
                 self.isLoadingStripeLink = false
                 switch result {
                 case .success(let urlString):
-                    if let url = URL(string: urlString) {
-                        UIApplication.shared.open(url)
-                    }
+                    self.webURL = URL(string: urlString)
                 case .failure(let error):
                     self.errorMessage = "Could not open payout setup: \(error.localizedDescription)"
                     self.showError = true

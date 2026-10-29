@@ -122,8 +122,6 @@ struct DriverLoginView: View {
     @State private var agreedToTerms = false
     @State private var currentNonce: String?
     @State private var showForgotPassword = false
-    @State private var showRegistrationAlert = false
-    @State private var registrationURL: String = ""
     @Binding var isLoggedIn: Bool
     @EnvironmentObject var authManager: AuthManager
 
@@ -493,16 +491,6 @@ struct DriverLoginView: View {
         .sheet(isPresented: $showForgotPassword) {
             DriverForgotPasswordView(isPresented: $showForgotPassword)
         }
-        .alert("Registration Required", isPresented: $showRegistrationAlert) {
-            Button("Register Now") {
-                if let url = URL(string: registrationURL) {
-                    UIApplication.shared.open(url)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("You need to register as a driver first. Tap 'Register Now' to apply on our website.")
-        }
     }
 
     // MARK: - Demo Login (App Store Review)
@@ -620,18 +608,11 @@ struct DriverLoginView: View {
                     case .success:
                         self.completeLogin()
                     case .failure(let error):
-                        if case P2PAPIError.registrationRequired(_, let url) = error {
-                            self.registrationURL = url
-                            self.showRegistrationAlert = true
+                        let errMsg = error.localizedDescription.lowercased()
+                        if errMsg.contains("suspended") {
+                            self.errorMessage = "Your driver account has been suspended. Please contact support."
                         } else {
-                            let errMsg = error.localizedDescription.lowercased()
-                            if errMsg.contains("not found") || errMsg.contains("no account") {
-                                self.errorMessage = "No driver account found. Please register first."
-                            } else if errMsg.contains("not approved") || errMsg.contains("pending") {
-                                self.errorMessage = "Your driver account is pending approval."
-                            } else {
-                                self.errorMessage = "Unable to sign in with Apple. Please try again."
-                            }
+                            self.errorMessage = "Unable to sign in with Apple. Please try again."
                         }
                     }
                 }
@@ -730,9 +711,13 @@ struct DriverLoginView: View {
                     case .success:
                         self.completeLogin()
                     case .failure(let error):
-                        if case P2PAPIError.registrationRequired(_, let url) = error {
-                            self.registrationURL = url
-                            self.showRegistrationAlert = true
+                        if case P2PAPIError.registrationRequired = error {
+                            // No driver account for this Google email: continue in the in-app sign-up form
+                            self.email = googleEmail
+                            self.firstName = googleFirstName
+                            self.lastName = googleLastName
+                            self.isSignUp = true
+                            self.errorMessage = "No driver account found for this email. Complete the sign-up form below to apply."
                         } else {
                             let errMsg = error.localizedDescription.lowercased()
                             if errMsg.contains("suspended") || errMsg.contains("deactivated") {

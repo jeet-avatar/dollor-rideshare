@@ -25,6 +25,7 @@ struct LoginView: View {
     @State private var fullName = ""
     @State private var phone = ""
     @State private var emailError: String?
+    @State private var legalPageURL: URL?
 
     var body: some View {
         ZStack {
@@ -67,6 +68,7 @@ struct LoginView: View {
         .sheet(isPresented: $authViewModel.showResetCodeEntry) {
             ResetCodeEntryView(authViewModel: authViewModel)
         }
+        .inAppBrowser(url: $legalPageURL)
     }
 
     // MARK: Brand mark (orange smiley + wordmark)
@@ -342,10 +344,10 @@ struct LoginView: View {
     // MARK: Footer links
     private var footerLinks: some View {
         HStack(spacing: 8) {
-            Link("Terms of Use", destination: URL(string: AppConstants.termsOfServiceURL)!)
+            Button("Terms of Use") { legalPageURL = URL(string: AppConstants.termsOfServiceURL) }
                 .foregroundColor(lxTextSecondary)
             Text("·").foregroundColor(lxTextMuted)
-            Link("Privacy Policy", destination: URL(string: AppConstants.privacyPolicyURL)!)
+            Button("Privacy Policy") { legalPageURL = URL(string: AppConstants.privacyPolicyURL) }
                 .foregroundColor(lxTextSecondary)
         }
         .font(Lx.Typography.footnote)
