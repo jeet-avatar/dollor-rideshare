@@ -51,11 +51,11 @@ struct MainAppView: View {
                 // dark colors (Theme.lx*), so force dark to keep system chrome consistent.
                 .preferredColorScheme(.dark)
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OrderCancelled"))) { notification in
-                    // Handle order cancellation alert
+                    // Handle ride cancellation alert
                     if let title = notification.userInfo?["title"] as? String,
                        let body = notification.userInfo?["body"] as? String {
-                        cancellationAlertTitle = title.isEmpty ? "Order Cancelled" : title
-                        cancellationAlertMessage = body.isEmpty ? "Your order has been cancelled. A refund will be processed if applicable." : body
+                        cancellationAlertTitle = title.isEmpty ? "Ride Cancelled" : title
+                        cancellationAlertMessage = body.isEmpty ? "Your ride has been cancelled. A refund will be processed if applicable." : body
                         showCancellationAlert = true
                         selectedTab = 1 // Switch to Trips tab
                     }
