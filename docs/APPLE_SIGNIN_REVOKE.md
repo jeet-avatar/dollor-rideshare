@@ -1,53 +1,75 @@
-# Sign in with Apple token revocation (App Store 5.1.1(v))
+# Sign in with Apple token revocation: owner checklist (App Store 5.1.1(v))
 
-Apple requires that deleting an account also revokes the user's Sign in with Apple token
-(`POST https://appleid.apple.com/auth/revoke`). The backend code is in place and is a **no-op until the
-secrets below exist**. Account deletion never fails because of Apple.
+Apple requires that deleting an account also revokes the user's Sign in with Apple token. The backend
+(`apps/web/p2p-platform/backend/apple_signin.py`) does this on account deletion. It is a **no-op (with a log line)
+until the AWS secret below exists**, and Apple trouble never fails a deletion. The task definition in the repo is
+deliberately **unchanged**, so normal deploys stay safe (ECS refuses to start tasks that reference a missing secret).
 
-## What the code does
-- `apps/web/p2p-platform/backend/apple_signin.py`
-  - `store_refresh_token_from_code`: when the app sends `authorization_code` to
-    `POST /api/customer/apple-auth` (also `/api/auth/customer/apple-auth`) or `POST /api/auth/driver/apple-auth`,
-    the code is exchanged at `https://appleid.apple.com/auth/token` and the refresh token is stored
-    Fernet-encrypted (`ENCRYPTION_KEY`) in the new table `apple_signin_tokens` (created by `create_all`).
-    It is not stored if `ENCRYPTION_KEY` is missing.
-  - `revoke_for_account`: called by `account_deletion.delete_customer/delete_driver` after the anonymisation commit,
-    and again when a deleted account calls delete a second time (retry). The row is removed only after Apple
-    answers 200.
-- With any of the four variables missing, both functions log a line and do nothing.
+## How it works
+- The apps send `authorization_code` with the apple-auth request. The backend exchanges it for a refresh token and
+  stores it encrypted (needs `ENCRYPTION_KEY`) in `apple_signin_tokens`.
+- On delete (and on a repeated delete, as a retry) the backend revokes that token. The row is removed only after
+  Apple answers 200.
+- The client id is chosen per account role, because a refresh token can only be exchanged or revoked with the client id
+  it was issued for, and the client secret JWT must have `sub` = that client id:
 
-## Secrets the owner must add (names only)
-| Name | What it is |
-|------|-----------|
-| `APPLE_TEAM_ID` | 10-character Apple Developer Team ID |
-| `APPLE_KEY_ID` | Key ID of a "Sign in with Apple" key (.p8) |
-| `APPLE_PRIVATE_KEY` | Full contents of the .p8 file (PEM text, including its BEGIN and END header lines). `\n` escapes are accepted |
-| `APPLE_CLIENT_ID` | Bundle ID of the app the token was issued to |
+| Role | Client id env var | Default |
+|------|-------------------|---------|
+| Rider (customer) | `APPLE_CLIENT_ID_CUSTOMER` | `com.dollorai.customer` |
+| Driver | `APPLE_CLIENT_ID_DRIVER` | `com.dollorai.delivery` |
 
-`APPLE_CLIENT_ID` must be the bundle ID of the app that signed the user in. The riders app is
-`com.dollorai.customer` and the driver app is `com.dollorai.delivery`. The identity token is already accepted for
-both audiences, but a refresh token is only revocable with the client_id it was issued for. If both apps must be
-revoked, the code needs a per-role client id (for example `APPLE_CLIENT_ID_DRIVER`); today one value is used for both,
-so set the rider bundle ID and tell the engineer if driver tokens must also be revoked, or create a Services ID
-shared by both (Apple then requires the apps to be grouped under one primary App ID).
+  Legacy `APPLE_CLIENT_ID`, if set, is used for any role whose own variable is unset.
+- Identity tokens are accepted only when `aud` is one of those bundle ids (plus legacy `APPLE_CLIENT_ID`).
+- Optional: `APPLE_KEY_ID_DRIVER` + `APPLE_PRIVATE_KEY_DRIVER` (both required) give the driver app its own key.
+  Do not add them unless step A3 says you need a second key.
 
-## How to add them
-1. developer.apple.com > Certificates, Identifiers & Profiles > Keys > "+" > enable Sign in with Apple,
-   configure the primary App ID, download the `.p8` once, note the Key ID. Team ID is under Membership.
-2. Create the secrets in AWS Secrets Manager (same pattern as `dollor/production/encryption-key`), for example
-   `dollor/production/apple-team-id`, `.../apple-key-id`, `.../apple-private-key`, `.../apple-client-id`.
-3. Add four `secrets` entries (`name` = variable above, `valueFrom` = secret ARN) to
-   `infrastructure/ecs/task-definition.json`, register the task definition and redeploy the service.
-4. The task execution role must be allowed `secretsmanager:GetSecretValue` on those ARNs.
+## A. Apple Developer portal (developer.apple.com > Certificates, Identifiers & Profiles)
+1. Identifiers: open App IDs `com.dollorai.customer` and `com.dollorai.delivery` (both must be in the same team) and
+   confirm the **Sign in with Apple** capability is enabled on each.
+2. Keys > "+" > name it, tick **Sign in with Apple** > Configure > choose a **primary App ID**
+   (`com.dollorai.customer`) and save > Continue > Register.
+3. Grouping: Apple groups Sign in with Apple App IDs under one primary App ID. In each App ID's Sign in with Apple
+   > Edit, set `com.dollorai.delivery` as grouped with the primary `com.dollorai.customer` so one key serves both.
+   If Apple will not let you group them, create a second key whose primary App ID is `com.dollorai.delivery` and use
+   the optional `APPLE_KEY_ID_DRIVER` / `APPLE_PRIVATE_KEY_DRIVER` (see B and C).
+4. **Download the `.p8` once** (Apple will not show it again). Store it somewhere safe.
+5. Write down the **Key ID** (10 characters, shown on the key page) and the **Team ID** (Membership details).
 
-## What the apps must send
-Both iOS apps must send the `authorizationCode` from `ASAuthorizationAppleIDCredential` (UTF-8 string) as the JSON
-field `authorization_code` in the apple-auth request body (`P2PAPIService.swift` apple-auth calls, rider
-`AuthViewModel.swift`, driver `DriverLoginView.swift`). They currently send only `identity_token`. Accounts created
-before this ships have no stored token and cannot be revoked server-side; those users can still remove the app under
-Settings > Apple ID > Sign in with Apple.
+## B. AWS Secrets Manager (account 134607809447, us-east-1)
+Create the secret `dollor/production/apple-signin` as key/value pairs:
+- `APPLE_TEAM_ID` = the Team ID
+- `APPLE_KEY_ID` = the Key ID
+- `APPLE_PRIVATE_KEY` = the full `.p8` text including its BEGIN and END header lines and
+  `-----END PRIVATE KEY-----` lines, with real newlines (paste into the console's plaintext editor; `\n` escapes
+  are also accepted)
 
-## Verify after deploy
-Sign in with Apple on a test account, then check `apple_signin_tokens` has one row for it (the token itself is
-encrypted). Delete the account in the app; the row disappears and the app no longer appears under the Apple ID
-settings. Logs: `apple token revoked for customer <id>`; on problems `apple token revocation failed ... HTTP <code>`.
+Example CLI (reads the key from the file, prints no secret):
+`aws secretsmanager create-secret --name dollor/production/apple-signin --secret-string "$(jq -n --arg t TEAMID --arg k KEYID --rawfile p AuthKey_KEYID.p8 '{APPLE_TEAM_ID:$t,APPLE_KEY_ID:$k,APPLE_PRIVATE_KEY:$p}')"`
+
+Check the task execution role can read it (`secretsmanager:GetSecretValue` on
+`arn:aws:secretsmanager:us-east-1:134607809447:secret:dollor/production/apple-signin-*`).
+
+## C. Apply the task-definition patch, then deploy
+The fragment is `infrastructure/ecs/apple-signin-task-definition-patch.json` (3 secrets + the 2 plain client ids).
+Only after step B:
+```
+jq --slurpfile p infrastructure/ecs/apple-signin-task-definition-patch.json \
+  '.containerDefinitions[0].environment += $p[0].environment | .containerDefinitions[0].secrets += $p[0].secrets' \
+  infrastructure/ecs/task-definition.json > /tmp/td.json && mv /tmp/td.json infrastructure/ecs/task-definition.json
+```
+Confirm the container you patched (index 0) is the API container, commit the result, and deploy through the normal
+workflow (it renders `task-definition.json`). If you need the second driver key, also add `APPLE_KEY_ID_DRIVER` and
+`APPLE_PRIVATE_KEY_DRIVER` keys to the same secret and matching `secrets` entries.
+
+## D. Verify
+1. Install the new build, sign up with Apple on a **test** account (rider; repeat with the driver app).
+2. Delete the account in the app.
+3. Check the API logs for `apple revoke ok for customer <id>` (or `driver <id>`). Problems log
+   `apple token exchange failed ...` / `apple token revocation failed ... HTTP <code>`; `... not configured` means
+   the secret is not applied yet.
+4. Settings > Apple ID > Sign in with Apple no longer lists the app.
+
+## Limits
+- The apps must send `authorization_code` (the new builds do). Accounts created **before** this ships have no stored
+  token and cannot be revoked server-side; those users can remove the app under Settings > Apple ID > Sign in with Apple.
+- The `.p8` client secret is regenerated per request (5 minute expiry), so nothing to rotate except the key itself.

@@ -239,15 +239,28 @@ def test_admin_status_filter(client, db_session, trip):
 
 # ------------------------------------------------------------------ Apple token revocation
 
-APPLE_ENV = {"APPLE_TEAM_ID": "TEAM123456", "APPLE_KEY_ID": "KEY1234567", "APPLE_CLIENT_ID": "com.dollorai.customer"}
+APPLE_ENV = {"APPLE_TEAM_ID": "TEAM123456", "APPLE_KEY_ID": "KEY1234567"}
+APPLE_ROLE_VARS = ("APPLE_CLIENT_ID", "APPLE_CLIENT_ID_CUSTOMER", "APPLE_CLIENT_ID_DRIVER",
+                   "APPLE_KEY_ID_DRIVER", "APPLE_PRIVATE_KEY_DRIVER")
+
+
+def new_pem():
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    return ec.generate_private_key(ec.SECP256R1()).private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
+
+
+def secret_claims_and_kid(secret):
+    from jose import jwt as jose_jwt
+    return jose_jwt.get_unverified_claims(secret), jose_jwt.get_unverified_header(secret)["kid"]
 
 
 @pytest.fixture
 def apple_env(monkeypatch):
-    from cryptography.hazmat.primitives import serialization
-    from cryptography.hazmat.primitives.asymmetric import ec
-    pem = ec.generate_private_key(ec.SECP256R1()).private_bytes(
-        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
+    for name in APPLE_ROLE_VARS:
+        monkeypatch.delenv(name, raising=False)
+    pem = new_pem()
     for k, v in {**APPLE_ENV, "APPLE_PRIVATE_KEY": pem}.items():
         monkeypatch.setenv(k, v)
     from cryptography.fernet import Fernet
@@ -309,6 +322,59 @@ def test_apple_failure_never_fails_deletion_and_is_retried(client, db_session, a
     with patch.object(apple_signin.requests, "post", return_value=fake_response(200)):
         assert client.delete(f"/api/drivers/{driver.id}/delete", headers=admin_headers(admin)).status_code == 200
     assert db_session.query(AppleSigninToken).count() == 0
+
+
+@pytest.mark.parametrize("role,bundle", [("customer", "com.dollorai.customer"), ("driver", "com.dollorai.delivery")])
+def test_exchange_and_revoke_use_the_role_client_id(db_session, apple_env, role, bundle):
+    account = make_customer(db_session) if role == "customer" else make_driver(db_session)
+    with patch.object(apple_signin.requests, "post", return_value=fake_response(200, {"refresh_token": "r"})) as post:
+        assert apple_signin.store_refresh_token_from_code(db_session, role, account.id, "code")
+    data = post.call_args.kwargs["data"]
+    claims, kid = secret_claims_and_kid(data["client_secret"])
+    assert data["client_id"] == bundle and claims["sub"] == bundle and claims["iss"] == "TEAM123456"
+    assert claims["aud"] == apple_signin.APPLE_AUDIENCE and claims["exp"] - claims["iat"] <= 300 and kid == "KEY1234567"
+    with patch.object(apple_signin.requests, "post", return_value=fake_response(200)) as post:
+        assert apple_signin.revoke_for_account(db_session, role, account.id)
+    revoke_data = post.call_args.kwargs["data"]
+    assert revoke_data["client_id"] == bundle
+    assert secret_claims_and_kid(revoke_data["client_secret"])[0]["sub"] == bundle
+
+
+def test_client_id_env_precedence(monkeypatch):
+    for name in APPLE_ROLE_VARS:
+        monkeypatch.delenv(name, raising=False)
+    assert apple_signin.client_id_for_role("customer") == "com.dollorai.customer"
+    assert apple_signin.client_id_for_role("driver") == "com.dollorai.delivery"
+    assert apple_signin.client_id_for_role("vendor") is None
+    monkeypatch.setenv("APPLE_CLIENT_ID", "com.legacy.app")  # legacy fallback applies to both roles
+    assert apple_signin.client_id_for_role("customer") == apple_signin.client_id_for_role("driver") == "com.legacy.app"
+    monkeypatch.setenv("APPLE_CLIENT_ID_CUSTOMER", "com.new.rider")
+    monkeypatch.setenv("APPLE_CLIENT_ID_DRIVER", "com.new.driver")
+    assert apple_signin.client_id_for_role("customer") == "com.new.rider"
+    assert apple_signin.client_id_for_role("driver") == "com.new.driver"
+    assert apple_signin.accepted_audiences() == {"com.legacy.app", "com.new.rider", "com.new.driver"}
+
+
+def test_driver_key_override_with_shared_fallback(db_session, apple_env, monkeypatch):
+    customer, driver = make_customer(db_session), make_driver(db_session)
+    monkeypatch.setenv("APPLE_KEY_ID_DRIVER", "DRIVERKEY1")
+    # override needs both variables: with only the key id, the shared key is still used
+    with patch.object(apple_signin.requests, "post", return_value=fake_response(200, {"refresh_token": "r"})) as post:
+        apple_signin.store_refresh_token_from_code(db_session, "driver", driver.id, "c")
+    assert secret_claims_and_kid(post.call_args.kwargs["data"]["client_secret"])[1] == "KEY1234567"
+    monkeypatch.setenv("APPLE_PRIVATE_KEY_DRIVER", new_pem())
+    with patch.object(apple_signin.requests, "post", return_value=fake_response(200, {"refresh_token": "r"})) as post:
+        apple_signin.store_refresh_token_from_code(db_session, "driver", driver.id, "c")
+        apple_signin.store_refresh_token_from_code(db_session, "customer", customer.id, "c")
+    driver_call, customer_call = post.call_args_list
+    assert secret_claims_and_kid(driver_call.kwargs["data"]["client_secret"])[1] == "DRIVERKEY1"
+    assert secret_claims_and_kid(customer_call.kwargs["data"]["client_secret"])[1] == "KEY1234567"
+
+
+def test_missing_shared_credentials_make_both_roles_noop(db_session, monkeypatch):
+    for name in apple_signin.REQUIRED_ENV + APPLE_ROLE_VARS:
+        monkeypatch.delenv(name, raising=False)
+    assert not apple_signin.is_configured("customer") and not apple_signin.is_configured("driver")
 
 
 def test_apple_auth_passes_authorization_code_to_storage(client, db_session):

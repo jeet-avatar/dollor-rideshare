@@ -1,0 +1,21 @@
+{
+  "_comment": "NOT applied by the deploy workflow. Merge into containerDefinitions[0] of task-definition.json ONLY AFTER the Secrets Manager secret dollor/production/apple-signin exists with keys APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY (ECS cannot start tasks that reference a missing secret/key). See docs/APPLE_SIGNIN_REVOKE.md. Remove this _comment key if you use the jq command there (it ignores it).",
+  "environment": [
+    { "name": "APPLE_CLIENT_ID_CUSTOMER", "value": "com.dollorai.customer" },
+    { "name": "APPLE_CLIENT_ID_DRIVER", "value": "com.dollorai.delivery" }
+  ],
+  "secrets": [
+    {
+      "name": "APPLE_TEAM_ID",
+      "valueFrom": "arn:aws:secretsmanager:us-east-1:134607809447:secret:dollor/production/apple-signin:APPLE_TEAM_ID::"
+    },
+    {
+      "name": "APPLE_KEY_ID",
+      "valueFrom": "arn:aws:secretsmanager:us-east-1:134607809447:secret:dollor/production/apple-signin:APPLE_KEY_ID::"
+    },
+    {
+      "name": "APPLE_PRIVATE_KEY",
+      "valueFrom": "arn:aws:secretsmanager:us-east-1:134607809447:secret:dollor/production/apple-signin:APPLE_PRIVATE_KEY::"
+    }
+  ]
+}

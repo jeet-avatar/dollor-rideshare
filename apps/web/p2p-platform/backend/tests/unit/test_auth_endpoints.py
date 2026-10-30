@@ -361,16 +361,34 @@ class TestAppleAuth:
         assert response.status_code in [200, 400, 401, 404]
 
 
-def _fake_apple_token(monkeypatch, sub, email=None, nonce=None):
+def _fake_apple_token(monkeypatch, sub, email=None, nonce=None, aud="com.dollorai.customer"):
     """Make _verify_apple_jwt return Apple-shaped claims for the token 'tok-<sub>'."""
     import main_new
-    claims = {"iss": "https://appleid.apple.com", "sub": sub}
+    claims = {"iss": "https://appleid.apple.com", "sub": sub, "aud": aud}
     if email:
         claims["email"] = email
     if nonce:
         claims["nonce"] = nonce
     monkeypatch.setattr(main_new, "_verify_apple_jwt", lambda token: claims if token == f"tok-{sub}" else {})
     return f"tok-{sub}"
+
+
+class TestAppleAudience:
+    def test_both_bundle_ids_accepted_and_others_rejected(self, client: TestClient, monkeypatch):
+        for var in ("APPLE_CLIENT_ID", "APPLE_CLIENT_ID_CUSTOMER", "APPLE_CLIENT_ID_DRIVER"):
+            monkeypatch.delenv(var, raising=False)
+        for aud in ("com.dollorai.customer", "com.dollorai.delivery"):
+            token = _fake_apple_token(monkeypatch, f"sub-aud-{aud}", aud=aud)
+            assert client.post("/api/customer/apple-auth", json={"identity_token": token}).status_code == 200
+        token = _fake_apple_token(monkeypatch, "sub-aud-evil", aud="com.evil.app")
+        assert client.post("/api/customer/apple-auth", json={"identity_token": token}).status_code == 401
+        token = _fake_apple_token(monkeypatch, "sub-aud-none", aud=None)
+        assert client.post("/api/auth/driver/apple-auth", json={"identity_token": token}).status_code == 401
+
+    def test_configured_client_ids_extend_the_accepted_audiences(self, client: TestClient, monkeypatch):
+        monkeypatch.setenv("APPLE_CLIENT_ID_DRIVER", "com.example.driver")
+        token = _fake_apple_token(monkeypatch, "sub-aud-custom", aud="com.example.driver")
+        assert client.post("/api/auth/driver/apple-auth", json={"identity_token": token}).status_code in (200, 201)
 
 
 class TestMultiRoleAppleAuth:

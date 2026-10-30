@@ -2946,6 +2946,9 @@ def verify_apple_identity(identity_token: Optional[str], nonce_hash: Optional[st
     decoded = _verify_apple_jwt(identity_token) if identity_token else {}
     if not decoded.get("sub") or decoded.get("iss") != APPLE_ISSUER:
         raise HTTPException(status_code=401, detail="Invalid Apple identity token")
+    if decoded.get("aud") not in apple_signin.accepted_audiences():
+        logger.warning("Apple identity token audience is not one of our bundle ids")
+        raise HTTPException(status_code=401, detail="Invalid Apple identity token")
     if nonce_hash and decoded.get("nonce") != nonce_hash:
         logger.warning("Apple nonce mismatch")
         raise HTTPException(status_code=401, detail="Invalid Apple identity token")
