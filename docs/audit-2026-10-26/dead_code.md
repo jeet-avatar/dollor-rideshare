@@ -2,13 +2,13 @@
 
 # Dead-code inventory: Dollor rideshare stack (Android / iOS / Backend)
 
-Generated 2026-10-26. READ-ONLY audit. Client repo: `/Users/jeet/doordash-p2p` @ `release/rideshare-launch-ready-20261026` (HEAD d3498fc9). Backend: `/private/tmp/dollor-single-session-wt/apps/web/p2p-platform/backend` @ `release/rideshare-backend-20261026`. No file was modified or deleted.
+Generated 2026-10-26. READ-ONLY audit. Client repo: `<repo>` @ `release/rideshare-launch-ready-20261026` (HEAD d3498fc9). Backend: `apps/web/p2p-platform/backend` @ `release/rideshare-backend-20261026`. No file was modified or deleted.
 
 ## How the evidence was gathered (read this first)
 
 - **Android**: every `.kt` in `app|driver|shared/src/main` was parsed for top-level class/object/interface/fun/val names. A file is a deletion unit only if NONE of its declared names occurs (comments stripped, string literals stripped) in any other live file, manifest, gradle, proguard or json (iterated as a cascade: removing a dead file can orphan another). Then each unit was re-verified with a raw `grep -rnw -I NAME app driver shared --include=*.kt,*.xml,*.gradle,*.kts,*.pro,*.json | grep -v <own file>`; the three counts in the evidence column are `all hits / hits under src/main / non-comment hits under src/main`. Every non-zero count is explained in the Notes column (always: another dead unit, a comment, a string, or an androidTest). Hilt: all `@Module` objects (`AppModule`, `RepoModule`, `SharedModule`) are registered by annotation, so they are KEEP even though nothing names them. Manifest components (Application, Activities, FCM services) are KEEP.
 - **iOS**: same method on `.swift` in `customer/eatfaircustomer`, `delivery/eatffairdelivery`, `eatfair-ios-shared/Sources` (types AND methods, comment+string stripped, iterated cascade of 7 rounds, protocol-requirement names like `makeBody`/delegate callbacks excluded). Raw check: `grep -rnw -I NAME apps/ios --include=*.swift,*.plist,*.pbxproj,*.json,*.storyboard | grep -v <own file>`. **Xcode membership**: both app targets use `PBXFileSystemSynchronizedRootGroup` (customer pbxproj, delivery pbxproj: 5 matches each) and the shared code is an SPM local package that auto-includes `Sources/EatFairShared`, so NO `project.pbxproj` edit is needed to delete a file; `grep -c <filename> project.pbxproj` = 0 for every file listed. The only `membershipExceptions` entry is `Info.plist`.
-- **Backend**: the real route table was extracted by importing `main_new.app` with `/private/tmp/ss-venv` (466 routes incl. aliases; `PYTHONDONTWRITEBYTECODE=1`, in-memory sqlite; worktree stayed clean). Each route was matched against: iOS + Android client endpoint lists (`calls.json`, re-derived), web `frontend/src` (relative, template and absolute `https://api.dollor.ai/...` strings), `admin_frontend` bundle, and `backend/tests`. 144 routes (excluding docs) have no reference anywhere. IMPORTANT finding: the backend branch has ALREADY removed essentially all food/vendor/restaurant/menu/order/cart routes (only 3 broken aliases remain, see below). 132 of the 134 iOS endpoint strings that sit inside dead iOS code point at routes that do not exist on the backend (`match.json` status `missing`; the other 2 are `TripBoardService.sendMessage`/`updateTripStatus` and `updateDriverLocation`, left out only because of method-name collisions), which independently corroborates that the iOS food/vendor surface is dead.
+- **Backend**: the real route table was extracted by importing `main_new.app` with a scratch virtualenv (466 routes incl. aliases; `PYTHONDONTWRITEBYTECODE=1`, in-memory sqlite; worktree stayed clean). Each route was matched against: iOS + Android client endpoint lists (`calls.json`, re-derived), web `frontend/src` (relative, template and absolute `https://api.dollor.ai/...` strings), `admin_frontend` bundle, and `backend/tests`. 144 routes (excluding docs) have no reference anywhere. IMPORTANT finding: the backend branch has ALREADY removed essentially all food/vendor/restaurant/menu/order/cart routes (only 3 broken aliases remain, see below). 132 of the 134 iOS endpoint strings that sit inside dead iOS code point at routes that do not exist on the backend (`match.json` status `missing`; the other 2 are `TripBoardService.sendMessage`/`updateTripStatus` and `updateDriverLocation`, left out only because of method-name collisions), which independently corroborates that the iOS food/vendor surface is dead.
 - Limits: static analysis cannot see `NSClassFromString`, `Class.forName`, KVC, Gson/Codable field reflection on property names, or callers outside the repo (e.g. production scripts). Those are flagged NEEDS-CHECK where plausible. Counts are lower bounds: names that are also common English words (`Order`, `Rating`, `Driver`) were hand-verified.
 
 ## Totals (lines)
@@ -28,7 +28,7 @@ Generated 2026-10-26. READ-ONLY audit. Client repo: `/Users/jeet/doordash-p2p` @
 
 ## A1. Whole-file deletions (verdict SAFE)
 
-Paths relative to `/Users/jeet/doordash-p2p/apps/android/`. Evidence = `grep -rnw -I <symbol> app driver shared (kt/xml/gradle/kts/pro/json) | grep -v <own file>` as `all/src-main/non-comment`.
+Paths relative to `<repo>/apps/android/`. Evidence = `grep -rnw -I <symbol> app driver shared (kt/xml/gradle/kts/pro/json) | grep -v <own file>` as `all/src-main/non-comment`.
 
 | path (symbols) | lines | evidence of zero references | verdict | notes |
 |---|---:|---|---|---|
@@ -126,7 +126,7 @@ Verified: none of these files has a single `import com.eatfair`; each defines it
 
 # iOS
 
-Paths relative to `/Users/jeet/doordash-p2p/apps/ios/`. `SH/` = `eatfair-ios-shared/Sources/EatFairShared/`.
+Paths relative to `<repo>/apps/ios/`. `SH/` = `eatfair-ios-shared/Sources/EatFairShared/`.
 
 ## I1. Whole-file deletions with zero references (verdict SAFE)
 
@@ -157,7 +157,7 @@ Paths relative to `/Users/jeet/doordash-p2p/apps/ios/`. `SH/` = `eatfair-ios-sha
 | `SH/Services/LegalService.swift` | 626 (626/0) | 28 units, all 0 code refs outside dead units; raw-hit symbols: 16 | SAFE | whole file; only users are LegalAcceptanceView + OrderConfirmationViews (both dead). Raw hits all in those two files. |
 | `SH/Services/GoogleMapsService.swift` | 624 (624/0) | 32 units, all 0 code refs outside dead units; raw-hit symbols: 5 | SAFE | whole file; raw hits only in GooglePlacesSearchView.swift (dead). `GoogleMapsConfig.swift`/`GoogleMapView.swift` stay. |
 | `SH/Models/Order.swift` | 601 (601/0) | 10 units, all 0 code refs outside dead units; raw-hit symbols: 6 | SAFE | delete everything from line 198 down (OrderModification, Order, DeliveryAddress, RestaurantInfo, OrderItem, MultiRestaurantOrder). KEEP `OrderStatus` (19-191) + `typealias DeliveryOrderStatus` (:195) for now: live code `EarningsViewModel.swift:284,342` still uses `DeliveryOrderStatus.delivered` in food-era Firestore queries (`db.collection("orders")`), see EarningsViewModel row. Raw `Order` hits are the English word / other dead units / test-local mocks. |
-| `SH/Services/AIEmployeeService.swift` | 468 (468/0) | 20 units, all 0 code refs outside dead units; raw-hit symbols: 0 | SAFE | AI-employee product (vibingticket era); 0 raw hits |
+| `SH/Services/AIEmployeeService.swift` | 468 (468/0) | 20 units, all 0 code refs outside dead units; raw-hit symbols: 0 | SAFE | AI-employee product (other product); 0 raw hits |
 | `customer/eatfaircustomer/Services/ACHPaymentService.swift` | 460 (0/460) | 6 units, all 0 code refs outside dead units; raw-hit symbols: 0 | NEEDS-CHECK | 0 raw hits, but it is a rider payment method -> confirm ACH is not planned before deleting |
 | `SH/Services/CallService.swift` | 431 (431/0) | 9 units, all 0 code refs outside dead units; raw-hit symbols: 1 | SAFE | raw hit = a comment/AppConfig string `CallService` |
 | `SH/Services/NegotiationService.swift` | 370 (370/0) | 9 units, all 0 code refs outside dead units; raw-hit symbols: 1 | SAFE | raw hit = AppConfig.swift string. Android twin is also dead (A1). |
@@ -237,7 +237,7 @@ NEEDS-CHECK reason: these are rideshare-flavoured. No iOS screen calls them toda
 
 # BACKEND
 
-Paths relative to `/private/tmp/dollor-single-session-wt/apps/web/p2p-platform/backend/`.
+Paths relative to `apps/web/p2p-platform/backend/`.
 
 ## B1. Routes
 

@@ -19,6 +19,7 @@ import argparse
 import os
 import re
 import sys
+import tempfile
 import warnings
 from pathlib import Path
 
@@ -55,6 +56,10 @@ EXCLUDED_EXACT_PATHS = {
     # iOS calls /api/erp/orders/pending-restaurant-delivery but backend has
     # /api/erp/orders/pending-delivery-decision — aspirational name mismatch, never used
     "/api/erp/orders/pending-restaurant-delivery",
+    # iOS P2PAPIService.sendChatMessage/fetchChatMessages (food-order chat) and assignDriver (ERP)
+    # have no callers in the customer or driver app targets; the backend has no such routes.
+    "/api/customer/orders/{}/chat",
+    "/api/erp/orders/{}/assign-driver",
 }
 
 
@@ -75,7 +80,10 @@ def is_excluded(path: str) -> bool:
 def extract_openapi_paths() -> set[str]:
     """Extract and normalize all paths from the FastAPI OpenAPI spec."""
     # Set env vars before importing
-    os.environ.setdefault("DATABASE_URL", "sqlite:///tmp/test.db")
+    os.environ.setdefault(
+        "DATABASE_URL",
+        "sqlite:///" + os.path.join(tempfile.gettempdir(), "validate-api-contracts.db"),
+    )
     os.environ.setdefault("JWT_SECRET_KEY", "ci-test-key")
     os.environ.setdefault("ENVIRONMENT", "development")
 
@@ -343,13 +351,13 @@ def main() -> int:
     parser.add_argument(
         "--android-repo",
         type=str,
-        default="/Users/jeet/StudioProjects/eatfair-android",
-        help="Path to Android repo root (default: /Users/jeet/StudioProjects/eatfair-android)",
+        default=None,
+        help="Path to the Android sources (default: apps/android in this repository)",
     )
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent.parent
-    android_repo = Path(args.android_repo)
+    android_repo = Path(args.android_repo) if args.android_repo else repo_root / "apps" / "android"
 
     # 1. Extract OpenAPI paths
     print("Extracting OpenAPI paths from FastAPI app...", flush=True)

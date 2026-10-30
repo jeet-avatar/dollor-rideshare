@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run Full-Stack Integration Tests
+# Run Full-Stack Integration Tests (LOCAL DEVELOPMENT ONLY: targets the docker-compose.integration.yml stack)
 # Usage: ./scripts/run-integration-tests.sh [options]
 #
 # Options:

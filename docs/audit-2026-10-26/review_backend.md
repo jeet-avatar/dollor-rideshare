@@ -2,7 +2,7 @@
 
 # Backend review: release/final-20261026 vs origin/main (apps/web/p2p-platform/backend)
 
-Read-only. Repro scripts: scratchpad/audit/t/test_scratch.py (run with the repo conftest, nothing written to the repo; `git status` in /private/tmp/final-wt stayed clean).
+Read-only. Repro scripts: scratchpad/audit/t/test_scratch.py (run with the repo conftest, nothing written to the repo; `git status` in the audited checkout stayed clean).
 `import main_new` succeeds in the venv. No model/table/column changes in this change set (models.py not in diff), so no migration gap.
 
 ## 1. Files reviewed (git diff --stat, insertions/deletions as reported)

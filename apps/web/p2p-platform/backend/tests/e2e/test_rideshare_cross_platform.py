@@ -13,7 +13,7 @@ Test Matrix:
 - TC-RS-005: Chat Message Consistency Across Platforms
 - TC-RS-006: Stripe Payment to Driver After Ride Completion
 
-API Base URL (Staging): https://d34u5ixl0bulv4.cloudfront.net
+API Base URL: https://api.dollor.ai
 """
 
 import os
@@ -849,7 +849,7 @@ MANUAL_TEST_SCENARIOS = """
 MANUAL CROSS-PLATFORM TEST SCENARIOS
 =============================================================================
 
-Staging URL: https://d34u5ixl0bulv4.cloudfront.net
+API URL: https://api.dollor.ai
 
 -----------------------------------------------------------------------------
 SCENARIO 1: iOS Customer ↔ Android Driver - Basic Flow

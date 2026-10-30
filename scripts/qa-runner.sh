@@ -25,14 +25,14 @@ NC='\033[0m' # No Color
 ENV="${1:-staging}"
 PHASE="${2:-pre-deploy}"
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
-PROJECT_ROOT="/Users/jeet/doordash-p2p"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT_DIR="$PROJECT_ROOT/.planning/qa-reports/${DATE}_${PHASE}"
 
 # API URLs
 if [ "$ENV" = "production" ]; then
     API_URL="https://api.dollor.ai"
 else
-    API_URL="https://d34u5ixl0bulv4.cloudfront.net"
+    API_URL="${STAGING_API_URL:?set STAGING_API_URL to the staging API base URL}"
 fi
 
 # Demo Credentials

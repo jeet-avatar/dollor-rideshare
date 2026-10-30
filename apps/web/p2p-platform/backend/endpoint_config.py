@@ -16,6 +16,8 @@ Usage:
 ================================================================================
 """
 
+import os
+
 import requests
 import json
 from typing import Dict, Optional, List
@@ -26,8 +28,8 @@ import re
 
 class Environment(Enum):
     PRODUCTION = "https://api.dollor.ai"
-    STAGING = "https://d34u5ixl0bulv4.cloudfront.net"
-    LOCAL = "http://localhost:8080"
+    # Local development only: set LOCAL_API_URL to the base URL of a backend you run yourself
+    LOCAL = os.getenv("LOCAL_API_URL", "")
 
 
 @dataclass

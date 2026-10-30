@@ -16,10 +16,14 @@ from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+# REDIS_URL must be provided by the environment (ECS task definition in production,
+# docker-compose.integration.yml for local runs). Without it the cache is in-memory.
+REDIS_URL = os.getenv("REDIS_URL", "")
 _is_prod = os.getenv("ENVIRONMENT", "production").lower() in ("production", "prod")
 
 try:
+    if not REDIS_URL:
+        raise RuntimeError("REDIS_URL is not set")
     _redis_kwargs = dict(
         decode_responses=True,
         socket_connect_timeout=2,

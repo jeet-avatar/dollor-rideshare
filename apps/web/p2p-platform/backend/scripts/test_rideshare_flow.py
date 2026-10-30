@@ -7,7 +7,7 @@ import os
 import requests
 from datetime import datetime
 
-API_URL = os.getenv("API_URL", "https://d34u5ixl0bulv4.cloudfront.net/api")
+API_URL = os.getenv("API_URL", "https://api.dollor.ai/api")
 PLATFORM_FEE = 1.00
 
 PICKUP = {"address": "350 S Grand Ave, LA", "lat": 34.0522, "lng": -118.2437, "name": "Downtown LA"}

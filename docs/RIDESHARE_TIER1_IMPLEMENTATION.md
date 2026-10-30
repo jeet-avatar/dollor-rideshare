@@ -6,7 +6,7 @@
 > Backend: `apps/web/p2p-platform/backend/`
 > iOS Customer: `apps/ios/customer/eatfaircustomer/`
 > iOS Driver: `apps/ios/delivery/eatffairdelivery/`
-> Android: `/Users/jeet/StudioProjects/eatfair-android/`
+> Android: `apps/android/`
 
 ---
 

@@ -12,7 +12,6 @@
 | Environment | URL |
 |-------------|-----|
 | **Production API** | `https://api.dollor.ai` |
-| **Staging API** | `https://d34u5ixl0bulv4.cloudfront.net` |
 
 ---
 

@@ -7,7 +7,7 @@ test_type, and category. Idempotent -- safe to re-run (overwrites existing value
 
 Usage:
   cd apps/web/p2p-platform/backend
-  DATABASE_URL=postgresql://jeet@localhost:5432/dollor_dev \
+  DATABASE_URL=postgresql://<user>@<host>:5432/<db> \
     JWT_SECRET_KEY=test ADMIN_SECRET_KEY=test \
     python scripts/populate_case_reasons.py
 """

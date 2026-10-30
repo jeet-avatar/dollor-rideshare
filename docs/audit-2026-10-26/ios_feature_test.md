@@ -2,7 +2,7 @@
 
 ## 1. Method and limits
 - Builds: Release simulator builds of current code (rider Dollor.app com.dollorai.customer on iPhone 16 Pro E67C38DE; driver "Dollor Driver.app" com.dollorai.delivery on iPhone 16 0C3822BC). Both uninstalled/reinstalled clean. Release = PRODUCTION https://api.dollor.ai (Config/Production.xcconfig, per the brief; I did not re-read the xcconfig). Server read-backs confirm the apps wrote to production (ride 610 etc.).
-- dev-api.dollor.ai: `dig +short dev-api.dollor.ai` returned nothing (does not resolve). Debug builds / XCUITest not used.
+- The former dev API host does not resolve (`dig +short` returned nothing). Debug builds / XCUITest not used.
 - Driving: macOS pointer clicks via the `click` Swift binary on the Simulator windows (rider window at 661,38; driver at 1150,38), drags for swipe-to-confirm sliders / back-swipes, osascript keystroke for typing. Screenshots via `simctl io`. No XCUITest run.
 - Flakiness / my automation errors (not app bugs): first typing attempts into driver login missed field focus; one run had Chrome frontmost (I added a frontmost guard; nothing was typed into Chrome); coordinate calibration for the driver window was wrong at first; one shell loop clobbered its args. A scroll-wheel attempt did nothing; drags worked.
 - Evidence level: I opened screenshots for the steps below, but several rider/driver mid-flow screens I checked mainly via server read-back; where the on-screen result was not individually confirmed I say INFERRED. Screenshots in scratchpad/shots/ios_r_* (rider) and ios_d_* (driver).

@@ -2,9 +2,9 @@
 
 # Hardcoded business values audit (rideshare apps)
 
-Repo `/Users/jeet/doordash-p2p`, branch `release/rideshare-launch-ready-20261026`. Read-only audit, no source edited.
+Repo `<repo>`, branch `release/rideshare-launch-ready-20261026`. Read-only audit, no source edited.
 Scope: Android `apps/android/{app,driver,shared}/src/main`, iOS `apps/ios/customer/eatfaircustomer`, `apps/ios/delivery/eatffairdelivery`, `apps/ios/eatfair-ios-shared/Sources`.
-Backend truth: `/private/tmp/dollor-single-session-wt/apps/web/p2p-platform/backend` (`pricing_config.py`, `ride_dispatch.py`, `rideshare_config.py`, `bid_routes.py`, `founding_members.py`).
+Backend truth: `apps/web/p2p-platform/backend` (`pricing_config.py`, `ride_dispatch.py`, `rideshare_config.py`, `bid_routes.py`, `founding_members.py`).
 
 Path shorthand (all under `apps/`):
 - `A:app` = `android/app/src/main/java/com/eatfair/app`

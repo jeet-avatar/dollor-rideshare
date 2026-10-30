@@ -7,7 +7,7 @@ import os
 # Set admin secret before importing app (admin middleware checks this)
 os.environ.setdefault("ADMIN_SECRET_KEY", "test-admin-secret")
 os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret")
-os.environ.setdefault("DATABASE_URL", "postgresql://jeet@localhost:5432/dollor_dev")
+os.environ.setdefault("DATABASE_URL", "postgresql://postgres@localhost:5432/dollor_dev")  # test-only default
 
 import pytest
 from fastapi.testclient import TestClient

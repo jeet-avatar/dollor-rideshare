@@ -28,8 +28,8 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Directories
-IOS_REPO="/Users/jeet/doordash-p2p"
-ANDROID_REPO="/Users/jeet/StudioProjects/eatfair-android"
+IOS_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ANDROID_REPO="${ANDROID_REPO:-$IOS_REPO/apps/android}"
 LOG_DIR="/tmp/dollor-ui-tests"
 
 # Parse flags and positional arguments

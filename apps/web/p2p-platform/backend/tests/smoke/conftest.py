@@ -4,6 +4,8 @@ Smoke test configuration for staging and production environments.
 Provides --env flag, base URL fixtures, and demo credential fixtures.
 Standalone -- no dependency on main app conftest or models.
 """
+import os
+
 import pytest
 import requests
 
@@ -42,8 +44,9 @@ def pytest_collection_modifyitems(config, items):
 # Environment fixtures
 # ---------------------------------------------------------------------------
 
+# Staging has no fixed host in this repository; provide it with STAGING_API_URL.
 ENV_URLS = {
-    "staging": "https://d34u5ixl0bulv4.cloudfront.net",
+    "staging": os.getenv("STAGING_API_URL", ""),
     "production": "https://api.dollor.ai",
 }
 
@@ -58,7 +61,10 @@ def env_name(request):
 def env_url(request):
     """Return the base URL for the target environment."""
     env = request.config.getoption("--env")
-    return ENV_URLS[env]
+    url = ENV_URLS[env]
+    if not url:
+        pytest.skip(f"No base URL configured for --env={env} (set STAGING_API_URL)")
+    return url
 
 
 # ---------------------------------------------------------------------------

@@ -11,7 +11,7 @@ export default {
           300: '#fdba74',
           400: '#fb923c',
           500: '#f97316',
-          600: '#ea580c', // DoorDash orange
+          600: '#ea580c', // brand orange
           700: '#c2410c',
           800: '#9a3412',
           900: '#7c2d12',

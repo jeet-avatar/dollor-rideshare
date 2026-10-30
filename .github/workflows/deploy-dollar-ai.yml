@@ -1,5 +1,11 @@
 name: Deploy to Dollor.ai
 
+# Required GitHub Actions secrets (names only):
+#   AWS_ACCESS_KEY_ID       IAM user/role key with the permissions listed in docs/CUTOVER.md
+#   AWS_SECRET_ACCESS_KEY
+# No other secrets: application secrets live in AWS Secrets Manager and are injected by ECS
+# (see infrastructure/ecs/task-definition.json).
+
 on:
   push:
     branches:

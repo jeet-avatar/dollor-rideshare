@@ -519,7 +519,12 @@ def seed_ios_cases(
 
 # ==================== Android Seed ====================
 
-ANDROID_ROOT = "/Users/jeet/StudioProjects/eatfair-android"
+# Android sources live in this repository (apps/android); ANDROID_ROOT overrides the location.
+ANDROID_ROOT = os.getenv(
+    "ANDROID_ROOT",
+    os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "..", "..", "..", "..", "apps", "android")),
+)
 
 def seed_android_cases(
     db: Session,

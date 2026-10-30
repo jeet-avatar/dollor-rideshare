@@ -1,4 +1,4 @@
-# Docker Compose for Local Integration Testing
+# Docker Compose for Local Integration Testing (LOCAL DEVELOPMENT ONLY - never used in production)
 # Usage: docker-compose -f docker-compose.integration.yml up -d
 #
 # This starts all services needed for full-stack integration testing:

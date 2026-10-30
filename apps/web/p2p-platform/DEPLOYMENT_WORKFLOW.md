@@ -339,7 +339,7 @@ WHERE needs_review = FALSE;
 ## 📞 Support
 
 For deployment issues:
-- GitHub Issues: https://github.com/jeet-avatar/dindin-delivers/issues
+- GitHub Issues: the repository issue tracker
 - Slack: #dollor-ai-deployments
 - On-call engineer: Check PagerDuty schedule
 

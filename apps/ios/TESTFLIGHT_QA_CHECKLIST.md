@@ -157,7 +157,7 @@ Vendor:   demo.restaurant@dollor.ai / DemoRestaurant2025!
 
 ## API Verification
 - [ ] App connects to `https://api.dollor.ai` (production)
-- [ ] No "localhost" errors in console
+- [ ] No local-host or unreachable-API errors in console
 - [ ] Real-time updates work (WebSocket)
 
 ---

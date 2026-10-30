@@ -11,7 +11,7 @@
 
 ```bash
 # Navigate to project directory
-cd /Users/jeet/StudioProjects/eatfair-order
+cd <repo-root>
 
 # Build all apps
 ./gradlew assembleDebug

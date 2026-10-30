@@ -15,7 +15,7 @@ ENV="${1:-production}"
 
 case "$ENV" in
   staging)
-    BASE_URL="https://d34u5ixl0bulv4.cloudfront.net"
+    BASE_URL="${STAGING_API_URL:?set STAGING_API_URL to the staging API base URL}"
     ;;
   production)
     BASE_URL="https://api.dollor.ai"

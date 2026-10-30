@@ -1,7 +1,7 @@
 # Dollor.ai Android - Development Rules
 
 ## Current Phase: PRODUCTION
-Production build only. No staging, no localhost.
+Production build only. No staging or local API hosts.
 
 ## Core Rules (ENFORCE ALWAYS)
 1. **ONE APP AT A TIME** - Finish current app before moving to next

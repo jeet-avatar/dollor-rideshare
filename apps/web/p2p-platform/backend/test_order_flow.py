@@ -4,7 +4,7 @@ import os
 import requests
 import json
 
-BASE_URL = "https://d34u5ixl0bulv4.cloudfront.net/api"
+BASE_URL = os.getenv("API_URL", "https://api.dollor.ai/api")
 
 # Demo credentials
 DRIVER_EMAIL = "demo.driver@dollor.ai"

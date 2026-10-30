@@ -1,5 +1,7 @@
 name: CI - Security & Quality
 
+# No repository secrets required (GITHUB_TOKEN only).
+
 on:
   workflow_dispatch:
   pull_request:
@@ -149,47 +151,12 @@ jobs:
           path: apps/web/p2p-platform/backend/coverage.xml
 
   # ============================================
-  # JOB 4: SONARCLOUD ANALYSIS
-  # ============================================
-  sonarcloud:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download coverage artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-          path: apps/web/p2p-platform/backend/
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v5
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: apps/web/p2p-platform/backend
-          args: >
-            -Dsonar.projectKey=jeet-avatar_dindin-delivers
-            -Dsonar.organization=jeet-avatar
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.sources=.
-            -Dsonar.exclusions=**/tests/**,**/__pycache__/**,**/venv/**
-            -Dsonar.python.version=3.11
-
-  # ============================================
   # JOB 5: QUALITY GATE CHECK
   # ============================================
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
-    needs: [lint, semgrep, test, sonarcloud]
+    needs: [lint, semgrep, test]
     steps:
       - name: Check Quality Gate
         run: |
@@ -197,6 +164,5 @@ jobs:
           echo "- Lint: OK"
           echo "- Semgrep SAST: OK"
           echo "- Tests: OK"
-          echo "- SonarCloud: OK"
           echo ""
           echo "Ready for merge!"

@@ -31,7 +31,7 @@ fi
 # Environment URLs for display
 # ---------------------------------------------------------------------------
 if [[ "$ENV" == "staging" ]]; then
-    TARGET_URL="https://d34u5ixl0bulv4.cloudfront.net"
+    TARGET_URL="${STAGING_API_URL:?set STAGING_API_URL to the staging API base URL}"
 else
     TARGET_URL="https://api.dollor.ai"
 fi

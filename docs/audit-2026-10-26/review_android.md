@@ -4,7 +4,7 @@
 
 Scope: 84 added or modified .kt/.kts/.xml files under apps/android/{app,driver,shared} (tests, docs, images, deleted files excluded). Per-file added/deleted counts are in `audit/numstat.txt` (same directory). Totals: about 5,400 lines added and 8,600 deleted across the 154-file change set.
 
-All line numbers refer to the checked-out tree at /private/tmp/final-wt. Nothing was built or run, so every finding comes from reading the code.
+All line numbers refer to the audited checkout of the tree. Nothing was built or run, so every finding comes from reading the code.
 
 ## 1. Files reviewed and how
 

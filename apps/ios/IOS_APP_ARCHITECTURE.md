@@ -23,8 +23,6 @@
 │                    ENVIRONMENT URLS                              │
 ├─────────────────────────────────────────────────────────────────┤
 │  Production:   https://api.dollor.ai                            │
-│  Staging:      https://d34u5ixl0bulv4.cloudfront.net            │
-│  Development:  https://dev-api.dollor.ai                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  Config Source: AppConfig.shared.p2pAPIBaseURL                  │
 │  Files:         Config/Production.xcconfig                       │

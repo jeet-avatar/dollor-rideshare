@@ -30,7 +30,7 @@ NC='\033[0m'
 # Config
 ENV="${1:-production}"
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
-PROJECT_ROOT="/Users/jeet/StudioProjects/eatfair-ios"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT_DIR="$PROJECT_ROOT/.planning/uat-reports/${DATE}"
 
 # API URLs
@@ -38,8 +38,8 @@ if [ "$ENV" = "production" ]; then
     API_URL="https://api.dollor.ai"
     FRONTEND_URL="https://dollor.ai"
 else
-    API_URL="https://d34u5ixl0bulv4.cloudfront.net"
-    FRONTEND_URL="https://d34u5ixl0bulv4.cloudfront.net"
+    API_URL="${STAGING_API_URL:?set STAGING_API_URL to the staging API base URL}"
+    FRONTEND_URL="${STAGING_FRONTEND_URL:-$API_URL}"
 fi
 
 # Demo Credentials (Apple App Store Review)

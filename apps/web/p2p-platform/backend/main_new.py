@@ -103,29 +103,21 @@ app = FastAPI(
 )
 
 # CORS Configuration - SOC 2 Compliant
-# Production-safe origins list - NEVER add localhost here
+# Production-safe origins list - NEVER add local or development origins here
 # Production-safe CORS origins (always allowed)
 PRODUCTION_ORIGINS = [
     # Production domains
     "https://dollor.ai",
     "https://www.dollor.ai",
     "https://api.dollor.ai",
-    "https://vibingticket.com",
-    "https://www.vibingticket.com",
-    # Production Admin Panel (CloudFront)
+    # Production web app / admin panel (CloudFront distribution E1TL8YTTU1SF3A)
     "https://d3pus2gxlb5cer.cloudfront.net",
-    # Staging Frontend (CloudFront)
-    "https://d3b3ow4g7hjwi5.cloudfront.net",
 ]
 
 # Staging origins (allowed in staging and development)
 STAGING_ORIGINS = [
-    # Staging API (CloudFront) - Required for mobile apps and staging web
-    "https://d34u5ixl0bulv4.cloudfront.net",
     # Staging Frontend (CloudFront)
     "https://d3b3ow4g7hjwi5.cloudfront.net",
-    # Staging Frontend (S3 bucket)
-    "http://dollar-ai-staging-frontend.s3-website-us-east-1.amazonaws.com",
     # Staging subdomains
     "https://staging.dollor.ai",
     "https://staging-api.dollor.ai",
@@ -272,11 +264,12 @@ _BAD_USER_AGENT_SUBSTRINGS = (
 async def bot_blocklist_middleware(request: Request, call_next):
     """Block known bad user-agents. Returns 403 before auth or handler runs.
 
-    Exemption: requests from 127.0.0.1 are always passed through.
-    ECS health checks use `curl` from within the container (localhost) and
-    must not be blocked — external bots cannot spoof source IP to 127.0.0.1.
+    Exemption: requests from the container loopback address (127.0.0.1) are
+    always passed through. ECS health checks use `curl` from inside the
+    container and must not be blocked; external bots cannot spoof the
+    loopback source address.
     """
-    # Allow localhost health checks (ECS uses `curl -f http://localhost:8080/`)
+    # Allow container-local health checks (ECS curls the task from inside the container)
     client_host = request.client.host if request.client else None
     if client_host == "127.0.0.1":
         return await call_next(request)

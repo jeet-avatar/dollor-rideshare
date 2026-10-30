@@ -4,7 +4,7 @@
 
 Audit date: 2026-10-26. READ-ONLY (no source files edited; probes live in `scratchpad/audit/probe/`, helper scripts and raw samples in `scratchpad/audit/w/`).
 
-Scope: Android rider `apps/android/app`, Android driver `apps/android/driver`, iOS rider `apps/ios/customer`, iOS driver `apps/ios/delivery`; shared `apps/android/shared`, `apps/ios/eatfair-ios-shared`. Apps repo: `/Users/jeet/doordash-p2p` branch `release/rideshare-launch-ready-20261026`. Backend inspected: `/private/tmp/dollor-single-session-wt/apps/web/p2p-platform/backend` (branch `release/rideshare-backend-20261026`, HEAD `eaa73412`).
+Scope: Android rider `apps/android/app`, Android driver `apps/android/driver`, iOS rider `apps/ios/customer`, iOS driver `apps/ios/delivery`; shared `apps/android/shared`, `apps/ios/eatfair-ios-shared`. Apps repo: `<repo>` branch `release/rideshare-launch-ready-20261026`. Backend inspected: `apps/web/p2p-platform/backend` (branch `release/rideshare-backend-20261026`, HEAD `eaa73412`).
 
 ## 0. Evidence key and caveats (read first)
 
@@ -28,7 +28,7 @@ Caveats:
 
 | Item | Finding | Evidence |
 |---|---|---|
-| Repo | GitHub `jeet-avatar/dollor-rideshare` (local `/Users/jeet/doordash-p2p`) | `git remote` of `/Users/jeet/doordash-p2p-zietra-crm` shows the same remote; this checkout is the apps repo |
+| Repo | GitHub `jeet-avatar/dollor-rideshare` (legacy monorepo this repo was split from) | `git remote` of `<repo>-zietra-crm` shows the same remote; this checkout is the apps repo |
 | Trigger | push to **`main`** touching `apps/web/p2p-platform/**` or the workflow file; also `workflow_dispatch` with **no branch guard** (can be run on any ref) | `.github/workflows/deploy-dollar-ai.yml:3-10` |
 | Gate | job `run-tests`: `pytest tests/unit/` in `apps/web/p2p-platform/backend` (python 3.11) | `deploy-dollar-ai.yml:21-48` |
 | Backend path | `apps/web/p2p-platform/backend` | `deploy-dollar-ai.yml:116-126` |
@@ -45,29 +45,25 @@ Caveats:
 
 | Location | What it is | Anything pointing at it? |
 |---|---|---|
-| `/Users/jeet/doordash-p2p/backend/` | legacy root-level dir in this repo (Firebase-era Python `main_new.py`, 1261 lines, plus AI-employee Node code) | No: `deploy-dollar-ai.yml`, `Dockerfile*`, `docker-compose.integration.yml:55` all use `apps/web/p2p-platform/backend`; only `deploy-employee.yml` uses root `backend/` (AI employee Lambda path) |
-| `/Users/jeet/doordash-p2p-zietra-crm/` | separate checkout of the same GitHub repo, branch `gsd/phase-23-zietra-crm-port`, last commit 2026-04-25, contains `apps/web/p2p-platform/backend/bid_routes.py` | No |
-| `/Users/jeet/StudioProjects/eatfair-ios/` | different repo (`jeet-avatar/dindin-delivers`), 2026-02-14, has its own `apps/web/p2p-platform/backend/bid_routes.py` | No |
-| `/private/tmp/base-wt`, `/private/tmp/dollor-single-session-wt` | git worktrees (origin/main `259cdf3b`; release backend branch) | No |
-| `/Users/jeet/eatfair-import` | Node import script only, no backend | No |
-| `/Users/jeet/dollor-*-archive`, `doordash-p2p.zip`, `DriverAppArchive.xcarchive` | archives; the zip contains no `bid_routes.py` | No |
+| `<repo>/backend/` | legacy root-level dir in this repo (Firebase-era Python `main_new.py`, 1261 lines, plus AI-employee Node code) | No: `deploy-dollar-ai.yml`, `Dockerfile*`, `docker-compose.integration.yml:55` all use `apps/web/p2p-platform/backend`; only `deploy-employee.yml` uses root `backend/` (AI employee Lambda path) |
+| `<repo>-zietra-crm/` | separate checkout of the same GitHub repo, branch `gsd/phase-23-zietra-crm-port`, last commit 2026-04-25, contains `apps/web/p2p-platform/backend/bid_routes.py` | No |
 
-Proof apps cannot be pointed at a local copy: `grep -E "localhost|10.0.2.2|127.0.0.1|192.168."` over the four apps' sources, gradle files, xcconfigs returns nothing; the only non-prod base URL is the staging CloudFront below.
+Proof apps cannot be pointed at a local copy: a grep for local, emulator and private-network hosts over the four apps' sources, gradle files, xcconfigs returns nothing; the only non-prod base URL is the staging CloudFront below.
 
 ## 2. Hosts the apps can reach
 
 | Host | Used for | Configured at (file:line) |
 |---|---|---|
 | `https://api.dollor.ai` (`/api/...` REST; WebSocket `wss://api.dollor.ai/ws/{client_type}_{id}?token=JWT`) | everything rideshare | Android production flavor: `apps/android/app/build.gradle.kts:87`, `apps/android/driver/build.gradle.kts:80` (`API_BASE_URL=https://api.dollor.ai/api`); defaults `shared/.../config/AppConfig.kt:41,83`; Retrofit base `shared/.../di/SharedModule.kt:83-85`. iOS: `apps/ios/customer/Config/Release.xcconfig:6`, `apps/ios/delivery/Config/Release.xcconfig:6`, `apps/ios/Config/Production.xcconfig:6` -> Info.plist `API_BASE_URL` (`customer/eatfaircustomer/Info.plist:5-6`) -> `eatfair-ios-shared/.../AppConfig.swift:15-29` (fallback `:27,41`), `EnterpriseNetworkLayer.swift:64`; WebSocket URL derived from the API host in `WebSocketManager.swift` (`baseWebSocketURL`) |
-| `https://d34u5ixl0bulv4.cloudfront.net` | **staging** backend (ECS `dollor-api-staging-service`) | Android staging flavor: `app/build.gradle.kts:80`, `driver/build.gradle.kts:73`; iOS **Debug** configs: `customer/Config/Debug.xcconfig:6`, `delivery/Config/Debug.xcconfig:6`; `Config/Staging.xcconfig:5`; `EnterpriseNetworkLayer.swift:86`; tests `CustomerAppStagingApiTest.kt:34`, `CustomerAppStagingAPITests.swift:31` |
-| `https://dev-api.dollor.ai` | iOS Development.xcconfig only | `apps/ios/Config/Development.xcconfig:5`; the Xcode projects use `Debug.xcconfig`/`Release.xcconfig` (`project.pbxproj` `baseConfigurationReference`), so this host is not used by either build config |
+| former staging CloudFront host (retired, no longer in the tree) | **staging** backend (ECS `dollor-api-staging-service`) | Android staging flavor: `app/build.gradle.kts:80`, `driver/build.gradle.kts:73`; iOS **Debug** configs: `customer/Config/Debug.xcconfig:6`, `delivery/Config/Debug.xcconfig:6`; `Config/Staging.xcconfig:5`; `EnterpriseNetworkLayer.swift:86`; tests `CustomerAppStagingApiTest.kt:34`, `CustomerAppStagingAPITests.swift:31` |
+| former dev API host (retired, no longer in the tree) | iOS Development.xcconfig only | `apps/ios/Config/Development.xcconfig:5`; the Xcode projects use `Debug.xcconfig`/`Release.xcconfig` (`project.pbxproj` `baseConfigurationReference`), so this host is not used by either build config |
 | `wss://ws.dollor.ai` | declared as `WEBSOCKET_URL` | `customer/Config/Release.xcconfig:7`, `delivery/Config/Release.xcconfig:7`, `Config/Production.xcconfig:43`; **no Swift file reads it** (WebSocketManager derives wss from `p2pAPIBaseURL`) -> unused |
 | `https://cdn.dollor.ai` | iOS media (`CDN_URL`: driver and vehicle photos) | `customer/Config/Release.xcconfig:8`; `AppConfig.swift:29-44`; used `RideRequestView.swift:1895,1983,2525,3205` |
 | Firebase project `dollorai-production` | FCM push (both platforms), Google sign-in | `android/app/google-services.json:4`, `android/driver/google-services.json:4`, `ios/customer/eatfaircustomer/GoogleService-Info.plist`, `ios/delivery/eatffairdelivery/GoogleService-Info.plist` (bundle ids `com.dollorai.customer`/`com.dollorai.delivery` on iOS vs `ai.dollor.customer`/`ai.dollor.driver` on Android) |
 | Stripe (SDK -> api.stripe.com; keys delivered by backend `GET /api/customers/{id}/stripe/setup-intent`) | rider card add | Android `ui/payment/PaymentMethodsScreen.kt:32,161`; iOS `PaymentMethodsView.swift`; (`NetworkSecurity.swift:40` comment: Stripe not pinned) |
 | `maps.googleapis.com` (Directions, Geocoding, Places) and Maps SDK | iOS: `eatfair-ios-shared/.../GoogleMapsService.swift:15` (key from `GoogleMapsConfig.swift`, xcconfig `customer/Config/Release.xcconfig:9` and `Debug.xcconfig:9` contain a Maps key in the repo). Android: Maps SDK key through manifest placeholder `app/build.gradle.kts:62-66`, `AndroidManifest.xml:65-66`, driver `AndroidManifest.xml:82-83` |
 | `https://www.google.com/maps/dir/...` | Android driver "navigate" intent | `driver/.../ui/home/ActiveRideViews.kt:70` |
-| `https://api.vibingticket.com` | `AIEmployeeService` | `eatfair-ios-shared/.../AIEmployeeService.swift:27`; **not referenced from either iOS app target** (grep of `customer/` and `delivery/` returns nothing) -> dead for rideshare |
+| other-product AI-employee API host | `AIEmployeeService` | `eatfair-ios-shared/.../AIEmployeeService.swift:27`; **not referenced from either iOS app target** (grep of `customer/` and `delivery/` returns nothing) -> dead for rideshare |
 | `https://dollor.ai/...` and `https://www.dollor.ai/...` | legal, support, referral, Stripe return URL | Android `AppConfig.kt:669-673`; iOS `AppConfig.swift:382,701-712` (terms/privacy use `https://api.dollor.ai/terms|privacy` at `:705-706`), `P2PAPIService.swift:13835` |
 | `http://notification-service:8009` (server side, not an app host) | backend push relay, default when `NOTIFICATION_SERVICE_URL` unset | `order_flow.py:45` |
 

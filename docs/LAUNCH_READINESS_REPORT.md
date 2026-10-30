@@ -166,7 +166,7 @@ Legend: **V** verified on a device/API this session · **B** built and compiles,
 | Mixed red/orange drop-off markers; off-theme cards/buttons; raw colours/fonts/radii | iOS + Android | Zero raw styling outside theme files |
 | 7 duplicate backend routes (dead shadowed handlers); unprefixed `/rides/available` served old logic | backend | Fixed (staged) |
 
-## 7. Backend (staged on `deploy/single-driver-session`, worktree `/private/tmp/dollor-single-session-wt`)
+## 7. Backend (staged on `deploy/single-driver-session`)
 
 * One active session per driver (demo accounts exempt) · nearest-10 dispatch within 3 mi widening to 25 mi over 2 min (demo exempt; no GPS = show all) · cannot go offline mid-ride (409) · ride emails off the request path · history `total` · duplicate-route cleanup.
 * Tests: unit gate plus the rideshare E2E file give **548 passed, 7 failed** (the same 7 fail on unmodified production: email and insurance-webhook tests). New tests were added for each change. The repo's 10-test rideshare E2E (it was failing at step 3 on production code because of stale fixtures and the CPUC fee) now **passes 10/10**.
@@ -189,7 +189,7 @@ See `DO_NOT_USE.md` for legacy code that must not be reused, and its hygiene che
 * **Fixed:** driver Home no longer shows "You're Online – Waiting for ride requests" while a ride is active (verified on device, ride #596).
 * **Fixed:** fee tiers in Android Welcome, Login, Register, Terms, Help FAQ and the legal screen were typed into the copy; they now come from `AppConfig.Rideshare` (`feeRangeText`, `tierLines`). Verified on device: the Help FAQ renders "$1 platform fee for rides up to $35 / $2 … over $35 up to $70 / $3 … over $70".
 * **Backend suite:** 803 passed / 67 failed on the staged branch versus 770 / 76 on a clean `origin/main`. No new failures; 9 previously failing tests now pass; the 67 are pre-existing.
-* **Hardcode scans:** 0 raw colors/fonts/radii in iOS views, 0 raw colors in Android views, no live keys or localhost in app sources. Demo passwords exist only in debug-gated iOS code.
+* **Hardcode scans:** 0 raw colors/fonts/radii in iOS views, 0 raw colors in Android views, no live keys or local hosts in app sources. Demo passwords exist only in debug-gated iOS code.
 * **Still not re-run this pass:** iOS in-app timings, two-driver competition (driver 129 pending admin approval), Forgot-password code entry, real Stripe charging, push notifications.
 * **Still hardcoded copy to clean up:** Help screen claims such as "Average response time: 2 mins", "Available 9AM - 9PM" and "ACH payments receive a discount on platform fees" are static text; confirm each is true or remove it before submission.
 * The root `README.md` was an unrelated "Invoice Management System" template and has been replaced with this project's README.

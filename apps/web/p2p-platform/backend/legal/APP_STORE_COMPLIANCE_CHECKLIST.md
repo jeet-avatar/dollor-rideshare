@@ -256,7 +256,7 @@ NSLocationAlwaysUsageDescription:
 ### iOS App Store
 
 - [x] All apps build in Release configuration
-- [x] No localhost/staging references in production
+- [x] No local or staging host references in production
 - [x] Privacy manifests included
 - [x] App icons (1024x1024)
 - [x] Info.plist configured correctly

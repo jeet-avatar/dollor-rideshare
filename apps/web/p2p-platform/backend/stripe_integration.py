@@ -1,5 +1,5 @@
 """
-Stripe Payment Integration for DoorDash P2P
+Stripe Payment Integration for Dollor
 Handles payment intents and webhooks (rideshare only — food-order creation,
 tracking, vendor-payout sync, and invoice generation were removed along with
 the rest of the food order flow; the webhook's food-order branch was removed

@@ -4,6 +4,7 @@ Test runner for document verification service tests.
 Run with: python run_doc_verification_tests.py
 """
 
+import os
 import subprocess
 import sys
 
@@ -23,7 +24,7 @@ def main():
             "--tb=short",
             "-ra"
         ],
-        cwd="/Users/jeet/StudioProjects/eatfair-ios/apps/web/p2p-platform/backend"
+        cwd=os.path.dirname(os.path.abspath(__file__))
     )
 
     print()

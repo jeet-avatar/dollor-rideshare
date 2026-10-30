@@ -1,5 +1,8 @@
 name: CI/CD Pipeline
 
+# Backend/frontend CI for Dollor. No AWS access and no repository secrets needed:
+# the image is built and scanned locally (not pushed). Deployment is done by deploy-dollar-ai.yml.
+
 on:
   pull_request:
     branches: [main, develop, staging]
@@ -26,8 +29,7 @@ on:
 env:
   PYTHON_VERSION: '3.11'
   NODE_VERSION: '20'
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY: dollor-api
+  IMAGE_NAME: dollor-api
 
 # Concurrency: Cancel in-progress runs for same PR
 concurrency:
@@ -99,50 +101,11 @@ jobs:
       - name: Validate API contracts
         run: python scripts/validate-api-contracts.py --skip-android
         env:
-          DATABASE_URL: sqlite:///tmp/test.db
+          DATABASE_URL: sqlite:///${{ runner.temp }}/api-contracts.db
           JWT_SECRET_KEY: ci-test-key
           ENVIRONMENT: development
 
-  # ============================================
-  # STAGE 2: SECURITY SCANNING (SAST)
-  # ============================================
-  semgrep:
-    name: Semgrep SAST
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      contents: read
-    container:
-      image: semgrep/semgrep
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run Semgrep
-        run: |
-          semgrep scan \
-            --config p/owasp-top-ten \
-            --config p/python \
-            --config p/javascript \
-            --config p/typescript \
-            --config p/security-audit \
-            --config p/secrets \
-            --config p/ci \
-            --sarif --output semgrep.sarif \
-            --error \
-            || true
-          # Show summary
-          if [ -f semgrep.sarif ]; then
-            echo "SARIF file generated successfully"
-            ls -la semgrep.sarif
-          fi
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        continue-on-error: true  # Non-blocking - requires GitHub Advanced Security or Code Scanning enabled
-        with:
-          sarif_file: semgrep.sarif
+  # Semgrep SAST runs in ci-security.yml.
 
   # ============================================
   # STAGE 3: UNIT TESTS & COVERAGE
@@ -222,79 +185,16 @@ jobs:
             apps/web/p2p-platform/backend/htmlcov/
 
   # ============================================
-  # STAGE 4: SONARCLOUD ANALYSIS
-  # ============================================
-  sonarcloud:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download coverage
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: coverage-report
-          path: apps/web/p2p-platform/backend/
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v3
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: .
-          args: >
-            -Dsonar.projectKey=jeet-avatar_dindin-delivers
-            -Dsonar.organization=jeet-avatar
-            -Dsonar.python.coverage.reportPaths=apps/web/p2p-platform/backend/coverage.xml
-            -Dsonar.sources=apps/web/p2p-platform/backend
-            -Dsonar.tests=apps/web/p2p-platform/backend/tests
-            -Dsonar.exclusions=**/tests/**,**/__pycache__/**,**/venv/**,**/node_modules/**
-            -Dsonar.python.version=3.11
-
-  # ============================================
-  # STAGE 5: QUALITY GATE (PR BLOCKER)
-  # ============================================
-  quality-gate:
-    name: Quality Gate
-    runs-on: ubuntu-latest
-    needs: [lint, semgrep, test, sonarcloud]
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Quality Gate Summary
-        run: |
-          echo "## Quality Gate Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Lint | :white_check_mark: Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Semgrep SAST | :white_check_mark: Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tests | :white_check_mark: Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "| SonarCloud | :white_check_mark: Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**All quality gates passed! Ready to merge.**" >> $GITHUB_STEP_SUMMARY
-
-  # ============================================
-  # STAGE 6: BUILD & SCAN DOCKER IMAGE
+  # STAGE 4: BUILD & SCAN DOCKER IMAGE (local only, not pushed)
   # ============================================
   build:
     name: Build & Scan Image
     runs-on: ubuntu-latest
-    needs: [lint, semgrep, test]
+    needs: [lint, test]
     if: github.event_name == 'push'
     permissions:
       security-events: write
       contents: read
-    outputs:
-      # Use explicit ECR image path with commit SHA to avoid multiline issues from docker/metadata-action
-      image_tag: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-      image_digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -302,46 +202,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
-          tags: |
-            type=sha,prefix=
-            type=ref,event=branch
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Build and push
-        id: build
+      - name: Build image
         uses: docker/build-push-action@v5
         with:
           context: apps/web/p2p-platform/backend
-          file: apps/web/p2p-platform/backend/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          file: apps/web/p2p-platform/backend/Dockerfile.optimized
+          target: production
+          push: false
+          load: true
+          tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
         continue-on-error: true
         with:
-          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -354,33 +231,3 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: 'trivy-results.sarif'
-
-      - name: Trivy scan summary
-        uses: aquasecurity/trivy-action@0.28.0
-        continue-on-error: true
-        with:
-          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-          format: 'table'
-          severity: 'CRITICAL,HIGH,MEDIUM'
-          exit-code: '0'
-
-  # ============================================
-  # STAGE 7: DEPLOYMENT SUMMARY
-  # ============================================
-  # Note: Actual deployment to ECS is handled by the separate "Deploy to Dollor.ai" workflow.
-  # Kustomize/ArgoCD stages removed — they were dead code pushing to protected branches.
-  deploy-summary:
-    name: Deployment Summary
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push'
-    steps:
-      - name: Summary
-        run: |
-          echo "## Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ needs.build.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Deployment to ECS is handled by the **Deploy to Dollor.ai** workflow." >> $GITHUB_STEP_SUMMARY

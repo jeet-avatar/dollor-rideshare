@@ -267,7 +267,7 @@ def _start_redis_subscriber():
         while True:
             try:
                 sub_client = redis_lib.Redis.from_url(
-                    os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+                    os.environ["REDIS_URL"],  # present whenever REDIS_AVAILABLE is True
                     decode_responses=True,
                     socket_connect_timeout=5,
                     socket_timeout=None,  # blocking subscribe

@@ -9,7 +9,7 @@ import requests
 import json
 import time
 
-BASE_URL = "https://d34u5ixl0bulv4.cloudfront.net"
+BASE_URL = os.getenv("API_URL", "https://api.dollor.ai")
 
 # Demo credentials
 CUSTOMER_EMAIL = "demo.customer@dollor.ai"

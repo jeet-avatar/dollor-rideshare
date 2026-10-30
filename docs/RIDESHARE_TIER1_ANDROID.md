@@ -4,9 +4,9 @@
 >
 > Date: February 18, 2026
 > Backend: `apps/web/p2p-platform/backend/`
-> Android Customer: `/Users/jeet/StudioProjects/eatfair-android/app/` (`:app` module)
-> Android Driver: `/Users/jeet/StudioProjects/eatfair-android/driver/` (`:driver` module)
-> Android Shared: `/Users/jeet/StudioProjects/eatfair-android/shared/` (`:shared` module)
+> Android Customer: `apps/android/app/` (`:app` module)
+> Android Driver: `apps/android/driver/` (`:driver` module)
+> Android Shared: `apps/android/shared/` (`:shared` module)
 
 ---
 
@@ -621,7 +621,7 @@ Based on user impact and App Store review requirements:
 ## Build Commands
 
 ```bash
-cd /Users/jeet/StudioProjects/eatfair-android
+cd apps/android
 
 # Debug builds
 ./gradlew :app:assembleDebug       # Customer

@@ -10,7 +10,6 @@
 | Service | URL | Health Check |
 |---------|-----|--------------|
 | **Production API** | `https://api.dollor.ai` | `GET /health` |
-| **Staging API** | `https://d34u5ixl0bulv4.cloudfront.net` | `GET /health` |
 | **Admin Portal** | `https://admin.dollor.ai` | N/A |
 
 ---
@@ -72,10 +71,10 @@ cd apps/web/p2p-platform/backend
 
 # Deploy to staging
 git push origin main
-# GitHub Actions will auto-deploy to staging
+# GitHub Actions will auto-deploy
 
 # Wait for deployment, then verify
-curl -s https://d34u5ixl0bulv4.cloudfront.net/health | jq .
+curl -s https://api.dollor.ai/health | jq .
 ```
 
 ### Deploy to Production
@@ -112,7 +111,7 @@ See [TESTFLIGHT_BUILD_GUIDE.md](TESTFLIGHT_BUILD_GUIDE.md) for detailed steps.
 
 ```bash
 # Quick build commands
-cd /Users/jeet/StudioProjects/eatfair-ios/apps/ios
+cd apps/ios
 
 # Archive all three apps
 for app in customer delivery restaurant; do
@@ -128,7 +127,7 @@ done
 # Upload all apps
 fastlane run upload_to_testflight \
   ipa:/path/to/Dollor.ipa \
-  api_key_path:/Users/jeet/.appstoreconnect/private_keys/api_key.json \
+  api_key_path:$APP_STORE_CONNECT_API_KEY_PATH \
   skip_waiting_for_build_processing:true
 ```
 

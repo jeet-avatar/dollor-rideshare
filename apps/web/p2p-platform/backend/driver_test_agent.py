@@ -32,17 +32,16 @@ Usage:
     python driver_test_agent.py earnings
 """
 
-# Environment URLs
+# Environment URLs. "local" is for local development only: set LOCAL_WEB_URL and
+# LOCAL_API_URL to the frontend/backend you run yourself.
 ENVIRONMENTS = {
     "production": "https://www.dollor.ai",
-    "staging": "https://d3b3ow4g7hjwi5.cloudfront.net",
-    "local": "http://localhost:5173",
+    "local": os.getenv("LOCAL_WEB_URL", ""),
 }
 
 API_URLS = {
     "production": "https://api.dollor.ai",
-    "staging": "https://d34u5ixl0bulv4.cloudfront.net",
-    "local": "http://localhost:8080",
+    "local": os.getenv("LOCAL_API_URL", ""),
 }
 
 # Demo driver credentials
