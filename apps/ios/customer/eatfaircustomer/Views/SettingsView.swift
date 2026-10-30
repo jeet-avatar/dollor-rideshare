@@ -462,49 +462,30 @@ struct PrivacyPolicyView: View {
     @State private var fullPolicyURL: URL?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("Privacy Policy")
-                    .font(.title)
-                    .fontWeight(.bold)
-
-                Text("Effective October 13, 2026")
-                    .font(.caption)
-                    .foregroundColor(Lx.Palette.textSecondary)
-
-                Group {
-                    PolicySection(title: "Who we are", content: """
-                    Dollor.ai is a peer-to-peer rideshare marketplace operated by Zietra Technologies Inc.
-                    """)
-
-                    PolicySection(title: "Our commitment", content: """
-                    We do NOT sell your personal information. We do NOT share your information for cross-context behavioral advertising.
-                    """)
-
-                    PolicySection(title: "What we collect", content: """
-                    • Account details such as name, email, and phone number
-                    • Payment details, handled by Stripe (we do not store full card numbers)
-                    • Precise location while the app is in use, to set your pickup point and show nearby drivers
-                    • In-app messages between riders and drivers
-                    • Device, usage, and log data
-                    """)
-
-                    PolicySection(title: "Your rights", content: """
-                    California residents can know, delete, correct, and limit use of sensitive personal information. Email privacy@dollor.ai. To delete your account, use Profile > Delete Account in the app.
-                    """)
-
-                    PolicySection(title: "Full policy", content: """
-                    This is a summary. The full Privacy Policy is the binding text.
-                    """)
-                }
-
-                Button("Read the full Privacy Policy") {
-                    fullPolicyURL = URL(string: AppConstants.privacyPolicyURL)
-                }
-                .fontWeight(.semibold)
-            }
-            .padding()
-        }
+        LegalSummaryList(
+            effectiveDate: "Effective October 13, 2026",
+            sections: [
+                LegalSection(title: "Who we are", icon: "building.2", items: [
+                    "Dollor.ai is a peer-to-peer rideshare marketplace operated by Zietra Technologies Inc."
+                ]),
+                LegalSection(title: "Our commitment", icon: "hand.raised", items: [
+                    "We do NOT sell your personal information. We do NOT share your information for cross-context behavioral advertising."
+                ]),
+                LegalSection(title: "What we collect", icon: "list.bullet.rectangle", items: [
+                    "Account details such as name, email, and phone number",
+                    "Payment details, handled by Stripe (we do not store full card numbers)",
+                    "Precise location while the app is in use, to set your pickup point and show nearby drivers",
+                    "In-app messages between riders and drivers",
+                    "Device, usage, and log data"
+                ]),
+                LegalSection(title: "Your rights", icon: "person.badge.shield.checkmark", items: [
+                    "California residents can know, delete, correct, and limit use of sensitive personal information. Email privacy@dollor.ai. To delete your account, use Profile > Delete Account in the app."
+                ])
+            ],
+            footer: "This is a summary. The full Privacy Policy is the binding text.",
+            fullTextTitle: "Read the full Privacy Policy",
+            onReadFullText: { fullPolicyURL = URL(string: AppConstants.privacyPolicyURL) }
+        )
         .navigationTitle("Privacy Policy")
         .navigationBarTitleDisplayMode(.inline)
         .inAppBrowser(url: $fullPolicyURL)
@@ -516,78 +497,98 @@ struct TermsOfServiceView: View {
     @State private var fullTermsURL: URL?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("Terms of Service")
-                    .font(.title)
-                    .fontWeight(.bold)
-
-                Text("Effective October 29, 2026")
-                    .font(.caption)
-                    .foregroundColor(Lx.Palette.textSecondary)
-
-                Group {
-                    PolicySection(title: "What Dollor.ai is", content: """
-                    Dollor.ai is a peer-to-peer rideshare marketplace for California, operated by Zietra Technologies Inc. (doing business as Dollor.ai) under CPUC Transportation Network Company permit TNC0050982-N. Riders post a ride offer and independent drivers bid on it. Dollor.ai provides the technology that connects them and processes payment. Drivers are independent contractors.
-                    """)
-
-                    PolicySection(title: "How a ride works", content: """
-                    • Your request stays open for bids for 5 minutes.
-                    • You may accept a bid, make a counter-offer, or decline.
-                    • When you accept a bid, your card is authorized through Stripe (not charged) for the agreed fare.
-                    • When the trip is completed, the authorized amount is captured. Tips are optional.
-                    • If the card cannot be authorized at the match, the ride is cancelled.
-                    """)
-
-                    PolicySection(title: "Fees", content: """
-                    • Connection Fee, charged to the rider and separately to the driver: $1.00 if the fare is $35 or less, $2.00 if over $35 up to $70, $3.00 if over $70.
-                    • CPUC Access for All charge: $0.05 to the rider and $0.05 to the driver.
-                    • 100% of tips go to the driver.
-                    """)
-
-                    PolicySection(title: "Cancellations", content: """
-                    • Rider cancels before the ride starts: no cancellation fee. You cannot cancel once the trip is in progress.
-                    • Driver cancels after a match: no charge to you, and the request is re-opened to other drivers.
-                    • Rider no-show: after the driver has waited at least 5 minutes at pickup, the driver may mark a no-show and your saved card is charged a $5.00 no-show fee, of which $4.00 (80%) is paid to the driver.
-                    """)
-
-                    PolicySection(title: "Riders", content: """
-                    You must be at least 18, provide a valid payment card, and provide accurate account information.
-                    """)
-
-                    PolicySection(title: "Full terms", content: """
-                    This is a summary. The full Terms of Service, including liability limits and dispute resolution, are the binding text. Questions: support@dollor.ai.
-                    """)
-                }
-
-                Button("Read the full Terms of Service") {
-                    fullTermsURL = URL(string: AppConstants.termsOfServiceURL)
-                }
-                .fontWeight(.semibold)
-            }
-            .padding()
-        }
+        LegalSummaryList(
+            effectiveDate: "Effective October 29, 2026",
+            sections: [
+                LegalSection(title: "What Dollor.ai is", icon: "building.2", items: [
+                    "Dollor.ai is a peer-to-peer rideshare marketplace for California, operated by Zietra Technologies Inc. (doing business as Dollor.ai) under CPUC Transportation Network Company permit TNC0050982-N. Riders post a ride offer and independent drivers bid on it. Dollor.ai provides the technology that connects them and processes payment. Drivers are independent contractors."
+                ]),
+                LegalSection(title: "How a ride works", icon: "car", items: [
+                    "Your request stays open for bids for 5 minutes.",
+                    "You may accept a bid, make a counter-offer, or decline.",
+                    "When you accept a bid, your card is authorized through Stripe (not charged) for the agreed fare.",
+                    "When the trip is completed, the authorized amount is captured. Tips are optional.",
+                    "If the card cannot be authorized at the match, the ride is cancelled."
+                ]),
+                LegalSection(title: "Fees", icon: "dollarsign.circle", items: [
+                    "Connection Fee, charged to the rider and separately to the driver: $1.00 if the fare is $35 or less, $2.00 if over $35 up to $70, $3.00 if over $70.",
+                    "CPUC Access for All charge: $0.05 to the rider and $0.05 to the driver.",
+                    "100% of tips go to the driver."
+                ]),
+                LegalSection(title: "Cancellations", icon: "xmark.circle", items: [
+                    "Rider cancels before the ride starts: no cancellation fee. You cannot cancel once the trip is in progress.",
+                    "Driver cancels after a match: no charge to you, and the request is re-opened to other drivers.",
+                    "Rider no-show: after the driver has waited at least 5 minutes at pickup, the driver may mark a no-show and your saved card is charged a $5.00 no-show fee, of which $4.00 (80%) is paid to the driver."
+                ]),
+                LegalSection(title: "Riders", icon: "person", items: [
+                    "You must be at least 18, provide a valid payment card, and provide accurate account information."
+                ])
+            ],
+            footer: "This is a summary. The full Terms of Service, including liability limits and dispute resolution, are the binding text. Questions: support@dollor.ai.",
+            fullTextTitle: "Read the full Terms of Service",
+            onReadFullText: { fullTermsURL = URL(string: AppConstants.termsOfServiceURL) }
+        )
         .navigationTitle("Terms of Service")
         .navigationBarTitleDisplayMode(.inline)
         .inAppBrowser(url: $fullTermsURL)
     }
 }
 
-// MARK: - Policy Section Component
-struct PolicySection: View {
+// MARK: - Legal summary list (same grouped-List pattern as the driver app's Driver Terms)
+
+struct LegalSection {
     let title: String
-    let content: String
+    let icon: String
+    let items: [String]
+}
+
+struct LegalSummaryList: View {
+    let effectiveDate: String
+    let sections: [LegalSection]
+    let footer: String
+    let fullTextTitle: String
+    let onReadFullText: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.headline)
-                .foregroundColor(Theme.brandBlack)
+        List {
+            ForEach(sections, id: \.title) { section in
+                Section(section.title) {
+                    ForEach(section.items, id: \.self) { item in
+                        Label {
+                            Text(item)
+                                .font(Lx.Typography.body)
+                                .foregroundColor(Lx.Palette.text)
+                        } icon: {
+                            Image(systemName: section.icon)
+                                .foregroundColor(Lx.Palette.orange)
+                        }
+                    }
+                }
+                .listRowBackground(Lx.Palette.surface)
+            }
 
-            Text(content)
-                .font(.body)
-                .foregroundColor(Theme.textGrey)
+            Section {
+                Button(action: onReadFullText) {
+                    HStack {
+                        Label(fullTextTitle, systemImage: "doc.text")
+                            .foregroundColor(Lx.Palette.orange)
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(Lx.Typography.caption)
+                            .foregroundColor(Lx.Palette.textMuted)
+                            .accessibilityHidden(true)
+                    }
+                    .frame(minHeight: Lx.Size.buttonHeightCompact)
+                    .contentShape(Rectangle())
+                }
+            } footer: {
+                Text("\(footer)\n\n\(effectiveDate)")
+            }
+            .listRowBackground(Lx.Palette.surface)
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Lx.Palette.bg.ignoresSafeArea())
     }
 }
 

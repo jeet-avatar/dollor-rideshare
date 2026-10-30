@@ -2869,7 +2869,8 @@ async def complete_ride(request_id: int, request: Request, auth_driver: Driver =
     # Calculate and persist platform fee + driver payout (fare-tiered Model A)
     final_price = float(ride_request.final_price or ride_request.suggested_price or 0)
     charge = ride_charge_breakdown(final_price)
-    ride_request.platform_fee = charge["platform_fee"]
+    platform_fee = charge["platform_fee"]
+    ride_request.platform_fee = platform_fee
     ride_request.driver_payout = charge["driver_payout"]
 
     # Prop 22: compute per-ride floor data (non-blocking — failure must not block ride completion)

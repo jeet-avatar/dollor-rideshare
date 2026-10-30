@@ -122,6 +122,7 @@ struct DriverLoginView: View {
     @State private var agreedToTerms = false
     @State private var currentNonce: String?
     @State private var showForgotPassword = false
+    @State private var legalPageURL: URL?
     @Binding var isLoggedIn: Bool
     @EnvironmentObject var authManager: AuthManager
 
@@ -197,23 +198,6 @@ struct DriverLoginView: View {
             password.rangeOfCharacter(from: specialCharacters) != nil
     }
 
-    /// Password strength for UI feedback
-    private var passwordStrength: (level: Int, message: String) {
-        var strength = 0
-        if password.count >= 8 { strength += 1 }
-        if password.rangeOfCharacter(from: .uppercaseLetters) != nil { strength += 1 }
-        if password.rangeOfCharacter(from: .lowercaseLetters) != nil { strength += 1 }
-        if password.rangeOfCharacter(from: .decimalDigits) != nil { strength += 1 }
-        let specialCharacters = CharacterSet(charactersIn: "!@#$%^&*()_+-=[]{}|;':\",./<>?")
-        if password.rangeOfCharacter(from: specialCharacters) != nil { strength += 1 }
-
-        switch strength {
-        case 0...2: return (strength, "Weak")
-        case 3...4: return (strength, "Medium")
-        default: return (strength, "Strong")
-        }
-    }
-
     /// Issue #7 Fixed: E.164 format validation for phone numbers
     private var isValidPhone: Bool {
         let cleanPhone = phone.replacingOccurrences(of: "[^0-9+]", with: "", options: .regularExpression)
@@ -246,237 +230,36 @@ struct DriverLoginView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // App branding with dollar sign
-                ZStack {
-                    Circle()
-                        .fill(Theme.lxOrange.opacity(0.15))
-                        .frame(width: 120, height: 120)
-
-                    Text("$")
-                        .font(Lx.Typography.iconHero.weight(.bold))
-                        .foregroundColor(Theme.lxOrange)
-                }
-                .padding(.bottom, isSignUp ? 10 : 20)
-
-                Text("Dollor Driver")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(Theme.lxText)
-
-                Text("Drive and bid for rides")
-                    .font(.subheadline)
-                    .foregroundColor(Theme.lxTextSecondary)
-                    .padding(.bottom, isSignUp ? 10 : 20)
-
-                Text(isSignUp ? "Driver Sign Up" : "Driver Login")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Theme.lxText)
-
+            VStack(spacing: Lx.Spacing.xl) {
+                brandHeader
+                providerButtons
+                orDivider
+                credentialFields
                 if isSignUp {
-                    HStack(spacing: 10) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            TextField("First Name", text: $firstName)
-                                .textFieldStyle(.plain).lxField()
-                                .autocapitalization(.words)
-                            if isSignUp && firstName.isEmpty {
-                                Text("Required")
-                                    .font(.caption2)
-                                    .foregroundColor(Theme.lxError)
-                            }
-                        }
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            TextField("Last Name", text: $lastName)
-                                .textFieldStyle(.plain).lxField()
-                                .autocapitalization(.words)
-                            if isSignUp && lastName.isEmpty {
-                                Text("Required")
-                                    .font(.caption2)
-                                    .foregroundColor(Theme.lxError)
-                            }
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        TextField("Phone Number", text: $phone)
-                            .textFieldStyle(.plain).lxField()
-                            .keyboardType(.phonePad)
-                        if !phone.isEmpty && !isValidPhone {
-                            Text("Enter valid phone (10-15 digits)")
-                                .font(.caption2)
-                                .foregroundColor(Theme.lxError)
-                        }
-                    }
+                    termsAgreementRow
                 }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    TextField("Email", text: $email)
-                        .textFieldStyle(.plain).lxField()
-                        .autocapitalization(.none)
-                        .keyboardType(.emailAddress)
-                        .textContentType(.emailAddress)
-                    if !email.isEmpty && !isValidEmail {
-                        Text(emailValidationError ?? "Enter a valid email address")
-                            .font(.caption2)
-                            .foregroundColor(Theme.lxError)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    SecureField("Password", text: $password)
-                        .textFieldStyle(.plain).lxField()
-                        .textContentType(isSignUp ? .newPassword : .password)
-                    if isSignUp && !password.isEmpty {
-                        if !isValidPassword {
-                            Text("Min 8 chars, uppercase, lowercase, number & special char (!@#$%)")
-                                .font(.caption2)
-                                .foregroundColor(Theme.lxError)
-                        }
-                        // Password strength indicator
-                        HStack(spacing: 4) {
-                            ForEach(0..<5, id: \.self) { index in
-                                Rectangle()
-                                    .fill(index < passwordStrength.level ?
-                                          (passwordStrength.level <= 2 ? Theme.lxError :
-                                           passwordStrength.level <= 4 ? Theme.lxOrange : Theme.lxSuccess) :
-                                          Theme.lxHairline)
-                                    .frame(height: 4)
-                                    .cornerRadius(Lx.Radius.grabber)
-                            }
-                            Text(passwordStrength.message)
-                                .font(.caption2)
-                                .foregroundColor(passwordStrength.level <= 2 ? Theme.lxError :
-                                                passwordStrength.level <= 4 ? Theme.lxOrange : Theme.lxSuccess)
-                        }
-                    }
-                }
-
-                // Forgot Password Link (only show on login)
-                if !isSignUp {
-                    HStack {
-                        Spacer()
-                        Button(action: { showForgotPassword = true }) {
-                            Text("Forgot Password?")
-                                .font(.subheadline)
-                                .foregroundColor(Theme.lxOrange)
-                        }
-                    }
-                }
-
-                if isSignUp {
-                    VStack(alignment: .leading, spacing: 4) {
-                        SecureField("Confirm Password", text: $confirmPassword)
-                            .textFieldStyle(.plain).lxField()
-                            .textContentType(.newPassword)
-                        if !confirmPassword.isEmpty && password != confirmPassword {
-                            Text("Passwords do not match")
-                                .font(.caption2)
-                                .foregroundColor(Theme.lxError)
-                        }
-                    }
-
-                    // Terms and Conditions
-                    HStack(spacing: 8) {
-                        Button(action: { agreedToTerms.toggle() }) {
-                            Image(systemName: agreedToTerms ? "checkmark.square.fill" : "square")
-                                .foregroundColor(agreedToTerms ? Theme.lxOrange : Theme.lxTextMuted)
-                        }
-
-                        Text("I agree to the ")
-                            .font(.caption)
-                            .foregroundColor(Theme.lxTextSecondary)
-                        +
-                        Text("Terms & Conditions")
-                            .font(.caption)
-                            .foregroundColor(Theme.lxOrange)
-                            .underline()
-                    }
-                    .onTapGesture {
-                        showTerms = true
-                    }
-                }
-
                 if !errorMessage.isEmpty {
                     Text(errorMessage)
+                        .font(Lx.Typography.footnote)
                         .foregroundColor(Theme.lxError)
-                        .font(.caption)
                         .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityAddTraits(.updatesFrequently)
                 }
-
-                Button(action: handleAction) {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Theme.lxButtonGradient)
-                            .cornerRadius(Lx.Radius.button)
-                            .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
-                    } else {
-                        Text(isSignUp ? "Sign Up" : "Login")
-                            .fontWeight(.bold)
-                            .foregroundColor(Lx.Palette.onAccent)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Theme.lxButtonGradient)
-                            .cornerRadius(Lx.Radius.button)
-                            .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
-                    }
+                primaryButton
+                if !isSignUp {
+                    forgotPasswordButton
                 }
-                .disabled(isLoading)
-
-                Button(action: {
-                    isSignUp.toggle()
-                    errorMessage = ""
-                    // Reset fields when switching
-                    if !isSignUp {
-                        firstName = ""
-                        lastName = ""
-                        phone = ""
-                        confirmPassword = ""
-                        agreedToTerms = false
-                    }
-                }) {
-                    Text(isSignUp ? "Already have an account? Login" : "Don't have an account? Sign Up")
-                        .foregroundColor(Theme.lxOrange)
-                }
-
-                HStack {
-                    VStack { Divider().overlay(Theme.lxHairline) }
-                    Text("OR")
-                        .foregroundColor(Theme.lxTextMuted)
-                        .font(.caption)
-                    VStack { Divider().overlay(Theme.lxHairline) }
-                }
-                .padding(.vertical)
-
-                // Apple first, system button, same width and height as Google (HIG equal prominence)
-                SignInWithAppleButton(isSignUp ? .signUp : .signIn) { request in
-                    let nonce = randomNonceString()
-                    currentNonce = nonce
-                    request.requestedScopes = [.fullName, .email]
-                    request.nonce = sha256(nonce)
-                } onCompletion: { result in
-                    handleAppleSignIn(result: result)
-                }
-                .signInWithAppleButtonStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .cornerRadius(Lx.Radius.chip)
-
-                GoogleSignInButton(action: handleGoogleLogin)
-                    .colorScheme(.dark)
-
+                modeToggle
+                legalFooter
                 #if DEBUG
                 demoLoginButton
                 #endif
-
-                Spacer()
             }
-            .padding()
+            .padding(.horizontal, Lx.Spacing.xl)
+            .padding(.vertical, Lx.Spacing.xl)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(Theme.lxBg.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .onAppear {
@@ -492,26 +275,218 @@ struct DriverLoginView: View {
         .sheet(isPresented: $showForgotPassword) {
             DriverForgotPasswordView(isPresented: $showForgotPassword)
         }
+        .inAppBrowser(url: $legalPageURL)
+    }
+
+    // MARK: - Wordmark
+
+    private var brandHeader: some View {
+        VStack(spacing: Lx.Spacing.m) {
+            Image(systemName: "car.fill")
+                .font(Lx.Typography.icon)
+                .foregroundColor(Theme.lxOrange)
+                .accessibilityHidden(true)
+            Text("Dollor Driver")
+                .font(Lx.Typography.largeTitle)
+                .foregroundColor(Theme.lxText)
+            Text("Drive and bid for rides")
+                .font(Lx.Typography.subheadline)
+                .foregroundColor(Theme.lxTextSecondary)
+        }
+        .multilineTextAlignment(.center)
+        .padding(.top, Lx.Spacing.xl)
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: - Apple + Google (system buttons, equal size)
+
+    private var providerButtons: some View {
+        VStack(spacing: Lx.Spacing.m) {
+            SignInWithAppleButton(isSignUp ? .signUp : .signIn) { request in
+                let nonce = randomNonceString()
+                currentNonce = nonce
+                request.requestedScopes = [.fullName, .email]
+                request.nonce = sha256(nonce)
+            } onCompletion: { result in
+                handleAppleSignIn(result: result)
+            }
+            .signInWithAppleButtonStyle(.white)
+            .id(isSignUp) // the system button only reads its type at creation; recreate on mode change
+            .frame(maxWidth: .infinity)
+            .frame(height: Lx.Size.buttonHeight)
+            .clipShape(RoundedRectangle(cornerRadius: Lx.Radius.button, style: .continuous))
+            .disabled(isLoading)
+            .accessibilityLabel(isSignUp ? "Sign up with Apple" : "Sign in with Apple")
+
+            GoogleProviderButton(action: handleGoogleLogin)
+                .disabled(isLoading)
+        }
+    }
+
+    private var orDivider: some View {
+        HStack(spacing: Lx.Spacing.m) {
+            Rectangle().fill(Theme.lxHairline).frame(height: 1)
+            Text("or continue with email")
+                .font(Lx.Typography.footnote)
+                .foregroundColor(Theme.lxTextMuted)
+                .fixedSize()
+            Rectangle().fill(Theme.lxHairline).frame(height: 1)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: - Email form
+
+    private var credentialFields: some View {
+        VStack(spacing: Lx.Spacing.m) {
+            if isSignUp {
+                HStack(spacing: Lx.Spacing.m) {
+                    TextField("First name", text: $firstName)
+                        .lxField()
+                        .textContentType(.givenName)
+                        .textInputAutocapitalization(.words)
+                    TextField("Last name", text: $lastName)
+                        .lxField()
+                        .textContentType(.familyName)
+                        .textInputAutocapitalization(.words)
+                }
+
+                LxValidatedField(message: phone.isEmpty || isValidPhone ? nil : "Enter a valid phone number (10-15 digits)") {
+                    TextField("Phone number", text: $phone)
+                        .lxField()
+                        .keyboardType(.phonePad)
+                        .textContentType(.telephoneNumber)
+                }
+            }
+
+            LxValidatedField(message: email.isEmpty || isValidEmail ? nil : (emailValidationError ?? "Enter a valid email address")) {
+                TextField("Email", text: $email)
+                    .lxField()
+                    .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            }
+
+            LxValidatedField(message: isSignUp && !password.isEmpty && !isValidPassword ? "At least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol" : nil) {
+                LxPasswordField(title: "Password", text: $password,
+                                contentType: isSignUp ? .newPassword : .password)
+            }
+
+            if isSignUp {
+                LxValidatedField(message: !confirmPassword.isEmpty && password != confirmPassword ? "Passwords do not match" : nil) {
+                    LxPasswordField(title: "Confirm password", text: $confirmPassword, contentType: .newPassword)
+                }
+            }
+        }
+    }
+
+    // MARK: - Sign Up: Driver Terms agreement
+
+    private var termsAgreementRow: some View {
+        VStack(alignment: .leading, spacing: Lx.Spacing.s) {
+            Toggle("I agree to the Driver Terms", isOn: $agreedToTerms)
+                .font(Lx.Typography.body)
+                .foregroundColor(Theme.lxText)
+                .tint(Theme.lxOrange)
+
+            Button("Review the Driver Terms") { showTerms = true }
+                .font(Lx.Typography.footnote.weight(.semibold))
+                .foregroundColor(Theme.lxOrange)
+                .frame(minHeight: Lx.Size.buttonHeightCompact)
+                .accessibilityHint("Opens a summary of the Driver Terms")
+        }
+        .padding(.horizontal, Lx.Spacing.l)
+        .padding(.vertical, Lx.Spacing.s)
+        .lxCard()
+    }
+
+    // MARK: - Primary action
+
+    private var isPrimaryDisabled: Bool {
+        isLoading || (isSignUp && !agreedToTerms)
+    }
+
+    private var primaryButton: some View {
+        Button(action: handleAction) {
+            if isLoading {
+                ProgressView().tint(Lx.Palette.onAccent)
+            } else {
+                Text(isSignUp ? "Create Account" : "Log In")
+            }
+        }
+        .buttonStyle(.lxPrimary)
+        .disabled(isPrimaryDisabled)
+        .accessibilityHint(isSignUp ? "Creates your driver account" : "Signs in with your email and password")
+    }
+
+    private var forgotPasswordButton: some View {
+        Button("Forgot password?") { showForgotPassword = true }
+            .font(Lx.Typography.footnote.weight(.semibold))
+            .foregroundColor(Theme.lxOrange)
+            .frame(minHeight: Lx.Size.buttonHeightCompact)
+            .accessibilityHint("Opens the password reset form")
+    }
+
+    // MARK: - Log in / Create account toggle
+
+    private var modeToggle: some View {
+        HStack(spacing: Lx.Spacing.xs) {
+            Text(isSignUp ? "Already a driver?" : "New driver?")
+                .foregroundColor(Theme.lxTextSecondary)
+            Button(isSignUp ? "Log in" : "Create account") {
+                withAnimation {
+                    isSignUp.toggle()
+                    errorMessage = ""
+                    if !isSignUp {
+                        firstName = ""
+                        lastName = ""
+                        phone = ""
+                        confirmPassword = ""
+                        agreedToTerms = false
+                    }
+                }
+            }
+            .fontWeight(.bold)
+            .foregroundColor(Theme.lxOrange)
+            .accessibilityLabel(isSignUp ? "Switch to log in" : "Switch to create account")
+        }
+        .font(Lx.Typography.footnote)
+        .frame(minHeight: Lx.Size.buttonHeightCompact)
+    }
+
+    // MARK: - Legal footer
+
+    private var legalFooter: some View {
+        Text(legalFooterText)
+            .font(Lx.Typography.caption)
+            .foregroundColor(Theme.lxTextMuted)
+            .tint(Theme.lxOrange)
+            .multilineTextAlignment(.center)
+            .environment(\.openURL, OpenURLAction { url in
+                legalPageURL = url
+                return .handled
+            })
+    }
+
+    private var legalFooterText: AttributedString {
+        let markdown = "By continuing you agree to the [Driver Terms](\(AppConstants.driverTermsURL)) and [Privacy Policy](\(AppConstants.privacyPolicyURL))."
+        return (try? AttributedString(markdown: markdown))
+            ?? AttributedString("By continuing you agree to the Driver Terms and Privacy Policy.")
     }
 
     // MARK: - Demo Login (App Store Review)
     #if DEBUG
     private var demoLoginButton: some View {
-        Button(action: {
+        Button {
             email = "demo.driver@dollor.ai"
             password = ProcessInfo.processInfo.environment["DEMO_LOGIN_PASSWORD"] ?? ""
-        }) {
-            HStack {
-                Image(systemName: "bolt.fill")
-                Text("Demo Login (App Review)")
-                    .font(Lx.Typography.footnote.weight(.medium))
-            }
-            .foregroundColor(Theme.lxOrange)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(Theme.lxOrange.opacity(0.12))
-            .cornerRadius(Lx.Radius.chip)
+        } label: {
+            Label("Demo login (App Review)", systemImage: "bolt.fill")
+                .font(Lx.Typography.caption)
         }
+        .foregroundColor(Theme.lxTextMuted)
+        .frame(minHeight: Lx.Size.buttonHeightCompact)
         .accessibilityLabel("Demo login for App Store review")
     }
     #endif
@@ -839,87 +814,36 @@ struct DriverLoginView: View {
     }
 }
 
-// MARK: - Terms and Conditions Sheet
+// MARK: - Driver Terms Sheet (sign-up)
+//
+// Summary of the Driver Terms shown from the sign-up form. "Agree" flips the
+// form's acceptance toggle; the binding acceptance is what `handleAction`
+// requires before registering.
 struct DriverTermsSheet: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) private var dismiss
     @Binding var agreedToTerms: Bool
-    @State private var fullTermsURL: URL?
+    @State private var hasAgreed = false
 
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Terms & Conditions")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.lxText)
-
-                    Text("Effective October 29, 2026")
-                        .font(.caption)
-                        .foregroundColor(Theme.lxTextMuted)
-
-                    Group {
-                        sectionHeader("1. Driver Agreement")
-                        Text("Dollor Driver is operated by Zietra Technologies Inc. (doing business as Dollor.ai), a peer-to-peer rideshare marketplace operating under CPUC Transportation Network Company permit TNC0050982-N. By registering as a driver on Dollor Driver, you agree to the Driver Terms of Service and the Terms of Service. You are an independent contractor, not an employee of Dollor.ai or Zietra Technologies Inc.")
-
-                        sectionHeader("2. Requirements")
-                        Text("You must be at least 21 years old, hold a valid driver's license, maintain valid vehicle insurance, upload a profile photo, provide your vehicle information, complete a background check through Checkr, and be approved by Dollor.ai. You cannot go online until your account is approved and your background check has cleared.")
-
-                        sectionHeader("3. Earnings & Fees")
-                        Text("You name your bid. A flat Connection Fee of $1 (fares up to $35), $2 (fares over $35 up to $70), or $3 (fares over $70), plus a $0.05 CPUC Access for All charge, is deducted from your payout. 100% of tips go to you. Payouts are made through Stripe after you complete Stripe's payout onboarding.")
-
-                        sectionHeader("4. Insurance & Conduct")
-                        Text("You are responsible for the insurance and any license or permit that California law and the CPUC require of you. Harassment, discrimination, impaired or unsafe driving, fraud, or misuse of rider information may result in suspension or deactivation.")
-
-                        sectionHeader("5. Full Terms")
-                        Text("This is a summary. The full Driver Terms of Service and Terms of Service are the binding text. Questions: support@dollor.ai.")
+        NavigationStack {
+            DriverTermsList(hasAgreed: $hasAgreed)
+                .navigationTitle("Driver Terms")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
                     }
-
-                    Button(action: { fullTermsURL = URL(string: AppConstants.driverTermsURL) }) {
-                        Text("Read the full Driver Terms")
-                            .fontWeight(.semibold)
-                            .foregroundColor(Theme.lxOrange)
-                            .frame(maxWidth: .infinity)
-                    }
-
-                    Spacer(minLength: 40)
-
-                    Button(action: {
-                        agreedToTerms = true
-                        dismiss()
-                    }) {
-                        Text("I Agree to Terms & Conditions")
-                            .fontWeight(.bold)
-                            .foregroundColor(Lx.Palette.onAccent)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Theme.lxButtonGradient)
-                            .cornerRadius(Lx.Radius.button)
-                            .shadow(color: Theme.lxOrange.opacity(0.4), radius: 14, x: 0, y: 6)
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Agree") {
+                            agreedToTerms = true
+                            dismiss()
+                        }
+                        .fontWeight(.semibold)
+                        .disabled(!hasAgreed)
                     }
                 }
-                .padding()
-            }
-            .background(Theme.lxBg.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                    .foregroundColor(Theme.lxOrange)
-                }
-            }
         }
-        .inAppBrowser(url: $fullTermsURL)
+        .onAppear { hasAgreed = agreedToTerms }
         .preferredColorScheme(.dark)
-    }
-
-    private func sectionHeader(_ text: String) -> some View {
-        Text(text)
-            .font(.headline)
-            .foregroundColor(Theme.lxText)
-            .padding(.top, 8)
     }
 }
 
@@ -1001,7 +925,7 @@ struct DriverForgotPasswordView: View {
                                 .foregroundColor(Theme.lxTextSecondary)
 
                             TextField("Enter code", text: $resetCode)
-                                .textFieldStyle(.plain).lxField()
+                                .lxField()
                                 .keyboardType(.numberPad)
                         }
                         .padding(.horizontal)
@@ -1013,7 +937,7 @@ struct DriverForgotPasswordView: View {
                                 .foregroundColor(Theme.lxTextSecondary)
 
                             SecureField("Enter new password", text: $newPassword)
-                                .textFieldStyle(.plain).lxField()
+                                .lxField()
                                 .textContentType(.newPassword)
                         }
                         .padding(.horizontal)
@@ -1062,7 +986,7 @@ struct DriverForgotPasswordView: View {
                                 .foregroundColor(Theme.lxTextSecondary)
 
                             TextField("Enter your email", text: $email)
-                                .textFieldStyle(.plain).lxField()
+                                .lxField()
                                 .autocapitalization(.none)
                                 .keyboardType(.emailAddress)
                                 .textContentType(.emailAddress)
@@ -1192,18 +1116,50 @@ struct DriverForgotPasswordView: View {
     }
 }
 
+// MARK: - Google provider button
+//
+// Uses the Google Sign-In SDK's own button (official logo, localized text)
+// for the visual, but gives it the same frame and corner radius as the Apple
+// button above it. The SDK button is fixed at 40pt / 2pt radius, so the tap
+// target is the full-size outer button and the SDK view is display-only.
+private struct GoogleProviderButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                RoundedRectangle(cornerRadius: Lx.Radius.button, style: .continuous)
+                    .fill(Color.white)
+                GoogleSignInButton(scheme: .light, style: .wide, state: .normal, action: {})
+                    // Trim the SDK button's own drop shadow so only the outer shape shows.
+                    .mask(Rectangle().padding(.horizontal, 2).padding(.bottom, 3))
+                    .padding(.horizontal, Lx.Spacing.s)
+                    .allowsHitTesting(false)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: Lx.Size.buttonHeight)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Sign in with Google")
+        .accessibilityHint("Uses your Google account to sign in")
+    }
+}
+
 // MARK: - Luxury Dark Text Field Styling
 private struct LxFieldModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
+            .font(Lx.Typography.body)
             .foregroundColor(Theme.lxText)
             .tint(Theme.lxOrange)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Lx.Spacing.l)
+            .padding(.vertical, Lx.Spacing.m)
+            .frame(minHeight: Lx.Size.buttonHeightCompact)
             .background(Theme.lxSurface)
-            .cornerRadius(Lx.Radius.button)
+            .clipShape(RoundedRectangle(cornerRadius: Lx.Radius.button, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: Lx.Radius.button)
+                RoundedRectangle(cornerRadius: Lx.Radius.button, style: .continuous)
                     .stroke(Theme.lxHairline, lineWidth: 1)
             )
     }
@@ -1212,6 +1168,59 @@ private struct LxFieldModifier: ViewModifier {
 private extension View {
     func lxField() -> some View {
         modifier(LxFieldModifier())
+    }
+}
+
+/// A field with an optional inline validation message underneath.
+private struct LxValidatedField<Field: View>: View {
+    let message: String?
+    @ViewBuilder let field: () -> Field
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Lx.Spacing.xs) {
+            field()
+            if let message {
+                Text(message)
+                    .font(Lx.Typography.caption)
+                    .foregroundColor(Theme.lxError)
+                    .padding(.leading, Lx.Spacing.xs)
+            }
+        }
+    }
+}
+
+/// SecureField with a show/hide control.
+private struct LxPasswordField: View {
+    let title: String
+    @Binding var text: String
+    var contentType: UITextContentType = .password
+    @State private var isRevealed = false
+
+    var body: some View {
+        HStack(spacing: Lx.Spacing.s) {
+            Group {
+                if isRevealed {
+                    TextField(title, text: $text)
+                } else {
+                    SecureField(title, text: $text)
+                }
+            }
+            .textContentType(contentType)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+
+            Button {
+                isRevealed.toggle()
+            } label: {
+                Image(systemName: isRevealed ? "eye.slash" : "eye")
+                    .foregroundColor(Theme.lxTextSecondary)
+                    .frame(minWidth: Lx.Size.buttonHeightCompact, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isRevealed ? "Hide password" : "Show password")
+        }
+        .lxField()
     }
 }
 
