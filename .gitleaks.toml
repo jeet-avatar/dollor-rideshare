@@ -1,0 +1,92 @@
+# gitleaks configuration for the Dollor code in this repository.
+# Run locally:   gitleaks detect --source . --config .gitleaks.toml --redact
+# Pre-commit:    gitleaks protect --staged --config .gitleaks.toml --redact
+# CI:            gitleaks/gitleaks-action with GITLEAKS_CONFIG=.gitleaks.toml
+# See docs/SECRETS.md for where real secrets live and how to rotate them.
+
+title = "Dollor gitleaks config"
+
+[extend]
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# Project-specific rules
+# ---------------------------------------------------------------------------
+
+[[rules]]
+id = "dollor-demo-account-password"
+description = "Demo / review account password committed in code or scripts"
+regex = '''(?:Demo(?:Customer|Driver|Restaurant|Dollor)\w*|DollorAdmin\w*)\d{3,4}!'''
+tags = ["dollor", "password"]
+[rules.allowlist]
+paths = [
+  '''^docs/''',
+  '''fastlane/metadata/review_information/''',
+  '''(^|/)tests?/''',
+  '''\.md$''',
+]
+
+[[rules]]
+id = "apple-app-store-connect-p8"
+description = "App Store Connect / APNs private key file"
+regex = '''-----BEGIN\s+PRIVATE\s+KEY-----'''
+path = '''\.p8$'''
+tags = ["apple", "key"]
+
+[[rules]]
+id = "android-keystore-password"
+description = "Android signing password assigned in a gradle/properties file"
+regex = '''(?i)(store|key)Password\s*[=:]\s*["']?[^"'\s$\{\(]{4,}'''
+path = '''\.(gradle|kts|properties)$'''
+tags = ["android", "signing"]
+[rules.allowlist]
+regexes = ['''localProperties\.getProperty''', '''System\.getenv''']
+
+[[rules]]
+id = "fastlane-match-password"
+description = "fastlane match passphrase"
+regex = '''(?i)MATCH_PASSWORD\s*[=:]\s*["'`]?[A-Za-z0-9_!@#%^&*+-]{8,}'''
+tags = ["fastlane"]
+[rules.allowlist]
+regexes = ['''<[^>]+>''', '''\$\{?[A-Z_]+''', '''password manager''']
+
+[[rules]]
+id = "dollor-db-url-with-password"
+description = "Database URL with an inline password"
+regex = '''postgres(?:ql)?(?:\+\w+)?://[^:/\s"']+:[^@\s"'$\{<]{4,}@[A-Za-z0-9.-]+'''
+tags = ["database"]
+[rules.allowlist]
+regexes = [
+  '''CHANGE_ME''',
+  '''://(user|postgres|username):(pass(word)?|postgres|password|secret)@''',
+  '''@(localhost|127\.0\.0\.1|postgres|postgresql|db|host)\b''',
+]
+
+# ---------------------------------------------------------------------------
+# Global allowlist: values that are public by design or obvious placeholders
+# ---------------------------------------------------------------------------
+
+[allowlist]
+description = "Public identifiers, placeholders and generated artifacts"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''(^|/)build/''',
+  '''package-lock\.json$''',
+  '''Gemfile\.lock$''',
+  '''\.xcassets/''',
+  '''apps/web/p2p-platform/backend/admin_frontend/assets/''',
+  '''\.env\.example$''',
+  '''\.env\.default\.example$''',
+  '''\.xcconfig\.example$''',
+]
+regexes = [
+  # Google OAuth client IDs are public (shipped in every app and web bundle)
+  '''\d{10,}-[a-z0-9]{20,}\.apps\.googleusercontent\.com''',
+  # Obvious placeholders
+  '''CHANGE[-_]?ME''',
+  '''REPLACE_ME''',
+  '''your[-_](api[-_]?key|secret|token|password)''',
+  '''(sk|pk)_(test|live)_(x{4,}|your|CHANGE)''',
+  '''AIza<REDACTED''',
+]

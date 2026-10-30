@@ -46,7 +46,7 @@ class SimplePaymentIntentResponse(BaseModel):
     publishableKey: str
     paymentIntent: str  # Same as clientSecret for compatibility
 
-STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "pk_test_your_key_here")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
 
 @router.post("/payments/create-intent", response_model=SimplePaymentIntentResponse)
 async def create_simple_payment_intent(http_request: Request, request: SimplePaymentIntentRequest, customer: Customer = Depends(require_customer)):

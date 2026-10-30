@@ -50,7 +50,7 @@ You'll need Distribution certificates. Either:
 3. Run Match to generate distribution certificates:
    ```bash
    cd apps/ios
-   MATCH_PASSWORD="dollor_ios_certs_2025" \
+   MATCH_PASSWORD="<MATCH_PASSWORD - stored in the team password manager, never in git>" \
    APP_STORE_CONNECT_API_KEY_KEY_ID="YOUR_KEY_ID" \
    APP_STORE_CONNECT_API_KEY_ISSUER_ID="YOUR_ISSUER_ID" \
    APP_STORE_CONNECT_API_KEY_KEY="$(cat ~/path/to/AuthKey.p8)" \
@@ -84,6 +84,6 @@ fastlane customer_testflight  # TestFlight build (requires distribution cert)
 ## Match Password
 
 For decrypting certificates in the Match repo:
-- **MATCH_PASSWORD**: `dollor_ios_certs_2025`
+- **MATCH_PASSWORD**: `<MATCH_PASSWORD - stored in the team password manager, never in git>`
 
 Store this as a GitHub secret for CI.

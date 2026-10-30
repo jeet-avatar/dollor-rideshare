@@ -49,7 +49,7 @@ import ssl
 # ── Config ───────────────────────────────────────────────────────────────────
 BASE_URL = os.environ.get("BASE_URL_OVERRIDE", "https://api.dollor.ai")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "support@dollor.ai")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "DollorAdmin2026!")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "${DOLLOR_ADMIN_PASSWORD}")
 
 # Colors
 GREEN = "\033[92m"

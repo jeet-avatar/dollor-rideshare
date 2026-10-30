@@ -24,7 +24,7 @@ final class CustomerAuthFlowTests: DollorTestCase {
         let passwordField = app.secureTextFields["Password"]
         XCTAssertTrue(passwordField.waitForExistence(timeout: 3), "Password field should exist")
         passwordField.tap()
-        passwordField.typeText("DemoCustomer2025!")
+        passwordField.typeText(ProcessInfo.processInfo.environment["DEMO_LOGIN_PASSWORD"] ?? "")
 
         let loginButton = app.buttons["Continue to sign in"]
         XCTAssertTrue(loginButton.waitForExistence(timeout: 3), "Login button should exist")

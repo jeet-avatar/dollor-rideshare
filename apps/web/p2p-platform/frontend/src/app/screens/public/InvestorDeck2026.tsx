@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 // Password-based access control
-const VALID_PASSWORD = 'investor2026';
+// Set VITE_INVESTOR_DECK_PASSWORD at build time; when unset the deck stays locked.
+const VALID_PASSWORD: string = import.meta.env.VITE_INVESTOR_DECK_PASSWORD ?? '';
 
 // Watermark component - multi-position with viewer info
 const Watermark: React.FC<{ timestamp: string; email?: string }> = ({ timestamp, email }) => {
@@ -108,14 +109,14 @@ export default function InvestorDeck2026() {
 
   useEffect(() => {
     const pwd = searchParams.get('pwd');
-    if (pwd === VALID_PASSWORD) {
+    if (VALID_PASSWORD !== '' && pwd === VALID_PASSWORD) {
       setIsAuthorized(true);
     }
   }, [searchParams]);
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === VALID_PASSWORD) {
+    if (VALID_PASSWORD !== '' && passwordInput === VALID_PASSWORD) {
       setIsAuthorized(true);
       setError('');
     } else {

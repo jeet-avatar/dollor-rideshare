@@ -200,3 +200,20 @@ apps/ios/delivery/.dead-code-backup/
 # ===================
 .worktrees/
 worktrees/
+
+# ===================
+# Secret-scan hardening (Dollor): never commit credentials
+# ===================
+.env.*
+!.env.example
+!.env.default.example
+*.p8
+*.pem
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+keystore.properties
+secrets.properties
+*.local.xcconfig
+Secrets.xcconfig
+service-account*.json

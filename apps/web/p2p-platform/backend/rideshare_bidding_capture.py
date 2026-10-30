@@ -22,9 +22,9 @@ BASE_URL = "https://www.dollor.ai"
 
 # Demo credentials
 CUSTOMER_EMAIL = "demo.customer@dollor.ai"
-CUSTOMER_PASSWORD = "DemoCustomer2025!"
+CUSTOMER_PASSWORD = os.environ["DEMO_CUSTOMER_PASSWORD"]
 DRIVER_EMAIL = "demo.driver@dollor.ai"
-DRIVER_PASSWORD = "DemoDriver2025!"
+DRIVER_PASSWORD = os.environ["DEMO_DRIVER_PASSWORD"]
 
 # Output directory
 TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")

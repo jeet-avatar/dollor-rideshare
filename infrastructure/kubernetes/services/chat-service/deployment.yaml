@@ -159,7 +159,7 @@ metadata:
     platform: dollor-ai
 type: Opaque
 stringData:
-  DATABASE_URL: "postgresql://postgres:postgres@postgresql:5432/dollor_chat"
+  DATABASE_URL: "postgresql://postgres:CHANGE_ME_USE_SEALED_SECRETS@postgresql:5432/dollor_chat"
   REDIS_URL: "redis://redis:6379/0"
 
 ---

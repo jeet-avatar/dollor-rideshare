@@ -709,6 +709,27 @@ def _validate_password(password: str) -> None:
         )
 
 
+_DEMO_PASSWORD_ENV = {
+    "customer": "DEMO_CUSTOMER_PASSWORD",
+    "driver": "DEMO_DRIVER_PASSWORD",
+    "restaurant": "DEMO_RESTAURANT_PASSWORD",
+    "admin": "DOLLOR_ADMIN_PASSWORD",
+    "support_customer": "DEMO_SUPPORT_CUSTOMER_PASSWORD",
+}
+
+
+def _demo_password(kind: str) -> str:
+    """Password for a seeded demo/review account, read from the environment.
+
+    No default: the demo/admin seeding endpoints return 503 until the variable is set.
+    """
+    env_name = _DEMO_PASSWORD_ENV[kind]
+    value = os.getenv(env_name)
+    if not value:
+        raise HTTPException(status_code=503, detail=f"{env_name} is not configured")
+    return value
+
+
 def _require_admin_secret(secret_key: Optional[str] = None):
     """Verify ADMIN_SECRET_KEY for demo/admin endpoints.
 
@@ -2183,7 +2204,7 @@ def customer_demo_login(request: VendorDemoLoginRequest, db: Session = Depends(g
     print(f"Customer demo login attempt with hint: {hint}")
 
     demo_email = "demo.customer@dollor.ai"
-    demo_password = "DemoCustomer2025!"
+    demo_password = _demo_password("customer")
 
     # Check if demo customer exists
     customer = db.query(Customer).filter(Customer.email == demo_email).first()
@@ -2233,7 +2254,7 @@ def driver_demo_login(request: VendorDemoLoginRequest, db: Session = Depends(get
     print(f"Driver demo login attempt with hint: {hint}")
 
     demo_email = "demo.driver@dollor.ai"
-    demo_password = "DemoDriver2025!"
+    demo_password = _demo_password("driver")
 
     # Check if demo driver user exists
     user = db.query(User).filter(
@@ -11933,7 +11954,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
                 last_name="Customer",
                 email=customer_email,
                 phone="+14155551001",
-                password_hash=get_password_hash("DemoCustomer2025!"),
+                password_hash=get_password_hash(_demo_password("customer")),
                 default_address={"street": "123 Market St", "city": "San Francisco", "state": "CA", "zip_code": "94102"},
                 is_active=True,
                 is_verified=True,
@@ -11948,7 +11969,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
         else:
             # Update password to ensure it matches (for existing accounts)
             # Use explicit SQL UPDATE to ensure the change is applied
-            new_hash = get_password_hash("DemoCustomer2025!")
+            new_hash = get_password_hash(_demo_password("customer"))
             db.execute(
                 text("UPDATE customers SET password_hash = :hash, is_active = true WHERE email = :email"),
                 {"hash": new_hash, "email": customer_email}
@@ -11987,7 +12008,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
                 last_name="Johnson",
                 email=driver_email,
                 phone="+14155551002",
-                password_hash=get_password_hash("DemoDriver2025!"),
+                password_hash=get_password_hash(_demo_password("driver")),
                 city="San Francisco",
                 state="CA",
                 zip_code="94102",
@@ -12034,7 +12055,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
             # Create User record for driver login (required for /api/auth/driver/login)
             driver_user = User(
                 email=driver_email,
-                password_hash=get_password_hash("DemoDriver2025!"),
+                password_hash=get_password_hash(_demo_password("driver")),
                 full_name="Marcus Johnson",
                 role=UserRole.DRIVER,
                 driver_id=demo_driver.id,
@@ -12075,7 +12096,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
             if not existing_user:
                 driver_user = User(
                     email=driver_email,
-                    password_hash=get_password_hash("DemoDriver2025!"),
+                    password_hash=get_password_hash(_demo_password("driver")),
                     full_name="Marcus Johnson",
                     role=UserRole.DRIVER,
                     driver_id=existing_driver.id,
@@ -12086,7 +12107,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
                 results["created"].append("driver_user")
             else:
                 # Update password and name to ensure it matches
-                existing_user.password_hash = get_password_hash("DemoDriver2025!")
+                existing_user.password_hash = get_password_hash(_demo_password("driver"))
                 existing_user.full_name = "Marcus Johnson"
                 existing_user.driver_id = existing_driver.id
                 existing_user.role = UserRole.DRIVER
@@ -12120,7 +12141,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
             db.flush()
             vendor_user = User(
                 email=vendor_email,
-                password_hash=get_password_hash("DemoRestaurant2025!"),
+                password_hash=get_password_hash(_demo_password("restaurant")),
                 full_name="Demo Owner",
                 role=UserRole.VENDOR,
                 vendor_id=demo_vendor.id,
@@ -12135,7 +12156,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
             if not existing_user:
                 vendor_user = User(
                     email=vendor_email,
-                    password_hash=get_password_hash("DemoRestaurant2025!"),
+                    password_hash=get_password_hash(_demo_password("restaurant")),
                     full_name="Demo Owner",
                     role=UserRole.VENDOR,
                     vendor_id=existing.id,
@@ -12146,7 +12167,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
                 results["created"].append("restaurant_user")
             else:
                 # Update password to ensure it matches
-                existing_user.password_hash = get_password_hash("DemoRestaurant2025!")
+                existing_user.password_hash = get_password_hash(_demo_password("restaurant"))
                 existing_user.vendor_id = existing.id
                 existing_user.role = UserRole.VENDOR
                 db.commit()
@@ -12162,7 +12183,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
         if not existing:
             admin_user = User(
                 email=admin_email,
-                password_hash=get_password_hash("DollorAdmin2026!"),
+                password_hash=get_password_hash(_demo_password("admin")),
                 full_name="Dollor Admin",
                 role=UserRole.ADMIN,
                 created_at=datetime.utcnow()
@@ -12172,7 +12193,7 @@ def setup_demo_accounts(secret_key: Optional[str] = Query(None), db: Session = D
             results["created"].append("admin")
         else:
             # Update password to ensure it matches
-            existing.password_hash = get_password_hash("DollorAdmin2026!")
+            existing.password_hash = get_password_hash(_demo_password("admin"))
             existing.role = UserRole.ADMIN
             db.commit()
             results["existing"].append("admin")
@@ -12234,7 +12255,7 @@ def recreate_demo_customer(secret_key: Optional[str] = Query(None), db: Session 
         db.commit()
 
         # Create fresh demo customer
-        demo_password = "DemoCustomer2025!"
+        demo_password = _demo_password("customer")
         new_hash = get_password_hash(demo_password)
         demo_customer = Customer(
             customer_id="DEMO-CUST-001",
@@ -12277,10 +12298,10 @@ def force_reset_demo_passwords(secret_key: Optional[str] = Query(None), db: Sess
     results = {"reset": [], "verified": [], "failed": []}
 
     demo_accounts = [
-        {"type": "customer", "email": "demo.customer@dollor.ai", "password": "DemoCustomer2025!", "table": "customers"},
-        {"type": "driver", "email": "demo.driver@dollor.ai", "password": "DemoDriver2025!", "table": "users"},
-        {"type": "vendor", "email": "demo.restaurant@dollor.ai", "password": "DemoRestaurant2025!", "table": "users"},
-        {"type": "admin", "email": "support@dollor.ai", "password": "DollorAdmin2026!", "table": "users"},
+        {"type": "customer", "email": "demo.customer@dollor.ai", "password": _demo_password("customer"), "table": "customers"},
+        {"type": "driver", "email": "demo.driver@dollor.ai", "password": _demo_password("driver"), "table": "users"},
+        {"type": "vendor", "email": "demo.restaurant@dollor.ai", "password": _demo_password("restaurant"), "table": "users"},
+        {"type": "admin", "email": "support@dollor.ai", "password": _demo_password("admin"), "table": "users"},
     ]
 
     for account in demo_accounts:
@@ -12325,7 +12346,7 @@ def debug_driver_login(secret_key: Optional[str] = Query(None), db: Session = De
         raise HTTPException(status_code=404, detail="Not found")
     _require_admin_secret(secret_key)
     email = "demo.driver@dollor.ai"
-    password = "DemoDriver2025!"
+    password = _demo_password("driver")
 
     # Check 1: Find user with any role
     any_user = db.query(User).filter(User.email == email).all()
@@ -12385,7 +12406,7 @@ def debug_customer_login(secret_key: Optional[str] = Query(None), db: Session = 
         raise HTTPException(status_code=404, detail="Not found")
     _require_admin_secret(secret_key)
     email = "demo.customer@dollor.ai"
-    password = "DemoCustomer2025!"
+    password = _demo_password("customer")
 
     # Check: Find customer
     customer = db.query(Customer).filter(Customer.email == email).first()
@@ -12430,7 +12451,7 @@ def fix_driver_login(secret_key: Optional[str] = Query(None), db: Session = Depe
     _require_admin_secret(secret_key)
     try:
         driver_email = "demo.driver@dollor.ai"
-        driver_password = "DemoDriver2025!"
+        driver_password = _demo_password("driver")
         new_hash = get_password_hash(driver_password)
 
         # Find demo driver
@@ -12622,7 +12643,7 @@ def setup_support_customer(secret_key: Optional[str] = Query(None), db: Session 
     _require_admin_secret(secret_key)
     try:
         customer_email = "support@dollor.ai"
-        customer_password = "DemoDollor123!"
+        customer_password = _demo_password("support_customer")
         new_hash = get_password_hash(customer_password)
 
         # Check if customer exists in customers table

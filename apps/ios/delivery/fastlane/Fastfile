@@ -51,9 +51,9 @@ platform :ios do
   desc "Submit the current version for App Store review"
   lane :submit_review do
     api_key = app_store_connect_api_key(
-      key_id: "9K626GB728",
-      issuer_id: "80d10e49-f379-462f-9668-5ea53016812e",
-      key_filepath: File.expand_path("~/.appstoreconnect/private_keys/AuthKey_9K626GB728.p8"),
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+      key_filepath: File.expand_path(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH")),
       duration: 1200,
       in_house: false
     )
@@ -74,9 +74,9 @@ platform :ios do
   desc "Upload screenshots to App Store Connect (clears old ones first)"
   lane :upload_screenshots do
     api_key = app_store_connect_api_key(
-      key_id: "9K626GB728",
-      issuer_id: "80d10e49-f379-462f-9668-5ea53016812e",
-      key_filepath: File.expand_path("~/.appstoreconnect/private_keys/AuthKey_9K626GB728.p8"),
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+      key_filepath: File.expand_path(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH")),
       duration: 1200,
       in_house: false
     )

@@ -24,9 +24,9 @@ API_URL = "https://api.dollor.ai"
 
 # Demo credentials
 CUSTOMER_EMAIL = "demo.customer@dollor.ai"
-CUSTOMER_PASSWORD = "DemoCustomer2025!"
+CUSTOMER_PASSWORD = os.environ["DEMO_CUSTOMER_PASSWORD"]
 DRIVER_EMAIL = "demo.driver@dollor.ai"
-DRIVER_PASSWORD = "DemoDriver2025!"
+DRIVER_PASSWORD = os.environ["DEMO_DRIVER_PASSWORD"]
 
 # Real addresses in 92688 area
 PICKUP_ADDRESS = "30012 Crown Valley Pkwy, Laguna Niguel, CA 92677"

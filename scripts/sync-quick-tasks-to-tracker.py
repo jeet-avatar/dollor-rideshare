@@ -26,7 +26,7 @@ ENVS = {
 }
 
 ADMIN_EMAIL = "support@dollor.ai"
-ADMIN_PASSWORD = "DollorAdmin2026!"
+ADMIN_PASSWORD = os.environ["DOLLOR_ADMIN_PASSWORD"]
 
 STATE_MD_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

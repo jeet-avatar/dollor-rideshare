@@ -37,11 +37,11 @@ fi
 
 # Demo Credentials
 CUSTOMER_EMAIL="demo.customer@dollor.ai"
-CUSTOMER_PASS="DemoCustomer2025!"
+CUSTOMER_PASS="${DEMO_CUSTOMER_PASSWORD}"
 DRIVER_EMAIL="demo.driver@dollor.ai"
-DRIVER_PASS="DemoDriver2025!"
+DRIVER_PASS="${DEMO_DRIVER_PASSWORD}"
 RESTAURANT_EMAIL="demo.restaurant@dollor.ai"
-RESTAURANT_PASS="DemoRestaurant2025!"
+RESTAURANT_PASS="${DEMO_RESTAURANT_PASSWORD}"
 
 # Token storage (populated during auth tests)
 CUSTOMER_TOKEN=""
@@ -2815,7 +2815,7 @@ run_driver_app_agent() {
     # Get driver token
     local login_response=$(curl -s -X POST "$API_URL/api/auth/driver/login" \
         -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=demo.driver@dollor.ai&password=DemoDriver2025!")
+        -d "username=demo.driver@dollor.ai&password=${DEMO_DRIVER_PASSWORD}")
     local DRIVER_TOKEN=$(echo "$login_response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
     local DRIVER_ID=48
 
@@ -3033,7 +3033,7 @@ run_customer_app_agent() {
     # Get customer token
     local login_response=$(curl -s -X POST "$API_URL/api/auth/customer/login" \
         -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=demo.customer@dollor.ai&password=DemoCustomer2025!")
+        -d "username=demo.customer@dollor.ai&password=${DEMO_CUSTOMER_PASSWORD}")
     local CUSTOMER_TOKEN=$(echo "$login_response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
     local CUSTOMER_ID=74
 
@@ -4531,15 +4531,15 @@ EOF
     # Test demo accounts on production
     local customer_login=$(curl -s --max-time 10 -X POST "https://api.dollor.ai/api/auth/customer/login" \
         -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=demo.customer@dollor.ai&password=DemoCustomer2025!" 2>/dev/null)
+        -d "username=demo.customer@dollor.ai&password=${DEMO_CUSTOMER_PASSWORD}" 2>/dev/null)
 
     local driver_login=$(curl -s --max-time 10 -X POST "https://api.dollor.ai/api/auth/driver/login" \
         -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=demo.driver@dollor.ai&password=DemoDriver2025!" 2>/dev/null)
+        -d "username=demo.driver@dollor.ai&password=${DEMO_DRIVER_PASSWORD}" 2>/dev/null)
 
     local vendor_login=$(curl -s --max-time 10 -X POST "https://api.dollor.ai/api/auth/vendor/login" \
         -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=demo.restaurant@dollor.ai&password=DemoRestaurant2025!" 2>/dev/null)
+        -d "username=demo.restaurant@dollor.ai&password=${DEMO_RESTAURANT_PASSWORD}" 2>/dev/null)
 
     echo "" >> "$report"
     echo "| Account | Status | Details |" >> "$report"
@@ -4819,7 +4819,7 @@ import json
 try:
     response = requests.post(
         "${API_URL}/api/erp/drivers/login",
-        json={"email": "demo.driver@dollor.ai", "password": "DemoDriver2025!"},
+        json={"email": "demo.driver@dollor.ai", "password": "${DEMO_DRIVER_PASSWORD}"},
         headers={"Content-Type": "application/json"},
         timeout=10
     )
@@ -5006,7 +5006,7 @@ try:
     # Login as customer
     login_resp = requests.post(
         "${API_URL}/api/auth/customer/login",
-        data={"username": "demo.customer@dollor.ai", "password": "DemoCustomer2025!"},
+        data={"username": "demo.customer@dollor.ai", "password": "${DEMO_CUSTOMER_PASSWORD}"},
         timeout=10
     )
     if login_resp.status_code != 200:
@@ -5203,9 +5203,9 @@ def check_field_type(name, data, field, expected_type):
         return f"| {name} | {field} | {expected_type} | {actual_type} | ❌ FAIL |"
 
 # Login as all user types
-cust_token, cust_data = login(f"{base}/api/auth/customer/login", "demo.customer@dollor.ai", "DemoCustomer2025!")
-driver_token, driver_data = login(f"{base}/api/auth/driver/login", "demo.driver@dollor.ai", "DemoDriver2025!")
-vendor_token, vendor_data = login(f"{base}/api/auth/vendor/login", "demo.restaurant@dollor.ai", "DemoRestaurant2025!")
+cust_token, cust_data = login(f"{base}/api/auth/customer/login", "demo.customer@dollor.ai", "${DEMO_CUSTOMER_PASSWORD}")
+driver_token, driver_data = login(f"{base}/api/auth/driver/login", "demo.driver@dollor.ai", "${DEMO_DRIVER_PASSWORD}")
+vendor_token, vendor_data = login(f"{base}/api/auth/vendor/login", "demo.restaurant@dollor.ai", "${DEMO_RESTAURANT_PASSWORD}")
 
 cust_id = cust_data.get("customer_id", 74)
 driver_id = driver_data.get("driver_id", 48)

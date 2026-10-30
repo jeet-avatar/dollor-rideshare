@@ -13,7 +13,7 @@ platform :ios do
       app_store_connect_api_key(
         key_id: ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"],
         issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
-        key_filepath: File.expand_path("~/.appstoreconnect/private_keys/AuthKey_#{ENV['APP_STORE_CONNECT_API_KEY_KEY_ID']}.p8"),
+        key_filepath: File.expand_path(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH")),
         in_house: false
       )
     end

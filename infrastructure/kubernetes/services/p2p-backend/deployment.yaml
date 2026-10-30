@@ -245,7 +245,7 @@ metadata:
     app: p2p-backend
 type: Opaque
 stringData:
-  DATABASE_URL: "postgresql://postgres:postgres@postgresql:5432/invoice_db"
+  DATABASE_URL: "postgresql://postgres:CHANGE_ME_USE_SEALED_SECRETS@postgresql:5432/invoice_db"
   JWT_SECRET_KEY: "CHANGE-THIS-IN-PRODUCTION-use-sealed-secrets"
   STRIPE_SECRET_KEY: "sk_test_CHANGE-THIS-IN-PRODUCTION"
   STRIPE_PUBLISHABLE_KEY: "pk_test_CHANGE-THIS-IN-PRODUCTION"
@@ -254,4 +254,4 @@ stringData:
   AWS_SECRET_ACCESS_KEY: "CHANGE-THIS-IN-PRODUCTION"
   SMTP_USER: "your-email@gmail.com"
   SMTP_PASSWORD: "your-app-password"
-  ADMIN_SECRET_KEY: "dollor-admin-migrate-2026"
+  ADMIN_SECRET_KEY: "CHANGE_ME_USE_SEALED_SECRETS"

@@ -4,6 +4,7 @@ Test Ride with Complete Payment Checkout
 Tests the full P2P rideshare flow: request -> bid -> accept -> payment
 """
 
+import os
 import requests
 import json
 import time
@@ -12,9 +13,9 @@ BASE_URL = "https://d34u5ixl0bulv4.cloudfront.net"
 
 # Demo credentials
 CUSTOMER_EMAIL = "demo.customer@dollor.ai"
-CUSTOMER_PASSWORD = "DemoCustomer2025!"
+CUSTOMER_PASSWORD = os.environ["DEMO_CUSTOMER_PASSWORD"]
 DRIVER_EMAIL = "demo.driver@dollor.ai"
-DRIVER_PASSWORD = "DemoDriver2025!"
+DRIVER_PASSWORD = os.environ["DEMO_DRIVER_PASSWORD"]
 
 def print_step(step, description):
     print(f"\n{'='*60}")

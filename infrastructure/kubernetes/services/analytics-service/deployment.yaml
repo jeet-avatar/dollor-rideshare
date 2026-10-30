@@ -169,7 +169,7 @@ metadata:
 type: Opaque
 stringData:
   CLICKHOUSE_USER: "dollor"
-  CLICKHOUSE_PASSWORD: "dollor_analytics_pass"
+  CLICKHOUSE_PASSWORD: "CHANGE_ME_USE_SEALED_SECRETS"
 
 ---
 apiVersion: v1

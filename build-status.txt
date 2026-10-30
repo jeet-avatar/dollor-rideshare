@@ -1,0 +1,3 @@
+eatfaircustomer exit 0
+eatffairdelivery exit 0
+android exit 0

@@ -20,10 +20,11 @@ Production URLs:
 - API: https://api.dollor.ai
 
 Demo Credentials:
-- Customer: demo.customer@dollor.ai / DemoCustomer2025!
-- Driver: demo.driver@dollor.ai / DemoDriver2025!
+- Customer: demo.customer@dollor.ai / $DEMO_CUSTOMER_PASSWORD
+- Driver: demo.driver@dollor.ai / $DEMO_DRIVER_PASSWORD
 """
 
+import os
 import sys
 import time
 import json
@@ -38,9 +39,9 @@ API_URL = "https://api.dollor.ai"
 
 # Demo credentials
 CUSTOMER_EMAIL = "demo.customer@dollor.ai"
-CUSTOMER_PASSWORD = "DemoCustomer2025!"
+CUSTOMER_PASSWORD = os.environ["DEMO_CUSTOMER_PASSWORD"]
 DRIVER_EMAIL = "demo.driver@dollor.ai"
-DRIVER_PASSWORD = "DemoDriver2025!"
+DRIVER_PASSWORD = os.environ["DEMO_DRIVER_PASSWORD"]
 
 # Real 92688 addresses for testing
 PICKUP_ADDRESS = {

@@ -127,7 +127,9 @@ class PasswordResetService:
     def hash_code(self, code: str, email: str) -> str:
         """Hash the reset code for secure storage."""
         # Use HMAC with email as additional context
-        secret = os.getenv("SECRET_KEY", "fallback-secret-key")
+        secret = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY")
+        if not secret:
+            raise RuntimeError("SECRET_KEY or JWT_SECRET_KEY must be set to hash password reset codes")
         message = f"{email}:{code}".encode()
         return hmac.new(secret.encode(), message, hashlib.sha256).hexdigest()
 

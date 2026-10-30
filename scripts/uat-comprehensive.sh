@@ -10,9 +10,9 @@
 #   ./scripts/uat-comprehensive.sh [staging|production]
 #
 # Demo Credentials (Apple App Store Review):
-#   Customer: demo.customer@dollor.ai / DemoCustomer2025!
-#   Driver:   demo.driver@dollor.ai / DemoDriver2025!
-#   Vendor:   demo.restaurant@dollor.ai / DemoRestaurant2025!
+#   Customer: demo.customer@dollor.ai / ${DEMO_CUSTOMER_PASSWORD}
+#   Driver:   demo.driver@dollor.ai / ${DEMO_DRIVER_PASSWORD}
+#   Vendor:   demo.restaurant@dollor.ai / ${DEMO_RESTAURANT_PASSWORD}
 #
 
 set -e
@@ -44,11 +44,11 @@ fi
 
 # Demo Credentials (Apple App Store Review)
 CUSTOMER_EMAIL="demo.customer@dollor.ai"
-CUSTOMER_PASS="DemoCustomer2025!"
+CUSTOMER_PASS="${DEMO_CUSTOMER_PASSWORD}"
 DRIVER_EMAIL="demo.driver@dollor.ai"
-DRIVER_PASS="DemoDriver2025!"
+DRIVER_PASS="${DEMO_DRIVER_PASSWORD}"
 RESTAURANT_EMAIL="demo.restaurant@dollor.ai"
-RESTAURANT_PASS="DemoRestaurant2025!"
+RESTAURANT_PASS="${DEMO_RESTAURANT_PASSWORD}"
 
 # Token storage
 CUSTOMER_TOKEN=""

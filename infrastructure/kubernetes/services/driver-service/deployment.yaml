@@ -137,7 +137,7 @@ metadata:
   name: driver-service-secrets
 type: Opaque
 stringData:
-  DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/dollor"
+  DATABASE_URL: "postgresql://postgres:CHANGE_ME_USE_SEALED_SECRETS@postgres:5432/dollor"
 
 ---
 apiVersion: v1

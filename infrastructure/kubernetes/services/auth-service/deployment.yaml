@@ -150,5 +150,5 @@ metadata:
     app: auth-service
 type: Opaque
 stringData:
-  DATABASE_URL: "postgresql://postgres:postgres@postgresql:5432/dollor"
+  DATABASE_URL: "postgresql://postgres:CHANGE_ME_USE_SEALED_SECRETS@postgresql:5432/dollor"
   JWT_SECRET_KEY: "CHANGE-THIS-IN-PRODUCTION-use-sealed-secrets"

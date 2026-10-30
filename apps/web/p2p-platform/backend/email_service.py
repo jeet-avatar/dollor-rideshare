@@ -48,7 +48,8 @@ API_BASE_URL = os.getenv("API_BASE_URL", "https://api.dollor.ai")
 WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://dollor.ai")
 
 # Secret for signing unsubscribe tokens
-UNSUBSCRIBE_SECRET = os.getenv("UNSUBSCRIBE_SECRET", "dollor-unsubscribe-secret-change-in-prod")
+# Falls back to JWT_SECRET_KEY so no secret is hardcoded; both are set in production.
+UNSUBSCRIBE_SECRET = os.getenv("UNSUBSCRIBE_SECRET") or os.getenv("JWT_SECRET_KEY", "")
 
 
 def _generate_unsubscribe_token(email: str, recipient_type: str) -> str:
@@ -58,6 +59,9 @@ def _generate_unsubscribe_token(email: str, recipient_type: str) -> str:
     """
     import hashlib
     import base64
+
+    if not UNSUBSCRIBE_SECRET:
+        raise RuntimeError("UNSUBSCRIBE_SECRET or JWT_SECRET_KEY must be set to sign unsubscribe tokens")
 
     timestamp = str(int(datetime.utcnow().timestamp()))
     data = f"{email}:{recipient_type}:{timestamp}"
@@ -73,6 +77,9 @@ def verify_unsubscribe_token(token: str, max_age_days: int = 30) -> Tuple[bool, 
     """
     import hashlib
     import base64
+
+    if not UNSUBSCRIBE_SECRET:
+        return False, None, None
 
     try:
         decoded = base64.urlsafe_b64decode(token.encode()).decode()

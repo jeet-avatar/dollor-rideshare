@@ -8,7 +8,7 @@ platform :android do
       aab: "app/build/outputs/bundle/productionRelease/app-production-release.aab",
       track: "internal",
       release_status: "draft",
-      json_key: "/Users/jeet/.config/play-store/service-account.json",
+      json_key: ENV.fetch("PLAY_STORE_JSON_KEY_PATH"),
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
@@ -22,7 +22,7 @@ platform :android do
       aab: "driver/build/outputs/bundle/productionRelease/driver-production-release.aab",
       track: "internal",
       release_status: "draft",
-      json_key: "/Users/jeet/.config/play-store/service-account.json",
+      json_key: ENV.fetch("PLAY_STORE_JSON_KEY_PATH"),
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
@@ -36,7 +36,7 @@ platform :android do
       aab: "partner/build/outputs/bundle/productionRelease/partner-production-release.aab",
       track: "internal",
       release_status: "draft",
-      json_key: "/Users/jeet/.config/play-store/service-account.json",
+      json_key: ENV.fetch("PLAY_STORE_JSON_KEY_PATH"),
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
@@ -49,7 +49,7 @@ platform :android do
       package_name: "ai.dollor.customer",
       track: "internal",
       track_promote_to: "production",
-      json_key: "/Users/jeet/.config/play-store/service-account.json",
+      json_key: ENV.fetch("PLAY_STORE_JSON_KEY_PATH"),
       skip_upload_aab: true,
       skip_upload_metadata: true,
       skip_upload_images: true,

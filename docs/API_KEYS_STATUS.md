@@ -5,7 +5,7 @@
 ### **1. Firebase API Keys** ✅
 **Location**: `google-services.json` files  
 **Status**: ✅ **Active** (from Firebase project `eatfair-40f09`)  
-**Key**: `AIzaSyADVGiW0E82pbxPUNz2J3eO24jIQLoPkS8`
+**Key**: `AIza<REDACTED-see-Google-Cloud-Console>`
 
 **Used in**:
 - `app/google-services.json`
@@ -26,7 +26,7 @@
 ### **2. Google Maps API Key** ✅
 **Location**: `app/src/main/AndroidManifest.xml`  
 **Status**: ✅ **Active**  
-**Key**: `AIzaSyB1ZvoKM-JerGPdWQBPR7UKMh47yNmadrk`
+**Key**: `AIza<REDACTED-see-Google-Cloud-Console>`
 
 **Used for**:
 - Location selection

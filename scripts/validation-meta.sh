@@ -511,7 +511,7 @@ echo -e "${YELLOW}◆ Live Testing Demo Credentials...${NC}"
 # Customer
 response=$(curl -s -X POST "$API_URL/api/auth/customer/login" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "username=demo.customer@dollor.ai&password=DemoCustomer2025!" 2>/dev/null)
+    -d "username=demo.customer@dollor.ai&password=${DEMO_CUSTOMER_PASSWORD}" 2>/dev/null)
 if echo "$response" | grep -q "access_token"; then
     log_check "Demo" "Customer demo login" "PASS" ""
     echo "| Customer | demo.customer@dollor.ai | ✅ Working | ✅ Received |" >> "$REPORT_DIR/META_VALIDATION_REPORT.md"
@@ -523,7 +523,7 @@ fi
 # Driver
 response=$(curl -s -X POST "$API_URL/api/auth/driver/login" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "username=demo.driver@dollor.ai&password=DemoDriver2025!" 2>/dev/null)
+    -d "username=demo.driver@dollor.ai&password=${DEMO_DRIVER_PASSWORD}" 2>/dev/null)
 if echo "$response" | grep -q "access_token"; then
     log_check "Demo" "Driver demo login" "PASS" ""
     echo "| Driver | demo.driver@dollor.ai | ✅ Working | ✅ Received |" >> "$REPORT_DIR/META_VALIDATION_REPORT.md"
@@ -535,7 +535,7 @@ fi
 # Vendor
 response=$(curl -s -X POST "$API_URL/api/auth/vendor/login" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "username=demo.restaurant@dollor.ai&password=DemoRestaurant2025!" 2>/dev/null)
+    -d "username=demo.restaurant@dollor.ai&password=${DEMO_RESTAURANT_PASSWORD}" 2>/dev/null)
 if echo "$response" | grep -q "access_token"; then
     log_check "Demo" "Vendor demo login" "PASS" ""
     echo "| Restaurant | demo.restaurant@dollor.ai | ✅ Working | ✅ Received |" >> "$REPORT_DIR/META_VALIDATION_REPORT.md"

@@ -499,7 +499,7 @@ struct DriverLoginView: View {
     private var demoLoginButton: some View {
         Button(action: {
             email = "demo.driver@dollor.ai"
-            password = "DemoDriver2025!"
+            password = ProcessInfo.processInfo.environment["DEMO_LOGIN_PASSWORD"] ?? ""
         }) {
             HStack {
                 Image(systemName: "bolt.fill")

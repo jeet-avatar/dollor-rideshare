@@ -1,0 +1,2 @@
+eatfaircustomer exit 0
+eatffairdelivery exit 0

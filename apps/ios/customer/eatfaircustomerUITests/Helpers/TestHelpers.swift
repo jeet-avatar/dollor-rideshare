@@ -39,7 +39,7 @@ class DollorTestCase: XCTestCase {
     // MARK: - Demo Credentials
 
     private static let demoEmail = "demo.customer@dollor.ai"
-    private static let demoPassword = "DemoCustomer2025!"
+    private static let demoPassword = ProcessInfo.processInfo.environment["DEMO_LOGIN_PASSWORD"] ?? ""
 
     // MARK: - Navigation Helpers
 

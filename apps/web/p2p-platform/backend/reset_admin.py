@@ -15,7 +15,10 @@ def reset_admin_password():
     db = SessionLocal()
 
     admin_email = os.getenv("ADMIN_EMAIL", "support@dollor.ai")
-    new_password = os.getenv("ADMIN_PASSWORD", "DollorAdmin2026")
+    new_password = os.getenv("ADMIN_PASSWORD")
+    if not new_password:
+        print("ADMIN_PASSWORD environment variable is required")
+        return False
 
     try:
         admin = db.query(User).filter(User.email == admin_email).first()
@@ -37,7 +40,6 @@ def reset_admin_password():
         if pwd_context.verify(new_password, admin.password_hash):
             print("✅ Password reset successful and verified!")
             print(f"   Email: {admin.email}")
-            print(f"   Password: {new_password}")
             return True
         else:
             print("❌ Password verification failed after reset!")

@@ -9,7 +9,7 @@ PRODUCTION URLS:
 - Production API: https://api.dollor.ai
 
 CREDENTIALS:
-- Driver: demo.driver@dollor.ai / DemoDriver2025!
+- Driver: demo.driver@dollor.ai / $DEMO_DRIVER_PASSWORD
 
 Driver Portal Routes:
 - /driver/login    - Login page
@@ -47,7 +47,7 @@ API_URLS = {
 
 # Demo driver credentials
 DEFAULT_DRIVER_EMAIL = "demo.driver@dollor.ai"
-DEFAULT_DRIVER_PASSWORD = "DemoDriver2025!"
+DEFAULT_DRIVER_PASSWORD = os.environ["DEMO_DRIVER_PASSWORD"]
 
 import argparse
 import sys

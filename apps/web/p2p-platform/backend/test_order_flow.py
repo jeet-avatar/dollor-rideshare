@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Test order flow: accept -> pickup -> deliver"""
+import os
 import requests
 import json
 
@@ -7,9 +8,9 @@ BASE_URL = "https://d34u5ixl0bulv4.cloudfront.net/api"
 
 # Demo credentials
 DRIVER_EMAIL = "demo.driver@dollor.ai"
-DRIVER_PASSWORD = "DemoDriver2025!"
+DRIVER_PASSWORD = os.environ["DEMO_DRIVER_PASSWORD"]
 CUSTOMER_EMAIL = "demo.customer@dollor.ai"
-CUSTOMER_PASSWORD = "DemoCustomer2025!"
+CUSTOMER_PASSWORD = os.environ["DEMO_CUSTOMER_PASSWORD"]
 
 def test_order_flow():
     print("=" * 60)

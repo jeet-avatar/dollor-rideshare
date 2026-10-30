@@ -4,15 +4,16 @@ Update demo driver: Set realistic driver profile with photos and vehicle details
 Used for App Store review and demo purposes.
 """
 import os
+import secrets
 import sys
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-# Ensure JWT_SECRET_KEY is set for imports
+# Ensure JWT_SECRET_KEY is set for imports (random per run; this script never issues tokens)
 if not os.getenv("JWT_SECRET_KEY"):
-    os.environ["JWT_SECRET_KEY"] = "temp_key_for_script"
+    os.environ["JWT_SECRET_KEY"] = secrets.token_hex(32)
 
 from database import SessionLocal
 from models import Driver, DriverStatus
@@ -126,7 +127,6 @@ def update_demo_driver():
         print("="*60)
         print(f"\nDriver ready for App Store review:")
         print(f"  Email:    {DEMO_DRIVER_EMAIL}")
-        print(f"  Password: DemoDriver2025!")
         print("="*60 + "\n")
 
         return True

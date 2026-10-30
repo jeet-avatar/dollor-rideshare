@@ -48,7 +48,7 @@
 | **iOS Client ID** | `65740760476-0cnsrucn1tvadbf193cgio2siosnjg02.apps.googleusercontent.com` |
 | **Reversed Client ID (URL Scheme)** | `com.googleusercontent.apps.65740760476-0cnsrucn1tvadbf193cgio2siosnjg02` |
 | **Android Client ID** | `65740760476-7t1cvgv5h86s6qhncmgbori9a060no1u.apps.googleusercontent.com` |
-| **API Key** | `AIzaSyCELfWMuckt-Bbx5tyuiOSS3sYNywxVTXc` |
+| **API Key** | `AIza<REDACTED-see-Google-Cloud-Console>` |
 
 ---
 
@@ -56,7 +56,7 @@
 
 | Property | Value |
 |----------|-------|
-| **Google Maps API Key** | `AIzaSyCELfWMuckt-Bbx5tyuiOSS3sYNywxVTXc` |
+| **Google Maps API Key** | `AIza<REDACTED-see-Google-Cloud-Console>` |
 
 ---
 
@@ -131,7 +131,7 @@
 
 ```xml
 <key>GOOGLE_MAPS_API_KEY</key>
-<string>AIzaSyCELfWMuckt-Bbx5tyuiOSS3sYNywxVTXc</string>
+<string>AIza<REDACTED-see-Google-Cloud-Console></string>
 ```
 
 ### Orientation Support
@@ -257,7 +257,7 @@
     <string>65740760476-7t1cvgv5h86s6qhncmgbori9a060no1u.apps.googleusercontent.com</string>
 
     <key>API_KEY</key>
-    <string>AIzaSyCELfWMuckt-Bbx5tyuiOSS3sYNywxVTXc</string>
+    <string>AIza<REDACTED-see-Google-Cloud-Console></string>
 
     <key>GCM_SENDER_ID</key>
     <string>65740760476</string>
@@ -366,7 +366,7 @@
 - [ ] Bundle ID is `com.dollorai.customer`
 - [ ] Team ID is `PRKZ4UVCD7` (support2dollorai account)
 - [ ] Google Client ID is `65740760476-0cnsrucn1tvadbf193cgio2siosnjg02`
-- [ ] Google Maps API Key is `AIzaSyCELfWMuckt-Bbx5tyuiOSS3sYNywxVTXc`
+- [ ] Google Maps API Key is `AIza<REDACTED-see-Google-Cloud-Console>`
 - [ ] All Info.plist permission descriptions present
 - [ ] GoogleService-Info.plist matches this document
 - [ ] URL Scheme matches Reversed Client ID
@@ -380,7 +380,7 @@
 1. **Bundle ID**: `com.dollorai.customer` (with "ai") - NOT `com.dollor.customer`
 2. **Team ID**: `PRKZ4UVCD7` - NOT `PRKZ4UVCD7`
 3. **Google Client ID**: Different from what was in git repo - must use the one in this document
-4. **Google Maps API Key**: Embedded in Info.plist - `AIzaSyCELfWMuckt-Bbx5tyuiOSS3sYNywxVTXc`
+4. **Google Maps API Key**: Embedded in Info.plist - `AIza<REDACTED-see-Google-Cloud-Console>`
 
 ---
 

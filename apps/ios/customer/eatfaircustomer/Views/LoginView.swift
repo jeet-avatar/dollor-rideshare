@@ -337,7 +337,7 @@ struct LoginView: View {
     private var demoButton: some View {
         Button(action: {
             email = "demo.customer@dollor.ai"
-            password = "DemoCustomer2025!"
+            password = ProcessInfo.processInfo.environment["DEMO_LOGIN_PASSWORD"] ?? ""
             authViewModel.login(email: email, password: password)
         }) {
             HStack(spacing: 8) {
