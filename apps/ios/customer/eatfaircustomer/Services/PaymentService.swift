@@ -19,6 +19,18 @@ class StripeApplePayHandler: NSObject {
         PKPaymentAuthorizationController.canMakePayments(usingNetworks: [.visa, .masterCard, .amex, .discover])
     }
 
+    /// Whether the device supports Apple Pay at all, regardless of whether a card
+    /// has been added to Wallet yet. Used to keep the Apple Pay entry point visible
+    /// on every capable device.
+    static var deviceSupportsApplePay: Bool {
+        PKPaymentAuthorizationController.canMakePayments()
+    }
+
+    /// Opens Wallet so the user can add a card when none is available yet.
+    static func openApplePaySetup() {
+        PKPassLibrary().openPaymentSetup()
+    }
+
     /// Builds a PKPaymentRequest for confirming a PaymentIntent/SetupIntent via Apple
     /// Pay. `amount` defaults to 0 for save-a-card (SetupIntent) flows — PassKit
     /// requires a non-negative summary item even when nothing is charged yet.

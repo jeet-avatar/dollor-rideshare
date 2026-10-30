@@ -4,6 +4,7 @@ private let logger = Logger(subsystem: "com.dollorai.customer", category: "Payme
 
 import SwiftUI
 import Combine
+import PassKit
 import Stripe
 import EatFairShared
 
@@ -317,24 +318,25 @@ struct StripeAddCardView: View {
     var body: some View {
         NavigationStack {
             Form {
-                if StripeApplePayHandler.canMakeApplePayPayments {
+                if StripeApplePayHandler.deviceSupportsApplePay {
                     Section {
-                        Button(action: payWithApplePay) {
-                            HStack {
-                                Spacer()
-                                if isProcessingApplePay {
-                                    ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                } else {
-                                    Image(systemName: "apple.logo")
-                                    Text("Set Up with Apple Pay").fontWeight(.semibold)
-                                }
-                                Spacer()
-                            }
+                        // System Apple Pay button (HIG). With a card in Wallet it presents the
+                        // Apple Pay sheet to save a payment method; without one it opens Wallet
+                        // so the entry point is visible on every Apple Pay-capable device.
+                        if StripeApplePayHandler.canMakeApplePayPayments {
+                            PayWithApplePayButton(.plain, action: payWithApplePay)
+                                .payWithApplePayButtonStyle(.white)
+                                .frame(height: 44)
+                                .opacity(isProcessingApplePay ? 0.5 : 1)
+                                .disabled(isProcessing)
+                        } else {
+                            PayWithApplePayButton(.setUp, action: StripeApplePayHandler.openApplePaySetup)
+                                .payWithApplePayButtonStyle(.white)
+                                .frame(height: 44)
                         }
-                        .listRowBackground(Lx.Palette.shadow)
-                        .foregroundColor(Lx.Palette.text)
-                        .disabled(isProcessing)
                     }
+                    .listRowBackground(Theme.lxBg)
+                    .listRowInsets(EdgeInsets())
 
                     Section {
                         HStack {
