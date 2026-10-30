@@ -754,33 +754,60 @@ class DollorRepository @Inject constructor(
     }
 
     // Chat safety (report / block) for the driver app. 404/405 = older backend.
-    private suspend fun <T> chatSafetyCall(
-        call: suspend (token: String) -> retrofit2.Response<T>
-    ): Result<T?> = withContext(Dispatchers.IO) {
-        val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
-        try {
-            val response = call(token)
-            if (response.isSuccessful) Result.success(response.body())
-            else Result.failure(com.eatfair.shared.ui.ChatSafety.httpError(response.code(), response.errorBody()?.string()))
+    // Each call returns a concrete Result type. The earlier generic Result<T?> helper threw a
+    // ClassCastException in the R8-optimised release build when the chat screen opened.
+    private suspend fun chatSafetyBody(
+        call: suspend (token: String) -> retrofit2.Response<*>
+    ): Any? {
+        val token = driverToken() ?: throw Exception("Not authenticated")
+        val response = try {
+            call(token)
         } catch (e: IOException) {
-            Result.failure(Exception("Network error. Check your connection and try again."))
+            throw Exception("Network error. Check your connection and try again.")
         } catch (e: TokenExpiredException) {
-            Result.failure(Exception("Session expired. Please login again."))
+            throw Exception("Session expired. Please login again.")
         }
+        if (!response.isSuccessful) {
+            throw com.eatfair.shared.ui.ChatSafety.httpError(response.code(), response.errorBody()?.string())
+        }
+        return response.body()
     }
 
     suspend fun reportChat(requestId: Int, reason: String, details: String): Result<Unit> =
-        chatSafetyCall { apiService.reportChat(com.eatfair.shared.ui.ChatReportRequest(requestId, null, reason, details), it) }
-            .map { }
+        withContext(Dispatchers.IO) {
+            try {
+                chatSafetyBody {
+                    apiService.reportChat(com.eatfair.shared.ui.ChatReportRequest(requestId, null, reason, details), it)
+                }
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 
     suspend fun setChatBlock(block: Boolean, userType: String, userId: Int): Result<Unit> =
-        chatSafetyCall {
-            val body = com.eatfair.shared.ui.ChatBlockRequest(userType, userId)
-            if (block) apiService.blockChatUser(body, it) else apiService.unblockChatUser(body, it)
-        }.map { }
+        withContext(Dispatchers.IO) {
+            try {
+                chatSafetyBody {
+                    val body = com.eatfair.shared.ui.ChatBlockRequest(userType, userId)
+                    if (block) apiService.blockChatUser(body, it) else apiService.unblockChatUser(body, it)
+                }
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 
     suspend fun getChatBlocks(): Result<List<com.eatfair.shared.ui.ChatBlockEntry>> =
-        chatSafetyCall { apiService.getChatBlocks(it) }.map { it?.blocks.orEmpty() }
+        withContext(Dispatchers.IO) {
+            try {
+                val body = chatSafetyBody { apiService.getChatBlocks(it) }
+                    as? com.eatfair.shared.ui.ChatBlocksResponse
+                Result.success(body?.blocks.orEmpty())
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 
     suspend fun getDriverMe() = withContext(Dispatchers.IO) {
         val token = driverToken() ?: return@withContext Result.failure(Exception("Not authenticated"))
