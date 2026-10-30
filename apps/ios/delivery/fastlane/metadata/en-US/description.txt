@@ -22,7 +22,7 @@ FEATURES
 - Directions through Google Maps
 - In-app chat with your rider, with voice dictation for hands-free messages
 - Earnings summary and payout history
-- Payouts through Stripe to your bank account (instant payout is available for a fee)
+- Payouts through Stripe to your bank account
 - Accessibility setting to receive requests that need extra space for a mobility device
 
 REQUIREMENTS

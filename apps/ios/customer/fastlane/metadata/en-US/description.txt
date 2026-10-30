@@ -23,7 +23,7 @@ FEATURES
 - Emergency button during a trip that calls 911 from your phone
 - Report a safety concern from the trip screen
 - Saved addresses and ride history with receipts
-- Pay with a card or Apple Pay, processed by Stripe
+- Pay with a card, processed by Stripe
 - Optional accessibility request when you book
 - Two-way ratings after every trip
 
