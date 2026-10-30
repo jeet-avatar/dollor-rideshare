@@ -853,7 +853,7 @@ fun RideBottomSheet(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Dollor.ai connects riders with independent drivers. Drivers set their own rates and may accept, decline, or counter your offer. The connection fee is for using our matchmaking service. Transportation is provided directly by the driver, not Dollor.ai. By using this service, you agree to our Terms of Service.",
+                            text = "Dollor.ai is a peer-to-peer rideshare marketplace. Independent drivers bid on your offer and you choose whether to accept. Your card is authorized when a bid is accepted and charged when the ride is completed. The ride is provided by the driver, an independent contractor. By using this service, you agree to our Terms of Service.",
                             fontSize = Lx.FontSize.caption,
                             color = Lx.TextSecondary,
                             lineHeight = 14.sp

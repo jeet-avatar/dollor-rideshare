@@ -120,7 +120,7 @@ fun InsuranceDisclosureScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Dollor is a peer-to-peer matchmaking platform that connects independent drivers with customers. We facilitate the connection and charge a flat connection fee. You provide services directly to customers.",
+                        text = "Dollor.ai, operated by Zietra Technologies Inc., is a peer-to-peer rideshare marketplace in California operating under CPUC Transportation Network Company permit TNC0050982-N. Riders post an offer and you may bid on it. We provide the technology and process payments; the ride itself is provided by you. A flat connection fee ($1, $2, or $3 by fare) plus a $0.05 CPUC Access for All charge is deducted from your payout.",
                         fontSize = Lx.FontSize.footnote,
                         color = DollorDriverColors.Gray700,
                         lineHeight = 20.sp
@@ -156,8 +156,8 @@ fun InsuranceDisclosureScreen(
 
                     listOf(
                         "Valid personal auto insurance policy",
-                        "Coverage that meets your state's minimum requirements",
-                        "Insurance that covers your vehicle for personal use"
+                        "Insurance that California law and the CPUC require of a driver providing rides arranged through an online platform",
+                        "Confirm with your insurer that your policy covers rideshare activity"
                     ).forEach { item ->
                         Row(
                             modifier = Modifier.padding(vertical = 4.dp),
@@ -205,7 +205,7 @@ fun InsuranceDisclosureScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "As a peer-to-peer matchmaking platform, Dollor does not provide commercial insurance coverage. You are solely responsible for maintaining adequate insurance for your vehicle.",
+                            text = "Dollor.ai does not provide insurance coverage to you through the Driver Terms. You are responsible for maintaining the insurance and any license or permit your work requires.",
                             fontSize = Lx.FontSize.footnote,
                             color = DollorDriverColors.Gray700,
                             lineHeight = 18.sp
@@ -767,7 +767,7 @@ fun IndependentContractorAgreementScreen(
             )
 
             Text(
-                text = "P2P matchmaking platform relationship",
+                text = "Peer-to-peer rideshare marketplace relationship",
                 fontSize = Lx.FontSize.footnote,
                 color = DollorDriverColors.Gray500,
                 textAlign = TextAlign.Center,
@@ -787,9 +787,9 @@ fun IndependentContractorAgreementScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     ContractorBenefit(Icons.Default.Schedule, "Set Your Own Hours", "Work when you want. No minimum hours required.")
-                    ContractorBenefit(Icons.Default.Route, "Choose Your Requests", "Accept or decline any request.")
+                    ContractorBenefit(Icons.Default.Route, "Choose Your Requests", "Bid on the requests you want, or none.")
                     ContractorBenefit(Icons.Default.Apps, "Use Multiple Platforms", "Work with other services simultaneously.")
-                    ContractorBenefit(Icons.Default.AttachMoney, "Flat Connection Fee", "A flat $1-$3 fee per ride plus a $0.05 CPUC charge. Keep the rest of the fare plus 100% of tips.")
+                    ContractorBenefit(Icons.Default.AttachMoney, "Flat Connection Fee", "A flat fee of $1 (fares up to $35), $2 (up to $70), or $3 (over $70), plus a $0.05 CPUC charge, is deducted from your payout. 100% of tips are yours.")
                 }
             }
 
@@ -837,7 +837,7 @@ fun IndependentContractorAgreementScreen(
                         Text("Not An Employment Relationship", fontWeight = FontWeight.Bold, color = DollorDriverColors.Gray900)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "As an independent contractor using our P2P matchmaking platform, you are not an employee of Dollor. This means you are not eligible for employee benefits such as health insurance, paid time off, workers' compensation, or unemployment insurance from Dollor.",
+                            "You are an independent contractor, not an employee of Dollor.ai or Zietra Technologies Inc. Dollor.ai does not guarantee any minimum earnings, hours, or rides, and does not provide benefits.",
                             fontSize = Lx.FontSize.footnote,
                             color = DollorDriverColors.Gray700,
                             lineHeight = 18.sp
@@ -861,7 +861,7 @@ fun IndependentContractorAgreementScreen(
                         Text("Peer-to-Peer Platform", fontWeight = FontWeight.Bold, color = DollorDriverColors.Gray900)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "Dollor operates as a peer-to-peer matchmaking platform. You are classified as an independent contractor because: (1) Dollor does not prescribe your work hours, (2) you may use other platforms, (3) you may engage in other activities, and (4) we have agreed in writing to this relationship.",
+                            "Dollor.ai operates a peer-to-peer rideshare marketplace. You decide when you go online and which requests to bid on, and you may work for other platforms. Dollor.ai does not provide vehicles, set the fare for you, or supervise how you drive.",
                             fontSize = Lx.FontSize.footnote,
                             color = DollorDriverColors.Gray700,
                             lineHeight = 18.sp

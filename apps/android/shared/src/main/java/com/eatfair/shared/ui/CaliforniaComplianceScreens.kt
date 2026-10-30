@@ -171,7 +171,7 @@ fun CCPAPrivacyRightsScreen(
                         Text("Dollor's Commitment", fontWeight = FontWeight.Bold, color = TextPrimary)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "We do NOT sell your personal information to third parties. Your data is used only to provide and improve our peer-to-peer matchmaking services.",
+                            "We do NOT sell your personal information to third parties. We also do not share your information for cross-context behavioral advertising.",
                             fontSize = Lx.FontSize.footnote, color = TextSecondary, lineHeight = 18.sp
                         )
                     }

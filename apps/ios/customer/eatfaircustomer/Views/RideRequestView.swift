@@ -685,7 +685,7 @@ struct RideBottomSheet: View {
                             .fontWeight(.semibold)
                             .foregroundColor(Theme.lxTextSecondary)
 
-                        Text("Dollor.ai connects riders with independent drivers. Drivers set their own rates and may accept, decline, or counter your offer. The connection fee is for using our matchmaking service. Transportation is provided directly by the driver, not Dollor.ai. By using this service, you agree to our Terms of Service.")
+                        Text("Dollor.ai is a peer-to-peer rideshare marketplace. Independent drivers bid on your offer and you choose whether to accept. Your card is authorized when a bid is accepted and charged when the ride is completed. The ride is provided by the driver, an independent contractor. By using this service, you agree to our Terms of Service.")
                             .font(.caption2)
                             .foregroundColor(Theme.lxTextMuted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -693,7 +693,7 @@ struct RideBottomSheet: View {
                         HStack(spacing: 4) {
                             Image(systemName: "info.circle")
                                 .font(.caption2)
-                            Text("Connection fee: $\(String(format: "%.2f", viewModel.platformFee)) (tiered \(AppConfig.shared.rideshareFeeRangeText)) • Driver sets final price")
+                            Text("Connection fee: $\(String(format: "%.2f", viewModel.platformFee)) (tiered \(AppConfig.shared.rideshareFeeRangeText)) • Drivers bid, you choose")
                                 .font(.caption2)
                         }
                         .foregroundColor(Theme.lxTextMuted)
@@ -745,7 +745,7 @@ struct RideBottomSheet: View {
                     Image(systemName: "info.circle.fill")
                         .font(Lx.Typography.caption)
                         .foregroundColor(Lx.Palette.success)
-                    Text("\(AppConfig.shared.rideshareFeeRangeText) tiered connection fee • Drivers are independent")
+                    Text("\(AppConfig.shared.rideshareFeeRangeText) tiered connection fee + $0.05 CPUC charge • Drivers are independent")
                         .font(Lx.Typography.caption)
                         .foregroundColor(Lx.Palette.textSecondary)
                 }

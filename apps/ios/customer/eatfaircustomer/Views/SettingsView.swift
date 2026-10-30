@@ -459,6 +459,8 @@ struct BugReportView: View {
 
 // MARK: - Privacy Policy View
 struct PrivacyPolicyView: View {
+    @State private var fullPolicyURL: URL?
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -466,60 +468,53 @@ struct PrivacyPolicyView: View {
                     .font(.title)
                     .fontWeight(.bold)
 
-                Text("Last Updated: December 2024")
+                Text("Effective October 13, 2026")
                     .font(.caption)
                     .foregroundColor(Lx.Palette.textSecondary)
 
                 Group {
-                    PolicySection(title: "Information We Collect", content: """
-                    We collect information you provide directly, such as:
-                    • Account information (name, email, phone)
-                    • Pickup and dropoff addresses
-                    • Payment information (processed securely via Stripe)
-                    • Ride history
+                    PolicySection(title: "Who we are", content: """
+                    Dollor.ai is a peer-to-peer rideshare marketplace operated by Zietra Technologies Inc.
                     """)
 
-                    PolicySection(title: "How We Use Your Information", content: """
-                    Your information is used to:
-                    • Process and complete your rides
-                    • Connect you with independent drivers
-                    • Improve our services
-                    • Send ride updates and promotions
+                    PolicySection(title: "Our commitment", content: """
+                    We do NOT sell your personal information. We do NOT share your information for cross-context behavioral advertising.
                     """)
 
-                    PolicySection(title: "Information Sharing", content: """
-                    We share limited information with:
-                    • Independent drivers for your rides
-                    • Payment processors (Stripe)
-
-                    We never sell your personal information.
+                    PolicySection(title: "What we collect", content: """
+                    • Account details such as name, email, and phone number
+                    • Payment details, handled by Stripe (we do not store full card numbers)
+                    • Precise location while the app is in use, to set your pickup point and show nearby drivers
+                    • In-app messages between riders and drivers
+                    • Device, usage, and log data
                     """)
 
-                    PolicySection(title: "Data Security", content: """
-                    We use industry-standard security measures including:
-                    • Encrypted data transmission (TLS)
-                    • Secure payment processing
-                    • Regular security audits
+                    PolicySection(title: "Your rights", content: """
+                    California residents can know, delete, correct, and limit use of sensitive personal information. Email privacy@dollor.ai. To delete your account, use Profile > Delete Account in the app.
                     """)
 
-                    PolicySection(title: "Your Rights", content: """
-                    You have the right to:
-                    • Access your data
-                    • Request data deletion
-                    • Opt out of marketing
-                    • Update your information
+                    PolicySection(title: "Full policy", content: """
+                    This is a summary. The full Privacy Policy is the binding text.
                     """)
                 }
+
+                Button("Read the full Privacy Policy") {
+                    fullPolicyURL = URL(string: AppConstants.privacyPolicyURL)
+                }
+                .fontWeight(.semibold)
             }
             .padding()
         }
         .navigationTitle("Privacy Policy")
         .navigationBarTitleDisplayMode(.inline)
+        .inAppBrowser(url: $fullPolicyURL)
     }
 }
 
 // MARK: - Terms of Service View
 struct TermsOfServiceView: View {
+    @State private var fullTermsURL: URL?
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -527,49 +522,54 @@ struct TermsOfServiceView: View {
                     .font(.title)
                     .fontWeight(.bold)
 
-                Text("Last Updated: December 2024")
+                Text("Effective October 29, 2026")
                     .font(.caption)
                     .foregroundColor(Lx.Palette.textSecondary)
 
                 Group {
-                    PolicySection(title: "Acceptance of Terms", content: """
-                    By using Dollor.ai, you agree to these terms. If you disagree, please do not use our services.
+                    PolicySection(title: "What Dollor.ai is", content: """
+                    Dollor.ai is a peer-to-peer rideshare marketplace for California, operated by Zietra Technologies Inc. (doing business as Dollor.ai) under CPUC Transportation Network Company permit TNC0050982-N. Riders post a ride offer and independent drivers bid on it. Dollor.ai provides the technology that connects them and processes payment. Drivers are independent contractors.
                     """)
 
-                    PolicySection(title: "Platform Description", content: """
-                    Dollor.ai is a matchmaking platform that connects:
-                    • Riders with independent drivers
-
-                    We do not employ drivers. All drivers are independent contractors.
+                    PolicySection(title: "How a ride works", content: """
+                    • Your request stays open for bids for 5 minutes.
+                    • You may accept a bid, make a counter-offer, or decline.
+                    • When you accept a bid, your card is authorized through Stripe (not charged) for the agreed fare.
+                    • When the trip is completed, the authorized amount is captured. Tips are optional.
+                    • If the card cannot be authorized at the match, the ride is cancelled.
                     """)
 
-                    PolicySection(title: "User Responsibilities", content: """
-                    Users must:
-                    • Provide accurate information
-                    • Maintain account security
-                    • Use the platform lawfully
-                    • Treat drivers respectfully
+                    PolicySection(title: "Fees", content: """
+                    • Connection Fee, charged to the rider and separately to the driver: $1.00 if the fare is $35 or less, $2.00 if over $35 up to $70, $3.00 if over $70.
+                    • CPUC Access for All charge: $0.05 to the rider and $0.05 to the driver.
+                    • 100% of tips go to the driver.
                     """)
 
-                    PolicySection(title: "Platform Fees", content: """
-                    Dollor.ai charges transparent platform fees:
-                    • Rideshare: Tiered fees ($1-$3 based on fare)
-
-                    100% of tips go directly to drivers.
+                    PolicySection(title: "Cancellations", content: """
+                    • Rider cancels before the ride starts: no cancellation fee. You cannot cancel once the trip is in progress.
+                    • Driver cancels after a match: no charge to you, and the request is re-opened to other drivers.
+                    • Rider no-show: after the driver has waited at least 5 minutes at pickup, the driver may mark a no-show and your saved card is charged a $5.00 no-show fee, of which $4.00 (80%) is paid to the driver.
                     """)
 
-                    PolicySection(title: "Liability Limitations", content: """
-                    As a matchmaking platform:
-                    • We facilitate connections but don't control service quality
-                    • Drivers are independent contractors
-                    • We're not liable for driver actions
+                    PolicySection(title: "Riders", content: """
+                    You must be at least 18, provide a valid payment card, and provide accurate account information.
+                    """)
+
+                    PolicySection(title: "Full terms", content: """
+                    This is a summary. The full Terms of Service, including liability limits and dispute resolution, are the binding text. Questions: support@dollor.ai.
                     """)
                 }
+
+                Button("Read the full Terms of Service") {
+                    fullTermsURL = URL(string: AppConstants.termsOfServiceURL)
+                }
+                .fontWeight(.semibold)
             }
             .padding()
         }
         .navigationTitle("Terms of Service")
         .navigationBarTitleDisplayMode(.inline)
+        .inAppBrowser(url: $fullTermsURL)
     }
 }
 

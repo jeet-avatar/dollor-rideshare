@@ -5,7 +5,7 @@ const DriverTerms: React.FC = () => (
   <LegalLayout badge="🚗 DRIVERS" title="Driver Partner Agreement" updated="Last updated: October 29, 2026 · Zietra Technologies Inc. (DBA Dollor.ai)">
     {legalSection('1. Independent Contractor', <>
       <p>You are an independent contractor, not an employee of Dollor.ai or Zietra Technologies Inc. You decide when to go online, which requests to bid on, and whether to bid at all. You may work for other platforms. You are responsible for your own taxes, vehicle expenses, insurance, and any license or permit your work requires. Dollor does not guarantee any minimum earnings, hours, or number of rides, and does not provide benefits.</p>
-      <p style={{ marginTop: 12 }}>Dollor operates a peer-to-peer rideshare marketplace in California. Riders post a ride offer and you may bid on it. Dollor provides the technology and processes payments; the ride is provided by you. Dollor's application for a CPUC TNC permit is under CPUC review.</p>
+      <p style={{ marginTop: 12 }}>Dollor operates a peer-to-peer rideshare marketplace in California. Riders post a ride offer and you may bid on it. Dollor provides the technology and processes payments; the ride is provided by you. Dollor operates under CPUC Transportation Network Company permit TNC0050982-N, issued in October 2026.</p>
     </>)}
 
     {legalSection('2. How You Are Paid', <>

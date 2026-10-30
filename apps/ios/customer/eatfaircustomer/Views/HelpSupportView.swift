@@ -277,7 +277,7 @@ private var allFAQs: [FAQItem] { [
     FAQItem(
         id: "2",
         question: "What are the platform fees?",
-        answer: "We charge a platform fee of \(AppConfig.shared.rideshareFeeSummary). 100% of tips go directly to drivers.",
+        answer: "We charge a flat connection fee of \(AppConfig.shared.rideshareFeeSummary), plus a $0.05 CPUC Access for All charge. Drivers pay the same fee tier and charge separately. 100% of tips go directly to drivers.",
         category: .payments
     ),
     FAQItem(
@@ -289,7 +289,7 @@ private var allFAQs: [FAQItem] { [
     FAQItem(
         id: "4",
         question: "Can I cancel my ride?",
-        answer: "You can cancel your ride before the driver arrives for pickup. Go to your active ride and tap 'Cancel Ride'. Cancellation fees may apply depending on the ride status.",
+        answer: "You can cancel before the ride starts, with no cancellation fee, and your card authorization is released. You cannot cancel once the trip is in progress. If you are not at pickup after the driver has arrived and waited at least 5 minutes, the driver may mark a no-show and your saved card is charged a $5.00 no-show fee.",
         category: .orders
     ),
     FAQItem(
@@ -301,7 +301,7 @@ private var allFAQs: [FAQItem] { [
     FAQItem(
         id: "6",
         question: "What if there's an issue with my ride?",
-        answer: "Contact our support team immediately through the app or call us. We'll work with you and your driver to resolve the issue and may provide a refund or credit.",
+        answer: "Email support@dollor.ai with your trip ID and we will review the issue.",
         category: .orders
     ),
     FAQItem(

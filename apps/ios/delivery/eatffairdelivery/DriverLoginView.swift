@@ -843,6 +843,7 @@ struct DriverLoginView: View {
 struct DriverTermsSheet: View {
     @Environment(\.dismiss) var dismiss
     @Binding var agreedToTerms: Bool
+    @State private var fullTermsURL: URL?
 
     var body: some View {
         NavigationView {
@@ -853,28 +854,32 @@ struct DriverTermsSheet: View {
                         .fontWeight(.bold)
                         .foregroundColor(Theme.lxText)
 
-                    Text("Last Updated: December 2024")
+                    Text("Effective October 29, 2026")
                         .font(.caption)
                         .foregroundColor(Theme.lxTextMuted)
 
                     Group {
                         sectionHeader("1. Driver Agreement")
-                        Text("By registering as a driver on Dollor AI Service, you agree to provide rideshare services in accordance with these terms. You must maintain a valid driver's license, vehicle insurance, and pass our background verification process.")
+                        Text("Dollor Driver is operated by Zietra Technologies Inc. (doing business as Dollor.ai), a peer-to-peer rideshare marketplace operating under CPUC Transportation Network Company permit TNC0050982-N. By registering as a driver on Dollor Driver, you agree to the Driver Terms of Service and the Terms of Service. You are an independent contractor, not an employee of Dollor.ai or Zietra Technologies Inc.")
 
-                        sectionHeader("2. Account Requirements")
-                        Text("You must be at least 18 years old, possess a valid driver's license, and have access to a reliable vehicle. You are responsible for maintaining accurate account information.")
+                        sectionHeader("2. Requirements")
+                        Text("You must be at least 21 years old, hold a valid driver's license, maintain valid vehicle insurance, upload a profile photo, provide your vehicle information, complete a background check through Checkr, and be approved by Dollor.ai. You cannot go online until your account is approved and your background check has cleared.")
 
-                        sectionHeader("3. Document Verification")
-                        Text("All submitted documents (driver's license, insurance, etc.) will be reviewed as part of approval. You can go online once you are approved. Falsified documents will result in immediate account termination.")
+                        sectionHeader("3. Earnings & Fees")
+                        Text("You name your bid. A flat Connection Fee of $1 (fares up to $35), $2 (fares over $35 up to $70), or $3 (fares over $70), plus a $0.05 CPUC Access for All charge, is deducted from your payout. 100% of tips go to you. Payouts are made through Stripe after you complete Stripe's payout onboarding.")
 
-                        sectionHeader("4. Earnings & Payments")
-                        Text("You will receive payment for completed rides as per the agreed rates. Payouts are made through Stripe to your connected payout account.")
+                        sectionHeader("4. Insurance & Conduct")
+                        Text("You are responsible for the insurance and any license or permit that California law and the CPUC require of you. Harassment, discrimination, impaired or unsafe driving, fraud, or misuse of rider information may result in suspension or deactivation.")
 
-                        sectionHeader("5. Code of Conduct")
-                        Text("You agree to provide professional, courteous service. Any violations of our code of conduct may result in account suspension or termination.")
+                        sectionHeader("5. Full Terms")
+                        Text("This is a summary. The full Driver Terms of Service and Terms of Service are the binding text. Questions: support@dollor.ai.")
+                    }
 
-                        sectionHeader("6. Privacy")
-                        Text("Your personal information is protected under our Privacy Policy. We collect only necessary information for providing our services and compliance purposes.")
+                    Button(action: { fullTermsURL = URL(string: AppConstants.driverTermsURL) }) {
+                        Text("Read the full Driver Terms")
+                            .fontWeight(.semibold)
+                            .foregroundColor(Theme.lxOrange)
+                            .frame(maxWidth: .infinity)
                     }
 
                     Spacer(minLength: 40)
@@ -906,6 +911,7 @@ struct DriverTermsSheet: View {
                 }
             }
         }
+        .inAppBrowser(url: $fullTermsURL)
         .preferredColorScheme(.dark)
     }
 

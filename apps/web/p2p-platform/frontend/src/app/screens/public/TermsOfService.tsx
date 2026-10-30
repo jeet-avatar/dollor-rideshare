@@ -7,7 +7,7 @@ const TermsOfService: React.FC = () => (
 
     {legalSection('2. What Dollor Is', <>
       <p>Dollor is a peer-to-peer rideshare marketplace for California. Riders post a ride offer and independent drivers bid on it. Dollor provides the technology that connects them and processes payment. Dollor does not own vehicles, does not employ drivers, and does not provide transportation itself. Drivers are independent contractors.</p>
-      <p style={{ marginTop: 12 }}>Dollor's application for a California Public Utilities Commission (CPUC) Transportation Network Company permit is under CPUC review. These Terms do not state that a permit has been issued.</p>
+      <p style={{ marginTop: 12 }}>Dollor operates under a California Public Utilities Commission (CPUC) Transportation Network Company permit, number TNC0050982-N, issued in October 2026.</p>
     </>)}
 
     {legalSection('3. How a Ride Works', <>

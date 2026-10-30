@@ -39,7 +39,7 @@ class LoginScreenTest {
         }
 
         // Verify header elements
-        composeTestRule.onNodeWithText("Dollor AI Service").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Dollor").assertIsDisplayed()
         composeTestRule.onNodeWithText("$ online store").assertIsDisplayed()
 
         // Verify Login button is shown (not Sign Up)

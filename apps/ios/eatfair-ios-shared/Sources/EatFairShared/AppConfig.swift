@@ -724,6 +724,7 @@ public struct AppConstants {
     // Legal URLs (Required for App Store - Apple Guideline 5.1.1)
     // PRODUCTION ENVIRONMENT - api.dollor.ai
     public static let termsOfServiceURL = "https://api.dollor.ai/terms"
+    public static let driverTermsURL = "https://api.dollor.ai/driver-terms"
     public static let privacyPolicyURL = "https://api.dollor.ai/privacy"
     public static let driverApplicationURL = "https://dollor.ai/driver-application"
     public static let adminPanelURL = "https://www.dollor.ai/admin"

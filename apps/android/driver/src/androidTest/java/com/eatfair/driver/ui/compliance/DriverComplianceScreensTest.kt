@@ -69,7 +69,7 @@ class DriverComplianceScreensTest {
         }
 
         composeTestRule.onNodeWithText("Important Notice").assertIsDisplayed()
-        composeTestRule.onNodeWithText("peer-to-peer matchmaking platform", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("peer-to-peer rideshare marketplace", substring = true).assertIsDisplayed()
     }
 
     // =========================================================================
@@ -206,7 +206,7 @@ class DriverComplianceScreensTest {
         }
 
         composeTestRule.onNodeWithText("Independent Contractor Agreement").assertIsDisplayed()
-        composeTestRule.onNodeWithText("P2P matchmaking platform relationship").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Peer-to-peer rideshare marketplace relationship").assertIsDisplayed()
         composeTestRule.onNodeWithText("What This Means For You").assertIsDisplayed()
         composeTestRule.onNodeWithText("Set Your Own Hours").assertIsDisplayed()
         composeTestRule.onNodeWithText("Choose Your Requests").assertIsDisplayed()
@@ -247,7 +247,7 @@ class DriverComplianceScreensTest {
         }
 
         composeTestRule.onNodeWithText("Peer-to-Peer Platform").assertIsDisplayed()
-        composeTestRule.onNodeWithText("peer-to-peer matchmaking platform", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("peer-to-peer rideshare marketplace", substring = true).assertIsDisplayed()
     }
 
     @Test

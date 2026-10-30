@@ -79,7 +79,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "3",
                 "How do I cancel my ride?",
-                "You can cancel from your active ride on the Ride screen. Cancellation fees may apply depending on the ride status.",
+                "You can cancel before the ride starts with no cancellation fee, and your card authorization is released. You cannot cancel once the trip is in progress. If the driver has arrived and waited at least 5 minutes and you do not show up, your saved card is charged a $5.00 no-show fee.",
                 "Rides"
             ),
             FAQItem(
@@ -91,7 +91,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "5",
                 "What are platform fees?",
-                "Dollor.ai charges transparent, low platform fees:\n" + AppConfig.Rideshare.tierLines.joinToString("\n") { "• $it" } + "\n\n100% of tips go directly to drivers.",
+                "Dollor.ai charges a flat connection fee by fare:\n" + AppConfig.Rideshare.tierLines.joinToString("\n") { "• $it" } + "\n\nA $0.05 CPUC Access for All charge also applies. Drivers pay the same fee tier separately. 100% of tips go directly to drivers.",
                 "Payments"
             ),
             FAQItem(
@@ -103,7 +103,7 @@ fun HelpSupportScreen(
             FAQItem(
                 "7",
                 "What if I have an issue with my ride?",
-                "Contact support immediately through the app. We'll review the issue and provide appropriate assistance.",
+                "Email support@dollor.ai with your trip ID and we will review the issue.",
                 "Rides"
             ),
             FAQItem(
@@ -115,13 +115,13 @@ fun HelpSupportScreen(
             FAQItem(
                 "9",
                 "Are drivers employees of Dollor.ai?",
-                "No, all drivers are independent contractors. Dollor.ai is a matchmaking platform that connects riders with independent drivers.",
+                "No, all drivers are independent contractors. Dollor.ai is a peer-to-peer rideshare marketplace operated by Zietra Technologies Inc.; riders post an offer and independent drivers bid on it.",
                 "Drivers"
             ),
             FAQItem(
                 "10",
                 "How do refunds work?",
-                "Refunds are processed to your original payment method within 5-7 business days. For disputed charges, contact support for assistance.",
+                "For refund or charge questions, email support@dollor.ai with your trip ID.",
                 "Payments"
             )
         )
