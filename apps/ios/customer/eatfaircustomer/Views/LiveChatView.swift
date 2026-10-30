@@ -44,7 +44,7 @@ struct LiveChatView: View {
                 if messages.isEmpty {
                     messages.append((
                         id: UUID(),
-                        text: "Hi! I'm Dollor Support. I can help you check order status, cancel orders, check refund eligibility, and more. What do you need help with?",
+                        text: "Hi! I'm Dollor Support. I can help with your rides, receipts, payments, cancellations and refunds, and account questions. What do you need help with?",
                         isFromUser: false
                     ))
                 }

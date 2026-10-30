@@ -89,6 +89,8 @@ class RideRequestViewModel: ObservableObject {
     // P2P Driver Bids (incoming bids from drivers)
     @Published var incomingBids: [RideBid] = []
     @Published var selectedBid: RideBid?
+    /// "id-price" keys of bids the sheet has already been auto-presented for.
+    private var autoShownBidKeys = Set<String>()
     @Published var showBidsSheet = false
     @Published var acceptedDriver: AcceptedDriverInfo?
     @Published var driverETA: Int?  // Estimated arrival in minutes
@@ -488,6 +490,8 @@ class RideRequestViewModel: ObservableObject {
 
     // MARK: - Request Ride
     func requestRide(customerName: String, customerEmail: String, customerPhone: String) {
+        // A double tap on Find Driver must not create two requests.
+        guard !isLoading else { return }
         guard let pickup = pickupAddress, let dropoff = dropoffAddress else {
             showErrorMessage("Please select pickup and dropoff locations")
             return
@@ -642,6 +646,7 @@ class RideRequestViewModel: ObservableObject {
         }
 
         logger.info("Starting bid polling for request \(requestId)")
+        autoShownBidKeys = []
 
         // Connect WebSocket for real-time bid updates
         connectWebSocket(rideId: requestId)
@@ -741,10 +746,15 @@ class RideRequestViewModel: ObservableObject {
                     }
                     self.incomingBids = newBids
 
-                    // Auto-show bids sheet when first bid arrives
-                    if !newBids.isEmpty && !self.showBidsSheet && self.acceptedDriver == nil {
+                    // Auto-show the bids sheet once per new bid or re-bid. Keying on
+                    // id + price means a sheet the rider closed stays closed until a
+                    // driver actually changes something (it used to re-present every poll).
+                    let unseen = newBids.map { "\($0.id)-\($0.proposed_price)" }
+                        .filter { !self.autoShownBidKeys.contains($0) }
+                    if !unseen.isEmpty && !self.showBidsSheet && self.acceptedDriver == nil {
                         self.showBidsSheet = true
                     }
+                    self.autoShownBidKeys.formUnion(unseen)
 
                 case .failure(let error):
                     logger.error("Failed to fetch bids: \(error.localizedDescription)")

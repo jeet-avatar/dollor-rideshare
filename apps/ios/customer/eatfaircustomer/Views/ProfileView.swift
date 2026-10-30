@@ -529,10 +529,11 @@ struct AuthActionButton: View {
     let isAuthenticated: Bool
     @ObservedObject var authViewModel: AuthViewModel
     let onLogout: () -> Void
+    @State private var showLogoutConfirmation = false
 
     var body: some View {
         if isAuthenticated {
-            Button(action: onLogout) {
+            Button(action: { showLogoutConfirmation = true }) {
                 Text("Log Out")
                     .fontWeight(.bold)
                     .foregroundColor(Lx.Palette.onAccent)
@@ -541,6 +542,10 @@ struct AuthActionButton: View {
                     .background(Theme.lxError)
                     .cornerRadius(Lx.Radius.button)
                     .shadow(color: Theme.lxError.opacity(0.4), radius: 14, x: 0, y: 6)
+            }
+            .confirmationDialog("Log out of Dollor?", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
+                Button("Log Out", role: .destructive, action: onLogout)
+                Button("Cancel", role: .cancel) {}
             }
         } else {
             NavigationLink(destination: LoginView(authViewModel: authViewModel)) {
