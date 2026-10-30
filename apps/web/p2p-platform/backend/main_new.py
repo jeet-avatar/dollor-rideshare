@@ -10097,6 +10097,7 @@ async def track_ride(
 
             # iOS flat fields
             response.update({
+                "driver_id": driver.id,
                 "driver_name": driver_name,
                 "driver_phone": driver.phone,
                 "driver_photo_url": driver.photo_url,

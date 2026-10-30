@@ -840,7 +840,9 @@ object CustomerRideshareApiService {
                 val chatMessage = gson.fromJson(responseBody, RideChatMessage::class.java)
                 Result.success(chatMessage)
             } else {
-                Result.failure(Exception("Failed to send message: ${response.code}"))
+                // A refused send (403 when blocked) carries the reason in `detail`.
+                val detail = runCatching { org.json.JSONObject(responseBody.orEmpty()).optString("detail") }.getOrNull()
+                Result.failure(Exception(detail?.takeIf { it.isNotBlank() } ?: "Failed to send message: ${response.code}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

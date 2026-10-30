@@ -281,6 +281,13 @@ struct DriverChatView: View {
                 }
             case .failure(let error):
                 logger.info("[DriverChatView] Failed to send message: \(error)")
+                if case P2PAPIError.serverError(let detail) = error {
+                    errorMessage = detail
+                    if messageText.isEmpty, text == typedDraft {
+                        messageText = typedDraft
+                    }
+                    return
+                }
                 // A decoding error means the server accepted the message; the poll will show it.
                 if !(error is DecodingError), messageText.isEmpty, text == typedDraft {
                     messageText = typedDraft

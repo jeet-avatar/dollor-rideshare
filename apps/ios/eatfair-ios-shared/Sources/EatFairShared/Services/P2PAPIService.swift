@@ -5038,6 +5038,15 @@ public class P2PAPIService: ObservableObject {
                 return
             }
 
+            // A refused send (e.g. 403 when the other user blocked you) must surface its detail, not a decode error.
+            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                let detail = ((try? JSONSerialization.jsonObject(with: data)) as? [String: Any])?["detail"] as? String
+                DispatchQueue.main.async {
+                    completion(.failure(P2PAPIError.serverError(detail ?? "Message not sent (\(http.statusCode))")))
+                }
+                return
+            }
+
             DispatchQueue.main.async {
                 do {
                     let chatMessage = try JSONDecoder().decode(RideChatMessage.self, from: data)
@@ -5646,6 +5655,7 @@ public struct RideTrackingInfo: Codable {
     public let orderId: Int
     public let orderNumber: String
     public let status: String
+    public let driverId: Int?
     public let driverName: String?
     public let driverPhone: String?
     public let driverPhotoUrl: String?
@@ -5674,6 +5684,7 @@ public struct RideTrackingInfo: Codable {
         case orderId = "order_id"
         case orderNumber = "order_number"
         case status
+        case driverId = "driver_id"
         case driverName = "driver_name"
         case driverPhone = "driver_phone"
         case driverPhotoUrl = "driver_photo_url"

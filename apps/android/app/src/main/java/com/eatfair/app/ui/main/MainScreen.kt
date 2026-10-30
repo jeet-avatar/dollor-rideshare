@@ -74,7 +74,7 @@ private val visibleTabs: List<Pair<Int, BottomNavItem>> = listOf(
 @Composable
 fun MainScreen(
     profileViewModel: ProfileViewModel,
-    onRideChatClick: (Int, String) -> Unit = { _, _ -> },
+    onRideChatClick: (Int, String, Int?) -> Unit = { _, _, _ -> },
     onEditProfileClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onReferAndEarnClick: () -> Unit,

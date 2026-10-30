@@ -1175,7 +1175,7 @@ class RideRequestViewModel: ObservableObject {
               let name = tracking.driverName else { return }
         let vehicleParts = (tracking.driverVehicle ?? "").split(separator: " ")
         acceptedDriver = AcceptedDriverInfo(
-            id: 0,
+            id: tracking.driverId ?? 0,
             name: name,
             phone: tracking.driverPhone,
             rating: tracking.driverRating,

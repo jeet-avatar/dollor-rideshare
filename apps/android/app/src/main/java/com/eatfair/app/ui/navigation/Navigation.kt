@@ -37,9 +37,9 @@ sealed class Screen(val route: String) {
     object RideTracking: Screen("ride_tracking/{rideId}") {
         fun createRoute(rideId: String) = "ride_tracking/$rideId"
     }
-    object DriverChat: Screen("driver_chat/{rideRequestId}/{driverName}") {
-        fun createRoute(rideRequestId: Int, driverName: String) =
-            "driver_chat/$rideRequestId/${java.net.URLEncoder.encode(driverName, "UTF-8")}"
+    object DriverChat: Screen("driver_chat/{rideRequestId}/{driverName}?driverId={driverId}") {
+        fun createRoute(rideRequestId: Int, driverName: String, driverId: Int? = null) =
+            "driver_chat/$rideRequestId/${java.net.URLEncoder.encode(driverName, "UTF-8")}?driverId=${driverId ?: 0}"
     }
 
     // Help & Support screen

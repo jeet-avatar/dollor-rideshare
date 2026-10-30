@@ -225,6 +225,8 @@ fun DriverChatScreen(
                                         result.onSuccess { newMessage ->
                                             messages = messages + newMessage
                                             messageText = ""
+                                        }.onFailure { e ->
+                                            safety.snackbarHostState.showSnackbar(e.message ?: "Message not sent")
                                         }
                                         isSending = false
                                     }

@@ -135,9 +135,9 @@ fun NavigationGraph(
         composable(route = Screen.Main.route) {
             MainScreen(
                 profileViewModel = profileViewModel,
-                onRideChatClick = { rideRequestId, driverName ->
+                onRideChatClick = { rideRequestId, driverName, driverId ->
                     // Rideshare-only landing: open driver chat from the embedded ride screen
-                    navController.navigate(Screen.DriverChat.createRoute(rideRequestId, driverName))
+                    navController.navigate(Screen.DriverChat.createRoute(rideRequestId, driverName, driverId))
                 },
                 onEditProfileClick = {
                     navController.navigate(Screen.EditProfile.route)
@@ -749,8 +749,8 @@ fun NavGraphBuilder.rideshareGraph(navController: NavHostController) {
                 onNavigateToActiveRide = { rideRequestId ->
                     // Navigate to ride tracking
                 },
-                onNavigateToChat = { rideRequestId, driverName ->
-                    navController.navigate(Screen.DriverChat.createRoute(rideRequestId, driverName))
+                onNavigateToChat = { rideRequestId, driverName, driverId ->
+                    navController.navigate(Screen.DriverChat.createRoute(rideRequestId, driverName, driverId))
                 }
             )
         }
@@ -760,16 +760,19 @@ fun NavGraphBuilder.rideshareGraph(navController: NavHostController) {
             route = Screen.DriverChat.route,
             arguments = listOf(
                 navArgument("rideRequestId") { type = NavType.IntType },
-                navArgument("driverName") { type = NavType.StringType }
+                navArgument("driverName") { type = NavType.StringType },
+                navArgument("driverId") { type = NavType.IntType; defaultValue = 0 }
             )
         ) { backStackEntry ->
             val rideRequestId = backStackEntry.arguments?.getInt("rideRequestId") ?: 0
+            val driverId = (backStackEntry.arguments?.getInt("driverId") ?: 0).takeIf { it > 0 }
             val driverName = backStackEntry.arguments?.getString("driverName") ?: "Driver"
             val decodedName = java.net.URLDecoder.decode(driverName, "UTF-8")
 
             com.eatfair.app.ui.rideshare.DriverChatScreen(
                 rideRequestId = rideRequestId,
                 driverName = decodedName,
+                driverId = driverId,
                 onNavigateBack = { navController.navigateUp() }
             )
         }

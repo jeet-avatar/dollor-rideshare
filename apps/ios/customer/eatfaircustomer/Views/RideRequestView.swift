@@ -2416,7 +2416,7 @@ struct RideStatusCard: View {
                     rideRequestId: rideId,
                     driverName: driver.name ?? "Driver",
                     driverPhone: driver.phone,
-                    driverId: driver.id
+                    driverId: driver.id > 0 ? driver.id : nil
                 )
             }
         }

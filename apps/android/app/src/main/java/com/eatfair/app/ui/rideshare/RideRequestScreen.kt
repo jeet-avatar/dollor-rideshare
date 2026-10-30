@@ -59,7 +59,7 @@ fun RideRequestScreen(
     viewModel: RideRequestViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     onNavigateToActiveRide: (Int) -> Unit = {},
-    onNavigateToChat: (Int, String) -> Unit = { _, _ -> }
+    onNavigateToChat: (Int, String, Int?) -> Unit = { _, _, _ -> }
 ) {
     val context = LocalContext.current
 
@@ -293,7 +293,8 @@ fun RideRequestScreen(
                             rideTracking?.let { tracking ->
                                 onNavigateToChat(
                                     tracking.rideRequestId,
-                                    tracking.driver?.name ?: "Driver"
+                                    tracking.driver?.name ?: "Driver",
+                                    tracking.driver?.id
                                 )
                             }
                         },
