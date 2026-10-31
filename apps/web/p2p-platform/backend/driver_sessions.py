@@ -13,6 +13,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from models import Driver, DriverStatus, DriverOnlineSession, DriverPayout, RideRequest, RideRequestStatus
+from ride_dispatch import SHARED_DEMO_DRIVER_EMAILS
 
 # An open session only counts up to the driver's last location update plus this grace, so a driver
 # whose app died while "online" does not accrue hours forever.
@@ -35,6 +36,14 @@ def _open_session_end(driver: Optional[Driver], session: DriverOnlineSession, no
     if last_seen is None:
         return session.started_at
     return max(session.started_at, min(now, last_seen + HEARTBEAT_GRACE))
+
+
+def keep_demo_driver_online(driver: Driver, requested_online: bool) -> bool:
+    """The shared demo drivers (used by App Review and Play review) stay online: a reviewer who taps
+    Go Offline must not leave the next reviewer with nobody online."""
+    if (driver.email or "").lower() in SHARED_DEMO_DRIVER_EMAILS:
+        return True
+    return requested_online
 
 
 def record_online_state(db: Session, driver: Driver, online: bool, now: Optional[datetime] = None) -> None:

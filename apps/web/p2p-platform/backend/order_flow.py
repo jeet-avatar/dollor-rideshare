@@ -33,7 +33,9 @@ import requests
 
 from database import get_db, SessionLocal
 from email_service import send_order_delivered_with_receipt_email, send_delivery_completed_driver_email, send_delivery_completed_vendor_email, send_email
-from driver_sessions import ensure_can_go_offline, ensure_can_go_online, ensure_open_session, record_online_state
+from driver_sessions import (
+    ensure_can_go_offline, ensure_can_go_online, ensure_open_session, keep_demo_driver_online, record_online_state,
+)
 from google_maps_service import get_traffic_eta, ETAResult
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -1968,6 +1970,7 @@ async def update_driver_status(
     if int(driver_id) != driver.id:
         raise HTTPException(status_code=403, detail="Not authorized for this resource")
 
+    is_online = keep_demo_driver_online(driver, is_online)
     if is_online:
         ensure_can_go_online(driver)
     else:

@@ -10,7 +10,7 @@ Version: 1.0.1
 from pricing_config import pricing_engine, platform_fee_for, fare_tier_description
 from driver_sessions import (
     available_balance, ensure_can_go_offline, ensure_can_go_online, ensure_open_session, hours_online,
-    new_manual_payout, pending_payouts, record_online_state,
+    keep_demo_driver_online, new_manual_payout, pending_payouts, record_online_state,
 )
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect, Header, Body, Request
 from fastapi.responses import JSONResponse
@@ -3107,6 +3107,8 @@ def set_driver_online(
     if online_status is None:
         online_status = True  # Default to going online
 
+    online_status = keep_demo_driver_online(driver, online_status)
+
     # Block unapproved drivers from going online
     if online_status:  # Only check when trying to go online
         approved_statuses = [DriverStatus.APPROVED, DriverStatus.ACTIVE]
@@ -4817,6 +4819,8 @@ def post_driver_status(
     # SECURITY: Verify the authenticated driver owns this account
     if driver.id != driver_id:
         raise HTTPException(status_code=403, detail="Access denied")
+
+    is_online = keep_demo_driver_online(driver, is_online)
 
     # TNC gate (CPUC 13-09-045): a driver may only go ONLINE if approved AND the Checkr background check passed.
     if is_online:
